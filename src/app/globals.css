@@ -1,0 +1,139 @@
+@import "tailwindcss";
+
+/* ------------------------------------------------------------------
+   Design tokens
+   Restrained, low-contrast dark palette: ink ground, parchment text,
+   a single brass accent and a muted olive support colour.
+   No gradients, no glows, no saturated colour.
+------------------------------------------------------------------- */
+@theme {
+  --color-ink: #0b0c0a;
+  --color-surface: #131512;
+  --color-raised: #1a1d18;
+  --color-line: #272b24;
+  --color-line-strong: #3a3f35;
+  --color-parchment: #ece6d8;
+  --color-muted: #8d8a7d;
+  --color-faint: #5f5d55;
+  --color-brass: #c2a467;
+  --color-brass-dim: #8a7545;
+  --color-olive: #4c5c47;
+  --color-oxblood: #8a4b44;
+
+  --font-display: var(--font-serif), Georgia, "Times New Roman", serif;
+  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
+    Helvetica, Arial, sans-serif;
+
+  --radius-sm: 2px;
+  --radius-md: 4px;
+  --radius-lg: 6px;
+}
+
+/* ------------------------------------------------------------------
+   Base
+------------------------------------------------------------------- */
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+html {
+  background-color: var(--color-ink);
+  color-scheme: dark;
+}
+
+body {
+  margin: 0;
+  background-color: var(--color-ink);
+  color: var(--color-parchment);
+  font-family: var(--font-sans);
+  font-size: 16px;
+  line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  overscroll-behavior-y: none;
+}
+
+/* The application owns its own scroll regions; the document never scrolls. */
+body.app-shell {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+input,
+select,
+textarea {
+  background-color: transparent;
+}
+
+/* Remove the number spinner: weights and repetitions use explicit controls. */
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type="number"] {
+  -moz-appearance: textfield;
+}
+
+:focus-visible {
+  outline: 1px solid var(--color-brass);
+  outline-offset: 2px;
+}
+
+::selection {
+  background: var(--color-brass-dim);
+  color: var(--color-ink);
+}
+
+/* ------------------------------------------------------------------
+   Utilities
+------------------------------------------------------------------- */
+@utility label {
+  font-size: 0.6875rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--color-muted);
+  font-weight: 500;
+}
+
+@utility rule {
+  border-top: 1px solid var(--color-line);
+}
+
+@utility scroll-area {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+@utility tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

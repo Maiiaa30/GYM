@@ -1,0 +1,42 @@
+import type { Metadata, Viewport } from "next";
+import { Instrument_Serif } from "next/font/google";
+import "./globals.css";
+
+const serif = Instrument_Serif({
+  weight: "400",
+  subsets: ["latin"],
+  display: "swap",
+  variable: "--font-serif",
+});
+
+export const metadata: Metadata = {
+  title: "GYM",
+  description: "Private training log and programme for two.",
+  manifest: "/manifest.webmanifest",
+  applicationName: "GYM",
+  appleWebApp: {
+    capable: true,
+    title: "GYM",
+    statusBarStyle: "black-translucent",
+  },
+  robots: { index: false, follow: false },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#0b0c0a",
+  viewportFit: "cover",
+  width: "device-width",
+  initialScale: 1,
+};
+
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <html lang="en" className={serif.variable}>
+      <body className="app-shell">{children}</body>
+    </html>
+  );
+}
