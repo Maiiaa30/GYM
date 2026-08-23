@@ -121,12 +121,34 @@ export type SetLog = {
   logged_at: string;
 }
 
+export type ProgressionAction =
+  | "start"
+  | "increase"
+  | "hold"
+  | "deload"
+  | "unchanged";
+
 export type Progression = {
   user_id: string;
   exercise: string;
   working_kg: number;
   fail_count: number;
+  last_action: ProgressionAction;
   updated_at: string;
+}
+
+export type SessionItem = {
+  id: string;
+  session_id: string;
+  user_id: string;
+  position: number;
+  exercise: string;
+  sets: number;
+  rep_low: number;
+  rep_high: number;
+  rest_sec: number;
+  notes: string | null;
+  added_mid_session: boolean;
 }
 
 export type PersonalRecord = {
@@ -170,6 +192,7 @@ export type Database = {
       plan_days: Table<PlanDay>;
       plan_items: Table<PlanItem>;
       sessions: Table<Session>;
+      session_items: Table<SessionItem>;
       set_logs: Table<SetLog>;
       progression: Table<Progression>;
       personal_records: Table<PersonalRecord>;

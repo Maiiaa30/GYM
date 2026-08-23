@@ -1,7 +1,7 @@
 import Link from "next/link";
-import { Button, Card } from "@/components/ui";
+import { Card } from "@/components/ui";
 import { createClient } from "@/lib/supabase/server";
-import { startSession } from "../(session)/session/actions";
+import { TodayCard, type TodayDay } from "./today-card";
 
 export const dynamic = "force-dynamic";
 
@@ -42,23 +42,22 @@ export default async function TodayPage() {
     .eq("user_id", user!.id)
     .eq("status", "completed");
 
-  const nextDay = days?.length
-    ? days[(completedCount ?? 0) % days.length]
-    : null;
-
   const { data: openSession } = await supabase
     .from("sessions")
-    .select("id, plan_day_id")
+    .select("id")
     .eq("user_id", user!.id)
     .eq("status", "in_progress")
     .eq("performed_on", new Date().toISOString().slice(0, 10))
     .maybeSingle();
 
-  const { data: items } = nextDay
+  const { data: items } = days?.length
     ? await supabase
         .from("plan_items")
-        .select("position, exercise, sets, rep_low, rep_high")
-        .eq("plan_day_id", nextDay.id)
+        .select("plan_day_id, position, exercise, sets, rep_low, rep_high")
+        .in(
+          "plan_day_id",
+          days.map((day) => day.id),
+        )
         .order("position")
     : { data: null };
 
@@ -66,10 +65,28 @@ export default async function TodayPage() {
     ? await supabase
         .from("exercises")
         .select("slug, name")
-        .in("slug", items.map((item) => item.exercise))
+        .in("slug", [...new Set(items.map((item) => item.exercise))])
     : { data: null };
 
   const nameBySlug = new Map(exercises?.map((e) => [e.slug, e.name]) ?? []);
+
+  const cardDays: TodayDay[] = (days ?? []).map((day) => ({
+    id: day.id,
+    name: day.name,
+    focus: day.focus,
+    items: (items ?? [])
+      .filter((item) => item.plan_day_id === day.id)
+      .map((item) => ({
+        name: nameBySlug.get(item.exercise) ?? item.exercise,
+        sets: item.sets,
+        repLow: item.rep_low,
+        repHigh: item.rep_high,
+      })),
+  }));
+
+  const suggestedIndex = cardDays.length
+    ? (completedCount ?? 0) % cardDays.length
+    : 0;
 
   return (
     <div className="space-y-6">
@@ -80,7 +97,7 @@ export default async function TodayPage() {
         </h1>
       </header>
 
-      {!plan || !nextDay ? (
+      {cardDays.length === 0 ? (
         <Card className="p-5">
           <p className="label">Ainda sem programa</p>
           <p className="mt-2 text-sm leading-relaxed text-muted">
@@ -93,66 +110,28 @@ export default async function TodayPage() {
             Criar um programa
           </Link>
         </Card>
-      ) : (
-        <>
-          <Card>
-            <div className="flex items-baseline justify-between px-5 pt-5">
-              <div>
-                <p className="label">Hoje</p>
-                <p className="mt-1 font-[family-name:var(--font-display)] text-3xl">
-                  {nextDay.name}
-                </p>
-              </div>
-              <p className="text-xs text-faint">{nextDay.focus}</p>
-            </div>
-
-            <ul className="mt-4 divide-y divide-line">
-              {items?.map((item) => (
-                <li
-                  key={item.position}
-                  className="flex items-center justify-between px-5 py-3"
-                >
-                  <span className="text-sm">
-                    {nameBySlug.get(item.exercise) ?? item.exercise}
-                  </span>
-                  <span className="tabular text-sm text-muted">
-                    {item.sets} ×{" "}
-                    {item.rep_low === item.rep_high
-                      ? item.rep_low
-                      : `${item.rep_low}–${item.rep_high}`}
-                  </span>
-                </li>
-              ))}
-            </ul>
-
-            <div className="p-5">
-              {openSession ? (
-                <Link
-                  href={`/session/${openSession.id}`}
-                  className="block rounded-[var(--radius-md)] border border-brass bg-brass py-4 text-center font-medium text-ink"
-                >
-                  Retomar o treino
-                </Link>
-              ) : (
-                <form action={startSession}>
-                  <input
-                    type="hidden"
-                    name="plan_day_id"
-                    value={nextDay.id}
-                  />
-                  <Button type="submit" size="lg" className="w-full">
-                    Começar o treino
-                  </Button>
-                </form>
-              )}
-            </div>
-          </Card>
-
-          <p className="text-center text-xs text-faint">
-            {completedCount ?? 0} treinos concluídos
+      ) : openSession ? (
+        <Card className="p-5">
+          <p className="label">Treino a decorrer</p>
+          <p className="mt-2 text-sm text-muted">
+            Tens um treino começado hoje.
           </p>
-        </>
+          <Link
+            href={`/session/${openSession.id}`}
+            className="mt-4 block rounded-[var(--radius-md)] border border-brass bg-brass py-4 text-center font-medium text-ink"
+          >
+            Retomar o treino
+          </Link>
+        </Card>
+      ) : (
+        <TodayCard days={cardDays} suggestedIndex={suggestedIndex} />
       )}
+
+      {cardDays.length > 0 ? (
+        <p className="text-center text-xs text-faint">
+          {completedCount ?? 0} treinos concluídos
+        </p>
+      ) : null}
     </div>
   );
 }

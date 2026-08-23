@@ -7,7 +7,7 @@
  * larger than one increment.
  */
 
-import type { LiftFamily } from "@/lib/database.types";
+import type { LiftFamily, ProgressionAction } from "@/lib/database.types";
 
 export const BAR_WEIGHT_KG = 20;
 
@@ -158,4 +158,67 @@ export function sessionVolume(
     if (!set.completed || set.isWarmup) return total;
     return total + (set.weightKg ?? 0) * (set.reps ?? 0);
   }, 0);
+}
+
+/* ------------------------------------------------------------ explanation */
+
+/**
+ * Why the target is the number it is. Shown on every exercise so the load
+ * never looks arbitrary: a beginner who understands the rule follows it.
+ */
+export function describeTarget(input: {
+  action: ProgressionAction | null;
+  increment: number;
+  family: LiftFamily;
+  hasHistory: boolean;
+}): string {
+  if (!input.hasHistory) {
+    return "Primeira vez. Escolhe um peso que te deixe fazer todas as repetições com técnica limpa.";
+  }
+
+  if (input.family === "bodyweight") {
+    return "Peso do corpo. Tenta somar uma repetição a cada série.";
+  }
+
+  const step = formatKg(input.increment);
+
+  switch (input.action) {
+    case "increase":
+      return `Subiu ${step} kg porque fizeste todas as repetições da última vez.`;
+    case "hold":
+      return "Mesmo peso da última vez, em que faltaram repetições. Fecha-as todas hoje.";
+    case "deload":
+      return "Desceu 10% depois de duas falhas seguidas. Volta a subir a partir daqui.";
+    default:
+      return "Mesmo peso da última vez.";
+  }
+}
+
+function formatKg(value: number): string {
+  return Number.isInteger(value) ? String(value) : String(value).replace(".", ",");
+}
+
+/* ----------------------------------------------------------- prescription */
+
+export type Prescription = {
+  sets: number;
+  repLow: number;
+  repHigh: number;
+  restSec: number;
+};
+
+/**
+ * Sensible defaults for an exercise added in the middle of a session, where
+ * there is no programme row to copy.
+ */
+export function defaultPrescription(family: LiftFamily): Prescription {
+  switch (family) {
+    case "lower_compound":
+    case "upper_compound":
+      return { sets: 3, repLow: 5, repHigh: 8, restSec: 150 };
+    case "bodyweight":
+      return { sets: 3, repLow: 8, repHigh: 15, restSec: 90 };
+    default:
+      return { sets: 3, repLow: 10, repHigh: 12, restSec: 90 };
+  }
 }

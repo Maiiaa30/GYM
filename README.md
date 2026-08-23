@@ -44,6 +44,22 @@ The second account is created in **Settings → Members**, which returns a
 one-time invitation code. The invited member enters that code with their email
 at `/join` and chooses their own password.
 
+## During a session
+
+A session takes a snapshot of what it prescribes when it starts, so rebuilding
+the block never disturbs a workout in progress, and either member can add or
+drop an exercise mid-session without touching the programme both of them
+follow.
+
+The screen is held awake for as long as the session runs (per device, and
+switchable off from the session's adjust panel), the body weight is asked for
+once at the start if it has not been recorded that day, and every target says
+why it is the number it is — added, held or deloaded — rather than presenting
+a bare weight.
+
+The rotation suggests the next training day, but any day of the block can be
+chosen instead.
+
 ## Programme generation
 
 `GEMINI_API_KEY` enables tailored blocks. The model chooses the movements, the

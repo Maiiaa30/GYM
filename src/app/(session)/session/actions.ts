@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import {
+  defaultPrescription,
   estimatedOneRepMax,
   nextWorkingWeight,
   warmupSets,
@@ -11,8 +12,12 @@ import {
 import type { LiftFamily } from "@/lib/database.types";
 
 /**
- * Creates today's session for a training day and pre-creates every set row, so
- * that logging during the session is a single update per set.
+ * Starts today's session for a training day.
+ *
+ * The session takes a snapshot of what it prescribes (session_items) instead
+ * of reading the shared programme as it goes, so rebuilding the block does not
+ * disturb a workout in progress and either member can add or drop an exercise
+ * without touching what both of them follow.
  */
 export async function startSession(formData: FormData) {
   const planDayId = String(formData.get("plan_day_id") ?? "");
@@ -30,7 +35,6 @@ export async function startSession(formData: FormData) {
     .from("sessions")
     .select("id")
     .eq("user_id", user.id)
-    .eq("plan_day_id", planDayId)
     .eq("performed_on", today)
     .eq("status", "in_progress")
     .maybeSingle();
@@ -39,7 +43,7 @@ export async function startSession(formData: FormData) {
 
   const { data: items } = await supabase
     .from("plan_items")
-    .select("position, exercise, sets, rep_low, rep_high")
+    .select("position, exercise, sets, rep_low, rep_high, rest_sec, notes")
     .eq("plan_day_id", planDayId)
     .order("position");
 
@@ -71,6 +75,46 @@ export async function startSession(formData: FormData) {
 
   if (sessionError || !session) redirect("/");
 
+  await supabase.from("session_items").insert(
+    items.map((item, position) => ({
+      session_id: session.id,
+      user_id: user.id,
+      position,
+      exercise: item.exercise,
+      sets: item.sets,
+      rep_low: item.rep_low,
+      rep_high: item.rep_high,
+      rest_sec: item.rest_sec,
+      notes: item.notes,
+    })),
+  );
+
+  const rows = items.flatMap((item) =>
+    setRowsFor({
+      sessionId: session.id,
+      userId: user.id,
+      exercise: item.exercise,
+      family: familyBySlug.get(item.exercise) as LiftFamily | undefined,
+      working: workingBySlug.get(item.exercise) ?? 0,
+      sets: item.sets,
+    }),
+  );
+
+  await supabase.from("set_logs").insert(rows);
+
+  redirect(`/session/${session.id}`);
+}
+
+/** Warm-up rows plus working rows for one exercise. */
+function setRowsFor(input: {
+  sessionId: string;
+  userId: string;
+  exercise: string;
+  family: LiftFamily | undefined;
+  working: number;
+  sets: number;
+}) {
+  const loaded = input.family !== "bodyweight" && input.working > 0;
   const rows: Array<{
     session_id: string;
     user_id: string;
@@ -81,41 +125,33 @@ export async function startSession(formData: FormData) {
     completed: boolean;
   }> = [];
 
-  for (const item of items) {
-    const family = familyBySlug.get(item.exercise) as LiftFamily | undefined;
-    const working = workingBySlug.get(item.exercise) ?? 0;
-    const loaded = family !== "bodyweight" && working > 0;
-
-    if (loaded) {
-      warmupSets(working).forEach((warmup, index) => {
-        rows.push({
-          session_id: session.id,
-          user_id: user.id,
-          exercise: item.exercise,
-          set_no: index + 1,
-          is_warmup: true,
-          target_kg: warmup.kg,
-          completed: false,
-        });
-      });
-    }
-
-    for (let setNo = 1; setNo <= item.sets; setNo += 1) {
+  if (loaded) {
+    warmupSets(input.working).forEach((warmup, index) => {
       rows.push({
-        session_id: session.id,
-        user_id: user.id,
-        exercise: item.exercise,
-        set_no: setNo,
-        is_warmup: false,
-        target_kg: loaded ? working : null,
+        session_id: input.sessionId,
+        user_id: input.userId,
+        exercise: input.exercise,
+        set_no: index + 1,
+        is_warmup: true,
+        target_kg: warmup.kg,
         completed: false,
       });
-    }
+    });
   }
 
-  await supabase.from("set_logs").insert(rows);
+  for (let setNo = 1; setNo <= input.sets; setNo += 1) {
+    rows.push({
+      session_id: input.sessionId,
+      user_id: input.userId,
+      exercise: input.exercise,
+      set_no: setNo,
+      is_warmup: false,
+      target_kg: loaded ? input.working : null,
+      completed: false,
+    });
+  }
 
-  redirect(`/session/${session.id}`);
+  return rows;
 }
 
 export type LogSetResult = { ok: boolean };
@@ -147,6 +183,128 @@ export async function logSet(input: {
   return { ok: !error };
 }
 
+export type MutateSessionResult = { ok: boolean; error: string | null };
+
+/** Adds an exercise to a session already under way. */
+export async function addExerciseToSession(input: {
+  sessionId: string;
+  exercise: string;
+}): Promise<MutateSessionResult> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { ok: false, error: "A sessão expirou." };
+
+  const { data: session } = await supabase
+    .from("sessions")
+    .select("id, status")
+    .eq("id", input.sessionId)
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  if (!session || session.status !== "in_progress") {
+    return { ok: false, error: "Este treino já não está a decorrer." };
+  }
+
+  const { data: exercise } = await supabase
+    .from("exercises")
+    .select("slug, family")
+    .eq("slug", input.exercise)
+    .maybeSingle();
+
+  if (!exercise) return { ok: false, error: "Exercício desconhecido." };
+
+  const { data: current } = await supabase
+    .from("session_items")
+    .select("exercise, position")
+    .eq("session_id", input.sessionId)
+    .order("position");
+
+  if (current?.some((item) => item.exercise === input.exercise)) {
+    return { ok: false, error: "Esse exercício já está no treino." };
+  }
+
+  const { data: progression } = await supabase
+    .from("progression")
+    .select("working_kg")
+    .eq("user_id", user.id)
+    .eq("exercise", input.exercise)
+    .maybeSingle();
+
+  const prescription = defaultPrescription(exercise.family as LiftFamily);
+  const position = (current?.[current.length - 1]?.position ?? -1) + 1;
+
+  const { error: itemError } = await supabase.from("session_items").insert({
+    session_id: input.sessionId,
+    user_id: user.id,
+    position,
+    exercise: input.exercise,
+    sets: prescription.sets,
+    rep_low: prescription.repLow,
+    rep_high: prescription.repHigh,
+    rest_sec: prescription.restSec,
+    added_mid_session: true,
+  });
+
+  if (itemError) return { ok: false, error: "Não foi possível adicionar." };
+
+  const { error: setsError } = await supabase.from("set_logs").insert(
+    setRowsFor({
+      sessionId: input.sessionId,
+      userId: user.id,
+      exercise: input.exercise,
+      family: exercise.family as LiftFamily,
+      working: Number(progression?.working_kg ?? 0),
+      sets: prescription.sets,
+    }),
+  );
+
+  if (setsError) return { ok: false, error: "Não foi possível criar as séries." };
+
+  return { ok: true, error: null };
+}
+
+/** Drops an exercise from a session already under way. */
+export async function removeExerciseFromSession(input: {
+  sessionId: string;
+  exercise: string;
+}): Promise<MutateSessionResult> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { ok: false, error: "A sessão expirou." };
+
+  const { count } = await supabase
+    .from("session_items")
+    .select("id", { count: "exact", head: true })
+    .eq("session_id", input.sessionId)
+    .eq("user_id", user.id);
+
+  if ((count ?? 0) <= 1) {
+    return { ok: false, error: "Um treino tem de ter pelo menos um exercício." };
+  }
+
+  await supabase
+    .from("set_logs")
+    .delete()
+    .eq("session_id", input.sessionId)
+    .eq("user_id", user.id)
+    .eq("exercise", input.exercise);
+
+  const { error } = await supabase
+    .from("session_items")
+    .delete()
+    .eq("session_id", input.sessionId)
+    .eq("user_id", user.id)
+    .eq("exercise", input.exercise);
+
+  if (error) return { ok: false, error: "Não foi possível remover." };
+
+  return { ok: true, error: null };
+}
+
 /**
  * Closes the session: applies the progression rules to every exercise trained,
  * records any personal record, and marks the session complete.
@@ -163,7 +321,7 @@ export async function finishSession(formData: FormData) {
 
   const { data: session } = await supabase
     .from("sessions")
-    .select("id, plan_day_id, started_at, status")
+    .select("id, started_at, status")
     .eq("id", sessionId)
     .eq("user_id", user.id)
     .maybeSingle();
@@ -187,9 +345,9 @@ export async function finishSession(formData: FormData) {
         .select("slug, family, increment_kg")
         .in("slug", slugs),
       supabase
-        .from("plan_items")
+        .from("session_items")
         .select("exercise, rep_low")
-        .eq("plan_day_id", session.plan_day_id ?? ""),
+        .eq("session_id", sessionId),
       supabase
         .from("progression")
         .select("exercise, working_kg, fail_count")
@@ -259,6 +417,7 @@ export async function finishSession(formData: FormData) {
       exercise: slug,
       working_kg: outcome.workingKg,
       fail_count: outcome.failCount,
+      last_action: outcome.action,
       updated_at: new Date().toISOString(),
     });
 

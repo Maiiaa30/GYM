@@ -1,11 +1,29 @@
 "use client";
 
 import Image from "next/image";
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { Button, Card, cx } from "@/components/ui";
+import { useRouter } from "next/navigation";
+import {
+  useActionState,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  useTransition,
+} from "react";
+import { useFormStatus } from "react-dom";
+import { Button, Card, Field, Notice, cx } from "@/components/ui";
+import { Sheet } from "@/components/sheet";
 import { platesForWeight } from "@/lib/progression";
+import { useWakeLock } from "@/lib/use-wake-lock";
 import type { LiftFamily } from "@/lib/database.types";
-import { abandonSession, finishSession, logSet } from "../actions";
+import { logBodyWeight, type BodyLogState } from "@/app/(app)/progress/actions";
+import {
+  abandonSession,
+  addExerciseToSession,
+  finishSession,
+  logSet,
+  removeExerciseFromSession,
+} from "../actions";
 
 export type RunnerSet = {
   id: string;
@@ -29,9 +47,17 @@ export type RunnerExercise = {
   repHigh: number;
   restSec: number;
   notes: string | null;
+  addedMidSession: boolean;
+  reason: string;
   last: { weightKg: number | null; reps: number | null; on: string } | null;
   partner: { name: string | null; weightKg: number | null; reps: number | null } | null;
   sets: RunnerSet[];
+};
+
+export type CatalogueOption = {
+  slug: string;
+  name: string;
+  muscle: string;
 };
 
 /** A short tone at the end of the rest period. No audio file to download. */
@@ -69,28 +95,46 @@ export function SessionRunner({
   dayName,
   focus,
   exercises: initial,
+  available,
+  needsBodyWeight,
 }: {
   sessionId: string;
   dayName: string;
   focus: string | null;
   exercises: RunnerExercise[];
+  available: CatalogueOption[];
+  needsBodyWeight: boolean;
 }) {
+  const router = useRouter();
   const [exercises, setExercises] = useState(initial);
   const [index, setIndex] = useState(0);
   const [showDemo, setShowDemo] = useState(false);
   const [rest, setRest] = useState<number | null>(null);
+  const [adjusting, setAdjusting] = useState(false);
+  const [search, setSearch] = useState("");
+  const [mutation, setMutation] = useState<string | null>(null);
+  const [pending, startTransition] = useTransition();
+
+  const wakeLock = useWakeLock(true);
+
+  // The server owns the exercise list: adding or dropping one refreshes the
+  // route and the new prescription arrives as a prop.
+  useEffect(() => {
+    setExercises(initial);
+    setIndex((current) => Math.min(current, Math.max(initial.length - 1, 0)));
+  }, [initial]);
 
   const exercise = exercises[index];
   const isLast = index === exercises.length - 1;
-  const isBodyweight = exercise.family === "bodyweight";
+  const isBodyweight = exercise?.family === "bodyweight";
 
   const workingSets = useMemo(
-    () => exercise.sets.filter((set) => !set.isWarmup),
-    [exercise.sets],
+    () => exercise?.sets.filter((set) => !set.isWarmup) ?? [],
+    [exercise],
   );
   const warmups = useMemo(
-    () => exercise.sets.filter((set) => set.isWarmup),
-    [exercise.sets],
+    () => exercise?.sets.filter((set) => set.isWarmup) ?? [],
+    [exercise],
   );
 
   const target =
@@ -107,38 +151,35 @@ export function SessionRunner({
       setRest(null);
       return;
     }
-    const timer = window.setTimeout(() => setRest((value) => (value ?? 1) - 1), 1000);
+    const timer = window.setTimeout(
+      () => setRest((value) => (value ?? 1) - 1),
+      1000,
+    );
     return () => window.clearTimeout(timer);
   }, [rest]);
 
   /* ------------------------------------------------------------ actions */
 
-  const patchSet = useCallback(
-    (setId: string, patch: Partial<RunnerSet>) => {
-      setExercises((current) =>
-        current.map((item) => ({
-          ...item,
-          sets: item.sets.map((set) =>
-            set.id === setId ? { ...set, ...patch } : set,
-          ),
-        })),
-      );
-    },
-    [],
-  );
+  const patchSet = useCallback((setId: string, patch: Partial<RunnerSet>) => {
+    setExercises((current) =>
+      current.map((item) => ({
+        ...item,
+        sets: item.sets.map((set) =>
+          set.id === setId ? { ...set, ...patch } : set,
+        ),
+      })),
+    );
+  }, []);
 
-  const persist = useCallback(
-    (set: RunnerSet, patch: Partial<RunnerSet>) => {
-      const merged = { ...set, ...patch };
-      void logSet({
-        setLogId: set.id,
-        weightKg: merged.weightKg,
-        reps: merged.reps,
-        completed: merged.completed,
-      });
-    },
-    [],
-  );
+  const persist = useCallback((set: RunnerSet, patch: Partial<RunnerSet>) => {
+    const merged = { ...set, ...patch };
+    void logSet({
+      setLogId: set.id,
+      weightKg: merged.weightKg,
+      reps: merged.reps,
+      completed: merged.completed,
+    });
+  }, []);
 
   const adjustTarget = useCallback(
     (delta: number) => {
@@ -176,7 +217,7 @@ export function SessionRunner({
 
       if (!set.isWarmup) setRest(exercise.restSec);
     },
-    [exercise.repLow, exercise.restSec, patchSet, persist],
+    [exercise, patchSet, persist],
   );
 
   const changeReps = useCallback(
@@ -191,8 +232,56 @@ export function SessionRunner({
   const goTo = useCallback((next: number) => {
     setIndex(next);
     setShowDemo(false);
-    window.scrollTo?.(0, 0);
   }, []);
+
+  const addExercise = useCallback(
+    (slug: string) => {
+      setMutation(null);
+      startTransition(async () => {
+        const result = await addExerciseToSession({ sessionId, exercise: slug });
+        if (!result.ok) {
+          setMutation(result.error);
+          return;
+        }
+        setSearch("");
+        setAdjusting(false);
+        router.refresh();
+      });
+    },
+    [router, sessionId],
+  );
+
+  const removeExercise = useCallback(
+    (slug: string) => {
+      setMutation(null);
+      startTransition(async () => {
+        const result = await removeExerciseFromSession({
+          sessionId,
+          exercise: slug,
+        });
+        if (!result.ok) {
+          setMutation(result.error);
+          return;
+        }
+        router.refresh();
+      });
+    },
+    [router, sessionId],
+  );
+
+  const filtered = useMemo(() => {
+    const needle = search.trim().toLowerCase();
+    const list = needle
+      ? available.filter(
+          (option) =>
+            option.name.toLowerCase().includes(needle) ||
+            option.muscle.toLowerCase().includes(needle),
+        )
+      : available;
+    return list.slice(0, 40);
+  }, [available, search]);
+
+  if (!exercise) return null;
 
   const plates = target !== null && target > 0 ? platesForWeight(target) : null;
   const completedCount = exercises.filter((item) =>
@@ -206,20 +295,28 @@ export function SessionRunner({
         className="border-b border-line px-5 pb-3"
         style={{ paddingTop: "max(1rem, env(safe-area-inset-top))" }}
       >
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between gap-3">
           <div>
             <p className="label">{dayName}</p>
             <p className="text-xs text-faint">{focus}</p>
           </div>
-          <form action={abandonSession}>
-            <input type="hidden" name="session_id" value={sessionId} />
+          <div className="flex items-center gap-4">
             <button
-              type="submit"
-              className="text-xs uppercase tracking-[0.14em] text-faint"
+              onClick={() => setAdjusting(true)}
+              className="text-xs uppercase tracking-[0.14em] text-brass"
             >
-              Abandonar
+              Ajustar
             </button>
-          </form>
+            <form action={abandonSession}>
+              <input type="hidden" name="session_id" value={sessionId} />
+              <button
+                type="submit"
+                className="text-xs uppercase tracking-[0.14em] text-faint"
+              >
+                Abandonar
+              </button>
+            </form>
+          </div>
         </div>
         <div className="mt-3 flex gap-1">
           {exercises.map((item, itemIndex) => {
@@ -248,6 +345,8 @@ export function SessionRunner({
       {/* --------------------------------------------------------- body */}
       <div className="scroll-area px-5 py-5">
         <div className="mx-auto w-full max-w-md space-y-5">
+          {needsBodyWeight && index === 0 ? <BodyWeightPrompt /> : null}
+
           <div>
             <h1 className="font-[family-name:var(--font-display)] text-3xl leading-tight">
               {exercise.name}
@@ -298,9 +397,8 @@ export function SessionRunner({
           {isBodyweight ? (
             <Card className="p-5">
               <p className="label">Peso do corpo</p>
-              <p className="mt-1 text-sm text-muted">
-                Progride por repetições. Acrescenta uma repetição por série
-                antes de tornar o exercício mais difícil.
+              <p className="mt-2 text-sm leading-relaxed text-muted">
+                {exercise.reason}
               </p>
             </Card>
           ) : (
@@ -331,15 +429,12 @@ export function SessionRunner({
                 </Button>
               </div>
 
-              {target === null ? (
-                <p className="mt-3 text-sm text-muted">
-                  Primeira vez neste exercício. Começa leve o suficiente para
-                  fazeres todas as repetições com técnica limpa.
-                </p>
-              ) : null}
+              <p className="mt-3 text-sm leading-relaxed text-muted">
+                {exercise.reason}
+              </p>
 
               {plates?.loadable && plates.perSide.length > 0 ? (
-                <p className="mt-3 text-xs text-faint">
+                <p className="mt-2 text-xs text-faint">
                   Por lado: {plates.perSide.join(" + ")} kg numa barra de{" "}
                   {plates.barKg} kg
                 </p>
@@ -445,9 +540,145 @@ export function SessionRunner({
           )}
         </div>
       </footer>
+
+      {/* --------------------------------------------------------- sheet */}
+      <Sheet
+        open={adjusting}
+        title="Ajustar o treino"
+        onClose={() => setAdjusting(false)}
+      >
+        <div className="space-y-6 px-5 pt-4">
+          {mutation ? <Notice tone="error">{mutation}</Notice> : null}
+
+          {wakeLock.supported ? (
+            <label className="flex items-center justify-between gap-4">
+              <span>
+                <span className="block text-sm">Manter o ecrã ligado</span>
+                <span className="block text-xs text-faint">
+                  Enquanto o treino estiver a decorrer.
+                </span>
+              </span>
+              <input
+                type="checkbox"
+                checked={wakeLock.enabled}
+                onChange={(event) => wakeLock.toggle(event.target.checked)}
+                className="h-6 w-6 accent-[var(--color-brass)]"
+              />
+            </label>
+          ) : null}
+
+          <section>
+            <p className="label mb-2">Exercícios de hoje</p>
+            <ul className="divide-y divide-line rounded-[var(--radius-md)] border border-line">
+              {exercises.map((item) => (
+                <li
+                  key={item.slug}
+                  className="flex items-center justify-between gap-3 px-4 py-3"
+                >
+                  <span className="text-sm">{item.name}</span>
+                  <button
+                    onClick={() => removeExercise(item.slug)}
+                    disabled={pending || exercises.length <= 1}
+                    className="text-xs uppercase tracking-[0.14em] text-oxblood disabled:opacity-40"
+                  >
+                    Remover
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </section>
+
+          <section className="pb-2">
+            <p className="label mb-2">Adicionar exercício</p>
+            <input
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder="Procurar por nome ou músculo"
+              className="mb-3 h-12 w-full rounded-[var(--radius-md)] border border-line bg-raised px-3 placeholder:text-faint focus:border-brass focus:outline-none"
+            />
+            <ul className="divide-y divide-line rounded-[var(--radius-md)] border border-line">
+              {filtered.map((option) => (
+                <li key={option.slug}>
+                  <button
+                    onClick={() => addExercise(option.slug)}
+                    disabled={pending}
+                    className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left disabled:opacity-40"
+                  >
+                    <span className="text-sm">{option.name}</span>
+                    <span className="text-xs text-faint">{option.muscle}</span>
+                  </button>
+                </li>
+              ))}
+              {filtered.length === 0 ? (
+                <li className="px-4 py-3 text-sm text-muted">
+                  Nada encontrado.
+                </li>
+              ) : null}
+            </ul>
+          </section>
+        </div>
+      </Sheet>
     </div>
   );
 }
+
+/* ---------------------------------------------------------- body weight */
+
+const weightInitial: BodyLogState = { error: null, saved: false };
+
+function BodyWeightSubmit() {
+  const { pending } = useFormStatus();
+  return (
+    <Button type="submit" variant="quiet" disabled={pending}>
+      {pending ? "A guardar…" : "Registar"}
+    </Button>
+  );
+}
+
+/**
+ * Asked once at the start of a session, where the answer costs one tap and the
+ * body-weight chart stops having holes in it.
+ */
+function BodyWeightPrompt() {
+  const [state, formAction] = useActionState(logBodyWeight, weightInitial);
+  const [dismissed, setDismissed] = useState(false);
+
+  if (dismissed || state.saved) return null;
+
+  return (
+    <Card className="p-5">
+      <p className="label">Antes de começar</p>
+      <p className="mt-2 text-sm text-muted">
+        Ainda não registaste o peso hoje.
+      </p>
+      <form action={formAction} className="mt-4 space-y-3">
+        <div className="flex items-end gap-3">
+          <div className="flex-1">
+            <Field
+              label="Peso"
+              name="weight_kg"
+              type="number"
+              step="0.1"
+              inputMode="decimal"
+              suffix="kg"
+              required
+            />
+          </div>
+          <BodyWeightSubmit />
+        </div>
+        {state.error ? <Notice tone="error">{state.error}</Notice> : null}
+      </form>
+      <button
+        onClick={() => setDismissed(true)}
+        className="mt-3 text-xs uppercase tracking-[0.14em] text-faint"
+      >
+        Agora não
+      </button>
+    </Card>
+  );
+}
+
+/* ----------------------------------------------------------------- sets */
 
 function SetRow({
   set,
@@ -507,7 +738,7 @@ function SetRow({
           strokeWidth="2"
           strokeLinecap="round"
           strokeLinejoin="round"
-          aria-hidden
+          aria-hidden="true"
         >
           <path d="M4 12.5l5 5L20 7" />
         </svg>

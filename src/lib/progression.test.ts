@@ -1,6 +1,8 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
+  defaultPrescription,
+  describeTarget,
   estimatedOneRepMax,
   nextWorkingWeight,
   platesForWeight,
@@ -122,4 +124,32 @@ test("volume counts completed working sets only", () => {
     { weightKg: 60, reps: 5, completed: false, isWarmup: false },
   ]);
   assert.equal(total, 300);
+});
+
+test("every target explains itself", () => {
+  const base = { increment: 2.5, family: "upper_compound" as const, hasHistory: true };
+
+  assert.match(
+    describeTarget({ ...base, action: null, hasHistory: false }),
+    /Primeira vez/,
+  );
+  assert.match(describeTarget({ ...base, action: "increase" }), /Subiu 2,5 kg/);
+  assert.match(describeTarget({ ...base, action: "hold" }), /Mesmo peso/);
+  assert.match(describeTarget({ ...base, action: "deload" }), /Desceu 10%/);
+  assert.match(
+    describeTarget({ ...base, action: "increase", family: "bodyweight" }),
+    /uma repetição/,
+  );
+  assert.match(
+    describeTarget({ ...base, action: "increase", increment: 5 }),
+    /Subiu 5 kg/,
+  );
+});
+
+test("an exercise added mid-session gets a sensible prescription", () => {
+  const compound = defaultPrescription("lower_compound");
+  assert.equal(compound.sets, 3);
+  assert.ok(compound.repLow <= compound.repHigh);
+  assert.ok(compound.restSec >= defaultPrescription("accessory").restSec);
+  assert.ok(defaultPrescription("bodyweight").repHigh >= 12);
 });
