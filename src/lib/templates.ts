@@ -77,8 +77,8 @@ const FULL_GYM: TemplateDay[] = [
     items: [
       { exercise: "barbell-hip-thrust", sets: 3, repLow: 8, repHigh: 10, restSec: 120 },
       { exercise: "dumbbell-shoulder-press", sets: 3, repLow: 8, repHigh: 10, restSec: 120 },
-      { exercise: "dumbbell-row", sets: 3, repLow: 10, repHigh: 12, restSec: 90 },
-      { exercise: "split-squat", sets: 3, repLow: 8, repHigh: 10, restSec: 90, notes: "Repetições por perna." },
+      { exercise: "dumbbell-row", sets: 3, repLow: 20, repHigh: 24, restSec: 90 },
+      { exercise: "split-squat", sets: 3, repLow: 16, repHigh: 20, restSec: 90 },
       { exercise: "side-plank", sets: 2, repLow: 30, repHigh: 40, restSec: 45, notes: HOLD },
     ],
   },
@@ -101,7 +101,7 @@ const HOTEL: TemplateDay[] = [
     focus: "Ombros e unilateral",
     items: [
       { exercise: "pike-push-up", sets: 4, repLow: 6, repHigh: 12, restSec: 90 },
-      { exercise: "walking-lunge", sets: 3, repLow: 10, repHigh: 12, restSec: 90, notes: "Repetições por perna." },
+      { exercise: "walking-lunge", sets: 3, repLow: 20, repHigh: 24, restSec: 90 },
       { exercise: "inverted-row", sets: 3, repLow: 8, repHigh: 12, restSec: 90 },
       { exercise: "mountain-climber", sets: 3, repLow: 20, repHigh: 30, restSec: 60 },
       { exercise: "side-plank", sets: 2, repLow: 30, repHigh: 40, restSec: 45, notes: HOLD },
@@ -127,7 +127,7 @@ const HOME_MINIMAL: TemplateDay[] = [
     items: [
       { exercise: "goblet-squat", sets: 3, repLow: 10, repHigh: 12, restSec: 120 },
       { exercise: "dumbbell-bench-press", sets: 3, repLow: 8, repHigh: 12, restSec: 120 },
-      { exercise: "dumbbell-row", sets: 3, repLow: 10, repHigh: 12, restSec: 90 },
+      { exercise: "dumbbell-row", sets: 3, repLow: 20, repHigh: 24, restSec: 90 },
       { exercise: "plank", sets: 3, repLow: 30, repHigh: 45, restSec: 60, notes: HOLD },
     ],
   },
@@ -135,7 +135,7 @@ const HOME_MINIMAL: TemplateDay[] = [
     name: "Dia B",
     focus: "Afundos e ombros",
     items: [
-      { exercise: "dumbbell-lunge", sets: 3, repLow: 10, repHigh: 12, restSec: 120, notes: "Repetições por perna." },
+      { exercise: "dumbbell-lunge", sets: 3, repLow: 20, repHigh: 24, restSec: 120 },
       { exercise: "dumbbell-shoulder-press", sets: 3, repLow: 8, repHigh: 12, restSec: 120 },
       { exercise: "dumbbell-curl", sets: 3, repLow: 10, repHigh: 12, restSec: 60 },
       { exercise: "glute-bridge", sets: 3, repLow: 15, repHigh: 20, restSec: 60 },
@@ -145,9 +145,9 @@ const HOME_MINIMAL: TemplateDay[] = [
     name: "Dia C",
     focus: "Unilateral e empurrar",
     items: [
-      { exercise: "split-squat", sets: 3, repLow: 8, repHigh: 12, restSec: 120, notes: "Repetições por perna." },
+      { exercise: "split-squat", sets: 3, repLow: 16, repHigh: 24, restSec: 120 },
       { exercise: "push-up", sets: 3, repLow: 10, repHigh: 15, restSec: 90 },
-      { exercise: "dumbbell-row", sets: 3, repLow: 10, repHigh: 12, restSec: 90 },
+      { exercise: "dumbbell-row", sets: 3, repLow: 20, repHigh: 24, restSec: 90 },
       { exercise: "side-plank", sets: 2, repLow: 30, repHigh: 40, restSec: 45, notes: HOLD },
     ],
   },

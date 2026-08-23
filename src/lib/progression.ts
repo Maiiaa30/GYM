@@ -171,9 +171,23 @@ export function describeTarget(input: {
   increment: number;
   family: LiftFamily;
   hasHistory: boolean;
+  isTimed?: boolean;
+  hitCeiling?: boolean;
 }): string {
   if (!input.hasHistory) {
-    return "Primeira vez. Escolhe um peso que te deixe fazer todas as repetições com técnica limpa.";
+    return input.isTimed
+      ? "Primeira vez. Aguenta o tempo indicado com a posição direita; pára quando ela ceder."
+      : "Primeira vez. Escolhe um peso que te deixe fazer todas as repetições com técnica limpa.";
+  }
+
+  if (input.hitCeiling) {
+    return input.isTimed
+      ? "Aguentaste o topo do tempo em todas as séries. Hoje acrescenta uma série."
+      : "Fizeste o topo da gama em todas as séries. Hoje acrescenta uma série.";
+  }
+
+  if (input.isTimed) {
+    return "Os números são segundos. Tenta aguentar mais do que da última vez.";
   }
 
   if (input.family === "bodyweight") {
@@ -192,6 +206,37 @@ export function describeTarget(input: {
     default:
       return "Mesmo peso da última vez.";
   }
+}
+
+/* -------------------------------------------------------- reps and holds */
+
+/** How a target reads on screen: "5", "8–12", "30–45 s". */
+export function formatRepTarget(input: {
+  repLow: number;
+  repHigh: number;
+  isTimed?: boolean;
+}): string {
+  const range =
+    input.repLow === input.repHigh
+      ? String(input.repLow)
+      : `${input.repLow}–${input.repHigh}`;
+  return input.isTimed ? `${range} s` : range;
+}
+
+/**
+ * Unilateral work is logged as the total across both sides, because that is
+ * what the progression rules count. The split is what you actually do, so the
+ * interface shows it: an odd total means one side did one more than the other.
+ */
+export function perSideLabel(total: number | null): string | null {
+  if (total === null || total <= 0) return null;
+  if (total % 2 === 0) return `${total / 2} por lado`;
+  return `${Math.floor(total / 2)}+${Math.ceil(total / 2)} por lado`;
+}
+
+/** Unilateral targets move in twos so both sides can always match. */
+export function stepForExercise(perSide: boolean): number {
+  return perSide ? 2 : 1;
 }
 
 function formatKg(value: number): string {

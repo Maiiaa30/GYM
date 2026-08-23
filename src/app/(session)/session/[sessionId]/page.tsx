@@ -64,7 +64,7 @@ export default async function SessionPage({
   ] = await Promise.all([
     supabase
       .from("exercises")
-      .select("slug, name, primary_muscle, images, cues, family, increment_kg")
+      .select("slug, name, primary_muscle, images, cues, family, increment_kg, is_timed, per_side")
       .in("slug", slugs),
     supabase
       .from("progression")
@@ -73,7 +73,7 @@ export default async function SessionPage({
       .in("exercise", slugs),
     supabase
       .from("set_logs")
-      .select("exercise, weight_kg, reps, logged_at")
+      .select("exercise, weight_kg, reps, logged_at, session_id")
       .eq("user_id", user.id)
       .in("exercise", slugs)
       .eq("completed", true)
@@ -129,6 +129,7 @@ export default async function SessionPage({
     string,
     { weightKg: number | null; reps: number | null; on: string }
   >();
+  const lastSessionBySlug = new Map<string, string>();
   for (const entry of history ?? []) {
     if (lastBySlug.has(entry.exercise)) continue;
     lastBySlug.set(entry.exercise, {
@@ -136,7 +137,20 @@ export default async function SessionPage({
       reps: entry.reps,
       on: entry.logged_at.slice(0, 10),
     });
+    lastSessionBySlug.set(entry.exercise, entry.session_id);
   }
+
+  // Whether the last time out finished every set at the top of the range.
+  // For work that carries no load that is the signal to add a set rather than
+  // another repetition.
+  const hitCeiling = (slug: string, repHigh: number) => {
+    const lastSession = lastSessionBySlug.get(slug);
+    if (!lastSession) return false;
+    const sets = (history ?? []).filter(
+      (entry) => entry.exercise === slug && entry.session_id === lastSession,
+    );
+    return sets.length > 0 && sets.every((entry) => (entry.reps ?? 0) >= repHigh);
+  };
 
   const partnerBySlug = new Map<
     string,
@@ -156,6 +170,10 @@ export default async function SessionPage({
     const progress = progressionBySlug.get(item.exercise);
     const partner = partnerBySlug.get(item.exercise);
 
+    const timed = Boolean(exercise?.is_timed);
+    const unloaded = timed || family === "bodyweight";
+    const ceiling = unloaded && hitCeiling(item.exercise, item.rep_high);
+
     return {
       slug: item.exercise,
       name: exercise?.name ?? item.exercise,
@@ -169,11 +187,15 @@ export default async function SessionPage({
       restSec: item.rest_sec,
       notes: item.notes,
       addedMidSession: item.added_mid_session,
+      isTimed: timed,
+      perSide: Boolean(exercise?.per_side),
       reason: describeTarget({
         action: (progress?.last_action ?? null) as ProgressionAction | null,
         increment: Number(exercise?.increment_kg ?? 2.5),
         family,
         hasHistory: Boolean(progress) || lastBySlug.has(item.exercise),
+        isTimed: timed,
+        hitCeiling: ceiling,
       }),
       last: lastBySlug.get(item.exercise) ?? null,
       partner: partner ? { name: partnerName, ...partner } : null,

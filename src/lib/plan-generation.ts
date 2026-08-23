@@ -36,6 +36,8 @@ export type CatalogueEntry = {
   primary_muscle: string;
   equipment: string;
   family: LiftFamily;
+  isTimed?: boolean;
+  perSide?: boolean;
 };
 
 export type MemberContext = {
@@ -181,7 +183,9 @@ Regras que tens de cumprir:
 - Cada dia tem de caber no tempo disponível: entre ${LIMITS.minItemsPerDay} e ${LIMITS.maxItemsPerDay} exercícios.
 - Ordena cada dia do mais pesado e técnico para o mais leve; isolamento e core no fim.
 - Entre ${LIMITS.minSets} e ${LIMITS.maxSets} séries por exercício e descanso entre ${LIMITS.minRest} e ${LIMITS.maxRest} segundos.
-- Exercícios compostos entre 5 e 8 repetições, acessórios entre 8 e 15, core entre 10 e 20. Isometrias usam segundos nos campos de repetições e têm de dizer isso nas notas.
+- Exercícios compostos entre 5 e 8 repetições, acessórios entre 8 e 15, core entre 10 e 20.
+- Exercícios marcados como isometria usam segundos nos campos de repetições: entre 20 e 60.
+- Exercícios marcados como unilaterais levam o total dos dois lados, sempre um número par: 16 a 24 em vez de 8 a 12 por perna.
 - Nenhum exercício pode aparecer duas vezes no mesmo dia.
 - Principiantes precisam de frequência, não de variedade: repete os exercícios principais ao longo da semana em vez de encher o bloco de novidades.
 - Não passes de ${LIMITS.maxWeeklySetsPerMuscle} séries de trabalho por grupo muscular em toda a semana.

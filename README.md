@@ -60,6 +60,13 @@ a bare weight.
 The rotation suggests the next training day, but any day of the block can be
 chosen instead.
 
+Holds — planks, side planks, the superman — are logged in seconds, with a work
+timer that counts the hold itself and writes the time actually held. Unilateral
+work is logged as the total across both sides, because that is what the
+progression rules count, and the interface shows the split ("10 por lado").
+When an unloaded exercise finishes every set at the top of its range, the next
+session says to add a set rather than another repetition.
+
 ## Programme generation
 
 `GEMINI_API_KEY` enables tailored blocks. The model chooses the movements, the

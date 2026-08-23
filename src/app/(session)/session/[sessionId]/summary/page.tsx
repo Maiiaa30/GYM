@@ -49,10 +49,16 @@ export default async function SummaryPage({
   const slugs = [...new Set((logs ?? []).map((log) => log.exercise))];
 
   const { data: exercises } = slugs.length
-    ? await supabase.from("exercises").select("slug, name").in("slug", slugs)
+    ? await supabase
+        .from("exercises")
+        .select("slug, name, is_timed")
+        .in("slug", slugs)
     : { data: null };
 
   const nameBySlug = new Map(exercises?.map((e) => [e.slug, e.name]) ?? []);
+  const timedSlugs = new Set(
+    exercises?.filter((e) => e.is_timed).map((e) => e.slug) ?? [],
+  );
 
   const volume = sessionVolume(
     (logs ?? []).map((log) => ({
@@ -86,7 +92,13 @@ export default async function SummaryPage({
       0,
     );
     const reps = sets.reduce((total, log) => total + (log.reps ?? 0), 0);
-    return { slug, sets: sets.length, heaviest, reps };
+    return {
+      slug,
+      sets: sets.length,
+      heaviest,
+      reps,
+      timed: timedSlugs.has(slug),
+    };
   });
 
   return (
@@ -140,7 +152,7 @@ export default async function SummaryPage({
                   {nameBySlug.get(row.slug) ?? row.slug}
                 </span>
                 <span className="tabular text-sm text-muted">
-                  {row.sets} séries · {row.reps} reps
+                  {row.sets} séries · {row.reps} {row.timed ? "s" : "reps"}
                   {row.heaviest > 0 ? ` · ${row.heaviest} kg` : ""}
                 </span>
               </li>

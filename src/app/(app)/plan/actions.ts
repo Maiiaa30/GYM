@@ -208,7 +208,7 @@ export async function generateTailoredPlan(
         .order("created_at"),
       admin
         .from("exercises")
-        .select("slug, name, primary_muscle, equipment, family, profiles_ok"),
+        .select("slug, name, primary_muscle, equipment, family, profiles_ok, is_timed, per_side"),
       admin
         .from("plans")
         .select("id, name")
@@ -224,6 +224,8 @@ export async function generateTailoredPlan(
       primary_muscle: exercise.primary_muscle,
       equipment: exercise.equipment,
       family: exercise.family,
+      isTimed: exercise.is_timed,
+      perSide: exercise.per_side,
     }));
 
   if (catalogue.length === 0) {

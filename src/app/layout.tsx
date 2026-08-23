@@ -40,6 +40,15 @@ export default function RootLayout({
 }) {
   return (
     <html lang="pt-PT" className={serif.variable} suppressHydrationWarning>
+      <head>
+        {/*
+          The application ships its own dark palette. This asks Dark Reader to
+          leave the page alone: without it the extension rewrites stroke
+          attributes on every icon after the server HTML has been sent, which
+          React reports as a hydration mismatch.
+        */}
+        <meta name="darkreader-lock" />
+      </head>
       <body className="app-shell" suppressHydrationWarning>
         {children}
       </body>

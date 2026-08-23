@@ -99,6 +99,8 @@ for (const entry of CATALOGUE) {
     cues: entry.cues,
     instructions: (source.instructions ?? []).join(" "),
     profiles_ok: entry.profiles,
+    is_timed: Boolean(entry.timed),
+    per_side: Boolean(entry.perSide),
   });
 }
 

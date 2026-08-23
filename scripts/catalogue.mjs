@@ -10,6 +10,9 @@
  *   increment:  quilos acrescentados quando todas as repetições são feitas
  *   profiles:   perfis de equipamento em que o exercício pode ser prescrito
  *   cues:       três lembretes curtos, mostrados no ecrã de treino
+ *   timed:      a série é uma isometria; os campos de repetições são segundos
+ *   perSide:    o movimento é unilateral; regista-se o total das duas pernas
+ *               ou dos dois braços e a aplicação mostra a divisão
  */
 
 export const CATALOGUE = [
@@ -186,6 +189,7 @@ export const CATALOGUE = [
   },
   {
     slug: "dumbbell-row",
+    perSide: true,
     source: "One-Arm_Dumbbell_Row",
     name: "Remada Unilateral com Haltere",
     muscle: "costas",
@@ -200,6 +204,7 @@ export const CATALOGUE = [
   },
   {
     slug: "dumbbell-lunge",
+    perSide: true,
     source: "Dumbbell_Lunges",
     name: "Afundo com Halteres",
     muscle: "quadríceps",
@@ -214,6 +219,7 @@ export const CATALOGUE = [
   },
   {
     slug: "split-squat",
+    perSide: true,
     source: "Split_Squat_with_Dumbbells",
     name: "Agachamento Dividido",
     muscle: "quadríceps",
@@ -270,6 +276,7 @@ export const CATALOGUE = [
   },
   {
     slug: "overhead-triceps-extension",
+    perSide: true,
     source: "Dumbbell_One-Arm_Triceps_Extension",
     name: "Extensão de Tríceps Acima da Cabeça",
     muscle: "tríceps",
@@ -498,6 +505,7 @@ export const CATALOGUE = [
   },
   {
     slug: "walking-lunge",
+    perSide: true,
     source: "Bodyweight_Walking_Lunge",
     name: "Afundo a Andar",
     muscle: "quadríceps",
@@ -554,6 +562,7 @@ export const CATALOGUE = [
   },
   {
     slug: "plank",
+    timed: true,
     source: "Plank",
     name: "Prancha",
     muscle: "abdominais",
@@ -568,6 +577,7 @@ export const CATALOGUE = [
   },
   {
     slug: "side-plank",
+    timed: true,
     source: "Side_Bridge",
     name: "Prancha Lateral",
     muscle: "abdominais",
@@ -610,6 +620,7 @@ export const CATALOGUE = [
   },
   {
     slug: "superman",
+    timed: true,
     source: "Superman",
     name: "Superman",
     muscle: "lombar",

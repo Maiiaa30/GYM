@@ -4,6 +4,8 @@ import {
   defaultPrescription,
   describeTarget,
   estimatedOneRepMax,
+  formatRepTarget,
+  perSideLabel,
   nextWorkingWeight,
   platesForWeight,
   sessionVolume,
@@ -152,4 +154,53 @@ test("an exercise added mid-session gets a sensible prescription", () => {
   assert.ok(compound.repLow <= compound.repHigh);
   assert.ok(compound.restSec >= defaultPrescription("accessory").restSec);
   assert.ok(defaultPrescription("bodyweight").repHigh >= 12);
+});
+
+test("targets read correctly for reps and for holds", () => {
+  assert.equal(formatRepTarget({ repLow: 5, repHigh: 5 }), "5");
+  assert.equal(formatRepTarget({ repLow: 8, repHigh: 12 }), "8–12");
+  assert.equal(
+    formatRepTarget({ repLow: 30, repHigh: 45, isTimed: true }),
+    "30–45 s",
+  );
+});
+
+test("unilateral totals are shown as a split", () => {
+  assert.equal(perSideLabel(20), "10 por lado");
+  assert.equal(perSideLabel(15), "7+8 por lado");
+  assert.equal(perSideLabel(0), null);
+  assert.equal(perSideLabel(null), null);
+});
+
+test("holds and bodyweight work say when to add a set", () => {
+  assert.match(
+    describeTarget({
+      action: "unchanged",
+      increment: 0,
+      family: "bodyweight",
+      hasHistory: true,
+      hitCeiling: true,
+    }),
+    /acrescenta uma série/,
+  );
+  assert.match(
+    describeTarget({
+      action: "unchanged",
+      increment: 0,
+      family: "bodyweight",
+      hasHistory: true,
+      isTimed: true,
+    }),
+    /segundos/,
+  );
+  assert.match(
+    describeTarget({
+      action: null,
+      increment: 0,
+      family: "bodyweight",
+      hasHistory: false,
+      isTimed: true,
+    }),
+    /Primeira vez/,
+  );
 });

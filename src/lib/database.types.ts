@@ -60,6 +60,8 @@ export type Exercise = {
   cues: string[];
   instructions: string | null;
   profiles_ok: EquipmentProfile[];
+  is_timed: boolean;
+  per_side: boolean;
 }
 
 export type Plan = {

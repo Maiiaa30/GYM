@@ -13,7 +13,11 @@ import {
 import { useFormStatus } from "react-dom";
 import { Button, Card, Field, Notice, cx } from "@/components/ui";
 import { Sheet } from "@/components/sheet";
-import { platesForWeight } from "@/lib/progression";
+import {
+  formatRepTarget,
+  perSideLabel,
+  platesForWeight,
+} from "@/lib/progression";
 import { useWakeLock } from "@/lib/use-wake-lock";
 import type { LiftFamily } from "@/lib/database.types";
 import { logBodyWeight, type BodyLogState } from "@/app/(app)/progress/actions";
@@ -48,6 +52,8 @@ export type RunnerExercise = {
   restSec: number;
   notes: string | null;
   addedMidSession: boolean;
+  isTimed: boolean;
+  perSide: boolean;
   reason: string;
   last: { weightKg: number | null; reps: number | null; on: string } | null;
   partner: { name: string | null; weightKg: number | null; reps: number | null } | null;
@@ -353,9 +359,12 @@ export function SessionRunner({
             </h1>
             <p className="label mt-1">
               {exercise.muscle} · {workingSets.length} ×{" "}
-              {exercise.repLow === exercise.repHigh
-                ? exercise.repLow
-                : `${exercise.repLow}–${exercise.repHigh}`}
+              {formatRepTarget({
+                repLow: exercise.repLow,
+                repHigh: exercise.repHigh,
+                isTimed: exercise.isTimed,
+              })}
+              {exercise.perSide ? " no total" : ""}
               {exercise.notes ? ` · ${exercise.notes}` : ""}
             </p>
           </div>
@@ -396,7 +405,9 @@ export function SessionRunner({
           {/* ------------------------------------------------- load */}
           {isBodyweight ? (
             <Card className="p-5">
-              <p className="label">Peso do corpo</p>
+              <p className="label">
+                {exercise.isTimed ? "Isometria" : "Peso do corpo"}
+              </p>
               <p className="mt-2 text-sm leading-relaxed text-muted">
                 {exercise.reason}
               </p>
@@ -470,6 +481,8 @@ export function SessionRunner({
                     set={set}
                     repTarget={null}
                     bodyweight={isBodyweight}
+                    timed={exercise.isTimed}
+                    perSide={exercise.perSide}
                     onToggle={() => toggleSet(set)}
                     onReps={(reps) => changeReps(set, reps)}
                   />
@@ -479,7 +492,9 @@ export function SessionRunner({
           ) : null}
 
           <section>
-            <p className="label mb-2">Séries de trabalho</p>
+            <p className="label mb-2">
+              {exercise.isTimed ? "Séries (segundos)" : "Séries de trabalho"}
+            </p>
             <Card className="divide-y divide-line">
               {workingSets.map((set) => (
                 <SetRow
@@ -487,6 +502,8 @@ export function SessionRunner({
                   set={set}
                   repTarget={exercise.repLow}
                   bodyweight={isBodyweight}
+                  timed={exercise.isTimed}
+                  perSide={exercise.perSide}
                   onToggle={() => toggleSet(set)}
                   onReps={(reps) => changeReps(set, reps)}
                 />
@@ -684,65 +701,105 @@ function SetRow({
   set,
   repTarget,
   bodyweight,
+  timed,
+  perSide,
   onToggle,
   onReps,
 }: {
   set: RunnerSet;
   repTarget: number | null;
   bodyweight: boolean;
+  timed: boolean;
+  perSide: boolean;
   onToggle: () => void;
   onReps: (reps: number) => void;
 }) {
+  const [elapsed, setElapsed] = useState<number | null>(null);
   const weight = set.weightKg ?? set.targetKg;
+  const split = perSide ? perSideLabel(set.reps) : null;
+
+  // The work timer counts the hold itself, which is a different thing from the
+  // rest timer: stopping it writes the seconds you actually held.
+  useEffect(() => {
+    if (elapsed === null) return;
+    const timer = window.setTimeout(
+      () => setElapsed((value) => (value ?? 0) + 1),
+      1000,
+    );
+    return () => window.clearTimeout(timer);
+  }, [elapsed]);
+
+  const stopTimer = () => {
+    if (elapsed !== null && elapsed > 0) onReps(elapsed);
+    setElapsed(null);
+  };
 
   return (
-    <div className="flex items-center gap-3 px-4 py-3">
-      <span className="tabular w-6 text-sm text-faint">{set.setNo}</span>
+    <div className="px-4 py-3">
+      <div className="flex items-center gap-3">
+        <span className="tabular w-6 text-sm text-faint">{set.setNo}</span>
 
-      {!bodyweight ? (
-        <span className="tabular w-20 text-sm">
-          {weight === null ? "—" : `${weight} kg`}
-        </span>
-      ) : null}
+        {!bodyweight ? (
+          <span className="tabular w-20 text-sm">
+            {weight === null ? "—" : `${weight} kg`}
+          </span>
+        ) : null}
 
-      <label className="flex flex-1 items-center gap-2">
-        <span className="sr-only">Repetições</span>
-        <input
-          type="number"
-          inputMode="numeric"
-          value={set.reps ?? ""}
-          placeholder={repTarget !== null ? String(repTarget) : "—"}
-          onChange={(event) => onReps(Number(event.target.value))}
-          className="tabular h-10 w-16 rounded-[var(--radius-sm)] border border-line bg-surface px-2 text-center focus:border-brass focus:outline-none"
-        />
-        <span className="text-xs text-faint">reps</span>
-      </label>
+        <label className="flex flex-1 items-center gap-2">
+          <span className="sr-only">{timed ? "Segundos" : "Repetições"}</span>
+          <input
+            type="number"
+            inputMode="numeric"
+            step={perSide ? 2 : 1}
+            value={elapsed !== null ? elapsed : (set.reps ?? "")}
+            placeholder={repTarget !== null ? String(repTarget) : "—"}
+            readOnly={elapsed !== null}
+            onChange={(event) => onReps(Number(event.target.value))}
+            className="tabular h-10 w-16 rounded-[var(--radius-sm)] border border-line bg-surface px-2 text-center focus:border-brass focus:outline-none"
+          />
+          <span className="text-xs text-faint">{timed ? "s" : "reps"}</span>
+        </label>
 
-      <button
-        onClick={onToggle}
-        aria-pressed={set.completed}
-        aria-label={set.completed ? "Marcar como não feita" : "Marcar como feita"}
-        className={cx(
-          "flex h-11 w-11 items-center justify-center rounded-[var(--radius-md)] border transition-colors",
-          set.completed
-            ? "border-brass bg-brass text-ink"
-            : "border-line-strong text-faint",
-        )}
-      >
-        <svg
-          width="18"
-          height="18"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          aria-hidden="true"
+        {timed ? (
+          <button
+            onClick={() => (elapsed === null ? setElapsed(0) : stopTimer())}
+            className={cx(
+              "h-11 rounded-[var(--radius-md)] border px-3 text-xs uppercase tracking-[0.14em]",
+              elapsed === null
+                ? "border-line-strong text-muted"
+                : "border-brass text-brass",
+            )}
+          >
+            {elapsed === null ? "Contar" : "Parar"}
+          </button>
+        ) : null}
+
+        <button
+          onClick={onToggle}
+          aria-pressed={set.completed}
+          aria-label={set.completed ? "Marcar como não feita" : "Marcar como feita"}
+          className={cx(
+            "flex h-11 w-11 items-center justify-center rounded-[var(--radius-md)] border transition-colors",
+            set.completed
+              ? "border-brass bg-brass text-ink"
+              : "border-line-strong text-faint",
+          )}
         >
-          <path d="M4 12.5l5 5L20 7" />
-        </svg>
-      </button>
+          <svg
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+            className="fill-none stroke-current [stroke-linecap:round] [stroke-linejoin:round] [stroke-width:2]"
+          >
+            <path d="M4 12.5l5 5L20 7" />
+          </svg>
+        </button>
+      </div>
+
+      {split ? (
+        <p className="mt-1 pl-9 text-xs text-faint">{split}</p>
+      ) : null}
     </div>
   );
 }

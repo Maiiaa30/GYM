@@ -25,7 +25,9 @@
     "instructions": "This exercise is best performed inside a squat rack for safety purposes. To begin, first set the bar on a rack to just below shoulder level. Once the correct height is chosen and the bar is loaded, step under the bar and place the back of your shoulders (slightly below the neck) across it. Hold on to the bar using both arms at each side and lift it off the rack by first pushing with your legs and at the same time straightening your torso. Step away from the rack and position your legs using a shoulder width medium stance with the toes slightly pointed out. Keep your head up at all times and also maintain a straight back. This will be your starting position. (Note: For the purposes of this discussion we will use the medium stance described above which targets overall development; however you can choose any of the three stances discussed in the foot stances section). Begin to slowly lower the bar by bending the knees and hips as you maintain a straight posture with the head up. Continue down until the angle between the upper leg and the calves becomes slightly less than 90-degrees. Inhale as you perform this portion of the movement. Tip: If you performed the exercise correctly, the front of the knees should make an imaginary straight line with the toes that is perpendicular to the front. If your knees are past that imaginary line (if they are past your toes) then you are placing undue stress on the knee and the exercise has been performed incorrectly. Begin to raise the bar as you exhale by pushing the floor with the heel of your foot as you straighten the legs again and go back to the starting position. Repeat for the recommended amount of repetitions.",
     "profiles_ok": [
       "full_gym"
-    ]
+    ],
+    "is_timed": false,
+    "per_side": false
   },
   {
     "slug": "barbell-bench-press",
@@ -51,7 +53,9 @@
     "instructions": "Lie back on a flat bench. Using a medium width grip (a grip that creates a 90-degree angle in the middle of the movement between the forearms and the upper arms), lift the bar from the rack and hold it straight over you with your arms locked. This will be your starting position. From the starting position, breathe in and begin coming down slowly until the bar touches your middle chest. After a brief pause, push the bar back to the starting position as you breathe out. Focus on pushing the bar using your chest muscles. Lock your arms and squeeze your chest in the contracted position at the top of the motion, hold for a second and then start coming down slowly again. Tip: Ideally, lowering the weight should take about twice as long as raising it. Repeat the movement for the prescribed amount of repetitions. When you are done, place the bar back in the rack.",
     "profiles_ok": [
       "full_gym"
-    ]
+    ],
+    "is_timed": false,
+    "per_side": false
   },
   {
     "slug": "barbell-row",
@@ -78,7 +82,9 @@
     "instructions": "Holding a barbell with a pronated grip (palms facing down), bend your knees slightly and bring your torso forward, by bending at the waist, while keeping the back straight until it is almost parallel to the floor. Tip: Make sure that you keep the head up. The barbell should hang directly in front of you as your arms hang perpendicular to the floor and your torso. This is your starting position. Now, while keeping the torso stationary, breathe out and lift the barbell to you. Keep the elbows close to the body and only use the forearms to hold the weight. At the top contracted position, squeeze the back muscles and hold for a brief pause. Then inhale and slowly lower the barbell back to the starting position. Repeat for the recommended amount of repetitions.",
     "profiles_ok": [
       "full_gym"
-    ]
+    ],
+    "is_timed": false,
+    "per_side": false
   },
   {
     "slug": "barbell-deadlift",
@@ -110,7 +116,9 @@
     "instructions": "Stand in front of a loaded barbell. While keeping the back as straight as possible, bend your knees, bend forward and grasp the bar using a medium (shoulder width) overhand grip. This will be the starting position of the exercise. Tip: If it is difficult to hold on to the bar with this grip, alternate your grip or use wrist straps. While holding the bar, start the lift by pushing with your legs while simultaneously getting your torso to the upright position as you breathe out. In the upright position, stick your chest out and contract the back by bringing the shoulder blades back. Think of how the soldiers in the military look when they are in standing in attention. Go back to the starting position by bending at the knees while simultaneously leaning the torso forward at the waist while keeping the back straight. When the weights on the bar touch the floor you are back at the starting position and ready to perform another repetition. Perform the amount of repetitions prescribed in the program.",
     "profiles_ok": [
       "full_gym"
-    ]
+    ],
+    "is_timed": false,
+    "per_side": false
   },
   {
     "slug": "overhead-press",
@@ -135,7 +143,9 @@
     "instructions": "Start by placing a barbell that is about chest high on a squat rack. Once you have selected the weights, grab the barbell using a pronated (palms facing forward) grip. Make sure to grip the bar wider than shoulder width apart from each other. Slightly bend the knees and place the barbell on your collar bone. Lift the barbell up keeping it lying on your chest. Take a step back and position your feet shoulder width apart from each other. Once you pick up the barbell with the correct grip length, lift the bar up over your head by locking your arms. Hold at about shoulder level and slightly in front of your head. This is your starting position. Lower the bar down to the collarbone slowly as you inhale. Lift the bar back up to the starting position as you exhale. Repeat for the recommended amount of repetitions.",
     "profiles_ok": [
       "full_gym"
-    ]
+    ],
+    "is_timed": false,
+    "per_side": false
   },
   {
     "slug": "romanian-deadlift",
@@ -162,7 +172,9 @@
     "instructions": "Put a barbell in front of you on the ground and grab it using a pronated (palms facing down) grip that a little wider than shoulder width. Tip: Depending on the weight used, you may need wrist wraps to perform the exercise and also a raised platform in order to allow for better range of motion. Bend the knees slightly and keep the shins vertical, hips back and back straight. This will be your starting position. Keeping your back and arms completely straight at all times, use your hips to lift the bar as you exhale. Tip: The movement should not be fast but steady and under control. Once you are standing completely straight up, lower the bar by pushing the hips back, only slightly bending the knees, unlike when squatting. Tip: Take a deep breath at the start of the movement and keep your chest up. Hold your breath as you lower and exhale as you complete the movement. Repeat for the recommended amount of repetitions.",
     "profiles_ok": [
       "full_gym"
-    ]
+    ],
+    "is_timed": false,
+    "per_side": false
   },
   {
     "slug": "front-squat",
@@ -189,7 +201,9 @@
     "instructions": "This exercise is best performed inside a squat rack for safety purposes. To begin, first set the bar on a rack that best matches your height. Once the correct height is chosen and the bar is loaded, bring your arms up under the bar while keeping the elbows high and the upper arm slightly above parallel to the floor. Rest the bar on top of the deltoids and cross your arms while grasping the bar for total control. Lift the bar off the rack by first pushing with your legs and at the same time straightening your torso. Step away from the rack and position your legs using a shoulder width medium stance with the toes slightly pointed out. Keep your head up at all times as looking down will get you off balance and also maintain a straight back. This will be your starting position. (Note: For the purposes of this discussion we will use the medium stance described above which targets overall development; however you can choose any of the three stances described in the foot positioning section). Begin to slowly lower the bar by bending the knees as you maintain a straight posture with the head up. Continue down until the angle between the upper leg and the calves becomes slightly less than 90-degrees (which is the point in which the upper legs are below parallel to the floor). Inhale as you perform this portion of the movement. Tip: If you performed the exercise correctly, the front of the knees should make an imaginary straight line with the toes that is perpendicular to the front. If your knees are past that imaginary line (if they are past your toes) then you are placing undue stress on the knee and the exercise has been performed incorrectly. Begin to raise the bar as you exhale by pushing the floor mainly with the middle of your foot as you straighten the legs again and go back to the starting position. Repeat for the recommended amount of repetitions.",
     "profiles_ok": [
       "full_gym"
-    ]
+    ],
+    "is_timed": false,
+    "per_side": false
   },
   {
     "slug": "incline-bench-press",
@@ -215,7 +229,9 @@
     "instructions": "Lie back on an incline bench. Using a medium-width grip (a grip that creates a 90-degree angle in the middle of the movement between the forearms and the upper arms), lift the bar from the rack and hold it straight over you with your arms locked. This will be your starting position. As you breathe in, come down slowly until you feel the bar on you upper chest. After a second pause, bring the bar back to the starting position as you breathe out and push the bar using your chest muscles. Lock your arms in the contracted position, squeeze your chest, hold for a second and then start coming down slowly again. Tip: it should take at least twice as long to go down than to come up. Repeat the movement for the prescribed amount of repetitions. When you are done, place the bar back in the rack.",
     "profiles_ok": [
       "full_gym"
-    ]
+    ],
+    "is_timed": false,
+    "per_side": false
   },
   {
     "slug": "barbell-hip-thrust",
@@ -241,7 +257,9 @@
     "instructions": "Begin seated on the ground with a bench directly behind you. Have a loaded barbell over your legs. Using a fat bar or having a pad on the bar can greatly reduce the discomfort caused by this exercise. Roll the bar so that it is directly above your hips, and lean back against the bench so that your shoulder blades are near the top of it. Begin the movement by driving through your feet, extending your hips vertically through the bar. Your weight should be supported by your shoulder blades and your feet. Extend as far as possible, then reverse the motion to return to the starting position.",
     "profiles_ok": [
       "full_gym"
-    ]
+    ],
+    "is_timed": false,
+    "per_side": false
   },
   {
     "slug": "goblet-squat",
@@ -270,7 +288,9 @@
     "profiles_ok": [
       "full_gym",
       "home_minimal"
-    ]
+    ],
+    "is_timed": false,
+    "per_side": false
   },
   {
     "slug": "dumbbell-bench-press",
@@ -297,7 +317,9 @@
     "profiles_ok": [
       "full_gym",
       "home_minimal"
-    ]
+    ],
+    "is_timed": false,
+    "per_side": false
   },
   {
     "slug": "dumbbell-shoulder-press",
@@ -323,7 +345,9 @@
     "profiles_ok": [
       "full_gym",
       "home_minimal"
-    ]
+    ],
+    "is_timed": false,
+    "per_side": false
   },
   {
     "slug": "dumbbell-row",
@@ -351,7 +375,9 @@
     "profiles_ok": [
       "full_gym",
       "home_minimal"
-    ]
+    ],
+    "is_timed": false,
+    "per_side": true
   },
   {
     "slug": "dumbbell-lunge",
@@ -379,7 +405,9 @@
     "profiles_ok": [
       "full_gym",
       "home_minimal"
-    ]
+    ],
+    "is_timed": false,
+    "per_side": true
   },
   {
     "slug": "split-squat",
@@ -406,7 +434,9 @@
     "profiles_ok": [
       "full_gym",
       "home_minimal"
-    ]
+    ],
+    "is_timed": false,
+    "per_side": true
   },
   {
     "slug": "lateral-raise",
@@ -430,7 +460,9 @@
     "profiles_ok": [
       "full_gym",
       "home_minimal"
-    ]
+    ],
+    "is_timed": false,
+    "per_side": false
   },
   {
     "slug": "dumbbell-curl",
@@ -456,7 +488,9 @@
     "profiles_ok": [
       "full_gym",
       "home_minimal"
-    ]
+    ],
+    "is_timed": false,
+    "per_side": false
   },
   {
     "slug": "hammer-curl",
@@ -480,7 +514,9 @@
     "profiles_ok": [
       "full_gym",
       "home_minimal"
-    ]
+    ],
+    "is_timed": false,
+    "per_side": false
   },
   {
     "slug": "overhead-triceps-extension",
@@ -504,7 +540,9 @@
     "profiles_ok": [
       "full_gym",
       "home_minimal"
-    ]
+    ],
+    "is_timed": false,
+    "per_side": true
   },
   {
     "slug": "lat-pulldown",
@@ -531,7 +569,9 @@
     "instructions": "Sit down on a pull-down machine with a wide bar attached to the top pulley. Make sure that you adjust the knee pad of the machine to fit your height. These pads will prevent your body from being raised by the resistance attached to the bar. Grab the bar with the palms facing forward using the prescribed grip. Note on grips: For a wide grip, your hands need to be spaced out at a distance wider than shoulder width. For a medium grip, your hands need to be spaced out at a distance equal to your shoulder width and for a close grip at a distance smaller than your shoulder width. As you have both arms extended in front of you holding the bar at the chosen grip width, bring your torso back around 30 degrees or so while creating a curvature on your lower back and sticking your chest out. This is your starting position. As you breathe out, bring the bar down until it touches your upper chest by drawing the shoulders and the upper arms down and back. Tip: Concentrate on squeezing the back muscles once you reach the full contracted position. The upper torso should remain stationary and only the arms should move. The forearms should do no other work except for holding the bar; therefore do not try to pull down the bar using the forearms. After a second at the contracted position squeezing your shoulder blades together, slowly raise the bar back to the starting position when your arms are fully extended and the lats are fully stretched. Inhale during this portion of the movement. Repeat this motion for the prescribed amount of repetitions.",
     "profiles_ok": [
       "full_gym"
-    ]
+    ],
+    "is_timed": false,
+    "per_side": false
   },
   {
     "slug": "seated-cable-row",
@@ -558,7 +598,9 @@
     "instructions": "For this exercise you will need access to a low pulley row machine with a V-bar. Note: The V-bar will enable you to have a neutral grip where the palms of your hands face each other. To get into the starting position, first sit down on the machine and place your feet on the front platform or crossbar provided making sure that your knees are slightly bent and not locked. Lean over as you keep the natural alignment of your back and grab the V-bar handles. With your arms extended pull back until your torso is at a 90-degree angle from your legs. Your back should be slightly arched and your chest should be sticking out. You should be feeling a nice stretch on your lats as you hold the bar in front of you. This is the starting position of the exercise. Keeping the torso stationary, pull the handles back towards your torso while keeping the arms close to it until you touch the abdominals. Breathe out as you perform that movement. At that point you should be squeezing your back muscles hard. Hold that contraction for a second and slowly go back to the original position while breathing in. Repeat for the recommended amount of repetitions.",
     "profiles_ok": [
       "full_gym"
-    ]
+    ],
+    "is_timed": false,
+    "per_side": false
   },
   {
     "slug": "leg-press",
@@ -585,7 +627,9 @@
     "instructions": "Using a leg press machine, sit down on the machine and place your legs on the platform directly in front of you at a medium (shoulder width) foot stance. (Note: For the purposes of this discussion we will use the medium stance described above which targets overall development; however you can choose any of the three stances described in the foot positioning section). Lower the safety bars holding the weighted platform in place and press the platform all the way up until your legs are fully extended in front of you. Tip: Make sure that you do not lock your knees. Your torso and the legs should make a perfect 90-degree angle. This will be your starting position. As you inhale, slowly lower the platform until your upper and lower legs make a 90-degree angle. Pushing mainly with the heels of your feet and using the quadriceps go back to the starting position as you exhale. Repeat for the recommended amount of repetitions and ensure to lock the safety pins properly once you are done. You do not want that platform falling on you fully loaded.",
     "profiles_ok": [
       "full_gym"
-    ]
+    ],
+    "is_timed": false,
+    "per_side": false
   },
   {
     "slug": "leg-extension",
@@ -608,7 +652,9 @@
     "instructions": "For this exercise you will need to use a leg extension machine. First choose your weight and sit on the machine with your legs under the pad (feet pointed forward) and the hands holding the side bars. This will be your starting position. Tip: You will need to adjust the pad so that it falls on top of your lower leg (just above your feet). Also, make sure that your legs form a 90-degree angle between the lower and upper leg. If the angle is less than 90-degrees then that means the knee is over the toes which in turn creates undue stress at the knee joint. If the machine is designed that way, either look for another machine or just make sure that when you start executing the exercise you stop going down once you hit the 90-degree angle. Using your quadriceps, extend your legs to the maximum as you exhale. Ensure that the rest of the body remains stationary on the seat. Pause a second on the contracted position. Slowly lower the weight back to the original position as you inhale, ensuring that you do not go past the 90-degree angle limit. Repeat for the recommended amount of times.",
     "profiles_ok": [
       "full_gym"
-    ]
+    ],
+    "is_timed": false,
+    "per_side": false
   },
   {
     "slug": "lying-leg-curl",
@@ -631,7 +677,9 @@
     "instructions": "Adjust the machine lever to fit your height and lie face down on the leg curl machine with the pad of the lever on the back of your legs (just a few inches under the calves). Tip: Preferably use a leg curl machine that is angled as opposed to flat since an angled position is more favorable for hamstrings recruitment. Keeping the torso flat on the bench, ensure your legs are fully stretched and grab the side handles of the machine. Position your toes straight (or you can also use any of the other two stances described on the foot positioning section). This will be your starting position. As you exhale, curl your legs up as far as possible without lifting the upper legs from the pad. Once you hit the fully contracted position, hold it for a second. As you inhale, bring the legs back to the initial position. Repeat for the recommended amount of repetitions.",
     "profiles_ok": [
       "full_gym"
-    ]
+    ],
+    "is_timed": false,
+    "per_side": false
   },
   {
     "slug": "chest-press-machine",
@@ -657,7 +705,9 @@
     "instructions": "Load an appropriate weight onto the pins and adjust the seat for your height. The handles should be near the bottom or middle of the pectorals at the beginning of the motion. Your chest and head should be up and your shoulder blades retracted. This will be your starting position. Press the handles forward by extending through the elbow. After a brief pause at the top, return the weight just above the start position, keeping tension on the muscles by not returning the weight to the stops until the set is complete.",
     "profiles_ok": [
       "full_gym"
-    ]
+    ],
+    "is_timed": false,
+    "per_side": false
   },
   {
     "slug": "face-pull",
@@ -682,7 +732,9 @@
     "instructions": "Facing a high pulley with a rope or dual handles attached, pull the weight directly towards your face, separating your hands as you do so. Keep your upper arms parallel to the ground.",
     "profiles_ok": [
       "full_gym"
-    ]
+    ],
+    "is_timed": false,
+    "per_side": false
   },
   {
     "slug": "triceps-pushdown",
@@ -705,7 +757,9 @@
     "instructions": "Attach a straight or angled bar to a high pulley and grab with an overhand grip (palms facing down) at shoulder width. Standing upright with the torso straight and a very small inclination forward, bring the upper arms close to your body and perpendicular to the floor. The forearms should be pointing up towards the pulley as they hold the bar. This is your starting position. Using the triceps, bring the bar down until it touches the front of your thighs and the arms are fully extended perpendicular to the floor. The upper arms should always remain stationary next to your torso and only the forearms should move. Exhale as you perform this movement. After a second hold at the contracted position, bring the bar slowly up to the starting point. Breathe in as you perform this step. Repeat for the recommended amount of repetitions.",
     "profiles_ok": [
       "full_gym"
-    ]
+    ],
+    "is_timed": false,
+    "per_side": false
   },
   {
     "slug": "calf-raise",
@@ -728,7 +782,9 @@
     "instructions": "Adjust the padded lever of the calf raise machine to fit your height. Place your shoulders under the pads provided and position your toes facing forward (or using any of the two other positions described at the beginning of the chapter). The balls of your feet should be secured on top of the calf block with the heels extending off it. Push the lever up by extending your hips and knees until your torso is standing erect. The knees should be kept with a slight bend; never locked. Toes should be facing forward, outwards or inwards as described at the beginning of the chapter. This will be your starting position. Raise your heels as you breathe out by extending your ankles as high as possible and flexing your calf. Ensure that the knee is kept stationary at all times. There should be no bending at any time. Hold the contracted position by a second before you start to go back down. Go back slowly to the starting position as you breathe in by lowering your heels as you bend the ankles until calves are stretched. Repeat for the recommended amount of repetitions.",
     "profiles_ok": [
       "full_gym"
-    ]
+    ],
+    "is_timed": false,
+    "per_side": false
   },
   {
     "slug": "cable-crunch",
@@ -751,7 +807,9 @@
     "instructions": "Kneel below a high pulley that contains a rope attachment. Grasp cable rope attachment and lower the rope until your hands are placed next to your face. Flex your hips slightly and allow the weight to hyperextend the lower back. This will be your starting position. With the hips stationary, flex the waist as you contract the abs so that the elbows travel towards the middle of the thighs. Exhale as you perform this portion of the movement and hold the contraction for a second. Slowly return to the starting position as you inhale. Tip: Make sure that you keep constant tension on the abs throughout the movement. Also, do not choose a weight so heavy that the lower back handles the brunt of the work. Repeat for the recommended amount of repetitions.",
     "profiles_ok": [
       "full_gym"
-    ]
+    ],
+    "is_timed": false,
+    "per_side": false
   },
   {
     "slug": "pull-up",
@@ -778,7 +836,9 @@
     "profiles_ok": [
       "full_gym",
       "home_minimal"
-    ]
+    ],
+    "is_timed": false,
+    "per_side": false
   },
   {
     "slug": "chin-up",
@@ -806,7 +866,9 @@
     "profiles_ok": [
       "full_gym",
       "home_minimal"
-    ]
+    ],
+    "is_timed": false,
+    "per_side": false
   },
   {
     "slug": "dip",
@@ -832,7 +894,9 @@
     "instructions": "To get into the starting position, hold your body at arm's length with your arms nearly locked above the bars. Now, inhale and slowly lower yourself downward. Your torso should remain upright and your elbows should stay close to your body. This helps to better focus on tricep involvement. Lower yourself until there is a 90 degree angle formed between the upper arm and forearm. Then, exhale and push your torso back up using your triceps to bring your body back to the starting position. Repeat the movement for the prescribed amount of repetitions.",
     "profiles_ok": [
       "full_gym"
-    ]
+    ],
+    "is_timed": false,
+    "per_side": false
   },
   {
     "slug": "push-up",
@@ -860,7 +924,9 @@
       "full_gym",
       "hotel",
       "home_minimal"
-    ]
+    ],
+    "is_timed": false,
+    "per_side": false
   },
   {
     "slug": "bodyweight-squat",
@@ -887,7 +953,9 @@
     "profiles_ok": [
       "hotel",
       "home_minimal"
-    ]
+    ],
+    "is_timed": false,
+    "per_side": false
   },
   {
     "slug": "walking-lunge",
@@ -915,7 +983,9 @@
     "profiles_ok": [
       "hotel",
       "home_minimal"
-    ]
+    ],
+    "is_timed": false,
+    "per_side": true
   },
   {
     "slug": "glute-bridge",
@@ -941,7 +1011,9 @@
     "profiles_ok": [
       "hotel",
       "home_minimal"
-    ]
+    ],
+    "is_timed": false,
+    "per_side": false
   },
   {
     "slug": "inverted-row",
@@ -968,7 +1040,9 @@
       "full_gym",
       "hotel",
       "home_minimal"
-    ]
+    ],
+    "is_timed": false,
+    "per_side": false
   },
   {
     "slug": "pike-push-up",
@@ -995,7 +1069,9 @@
     "profiles_ok": [
       "hotel",
       "home_minimal"
-    ]
+    ],
+    "is_timed": false,
+    "per_side": false
   },
   {
     "slug": "plank",
@@ -1020,7 +1096,9 @@
       "full_gym",
       "hotel",
       "home_minimal"
-    ]
+    ],
+    "is_timed": true,
+    "per_side": false
   },
   {
     "slug": "side-plank",
@@ -1047,7 +1125,9 @@
       "full_gym",
       "hotel",
       "home_minimal"
-    ]
+    ],
+    "is_timed": true,
+    "per_side": false
   },
   {
     "slug": "hanging-leg-raise",
@@ -1070,7 +1150,9 @@
     "instructions": "Hang from a chin-up bar with both arms extended at arms length in top of you using either a wide grip or a medium grip. The legs should be straight down with the pelvis rolled slightly backwards. This will be your starting position. Raise your legs until the torso makes a 90-degree angle with the legs. Exhale as you perform this movement and hold the contraction for a second or so. Go back slowly to the starting position as you breathe in. Repeat for the recommended amount of repetitions.",
     "profiles_ok": [
       "full_gym"
-    ]
+    ],
+    "is_timed": false,
+    "per_side": false
   },
   {
     "slug": "mountain-climber",
@@ -1098,7 +1180,9 @@
     "profiles_ok": [
       "hotel",
       "home_minimal"
-    ]
+    ],
+    "is_timed": false,
+    "per_side": false
   },
   {
     "slug": "superman",
@@ -1125,6 +1209,8 @@
     "profiles_ok": [
       "hotel",
       "home_minimal"
-    ]
+    ],
+    "is_timed": true,
+    "per_side": false
   }
 ]
