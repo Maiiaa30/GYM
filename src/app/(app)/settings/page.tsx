@@ -30,22 +30,22 @@ export default async function SettingsPage() {
   return (
     <div className="space-y-6">
       <header>
-        <p className="label">Account</p>
+        <p className="label">Conta</p>
         <h1 className="mt-1 font-[family-name:var(--font-display)] text-4xl">
-          Settings
+          Definições
         </h1>
       </header>
 
       <Card>
         <div className="px-5 py-4">
-          <p className="label">Signed in as</p>
+          <p className="label">Sessão iniciada como</p>
           <p className="mt-1">{me?.name}</p>
           <p className="text-sm text-muted">{me?.email}</p>
         </div>
       </Card>
 
       <section>
-        <p className="label mb-2">Training</p>
+        <p className="label mb-2">Treino</p>
         <Card>
           <SettingsForm
             daysPerWeek={settings?.days_per_week ?? 3}
@@ -56,7 +56,7 @@ export default async function SettingsPage() {
       </section>
 
       <section>
-        <p className="label mb-2">Members</p>
+        <p className="label mb-2">Membros</p>
         <Card>
           <ul className="divide-y divide-line">
             {members?.map((member) => (
@@ -76,13 +76,13 @@ export default async function SettingsPage() {
 
       <form action={signOut}>
         <Button type="submit" variant="ghost" className="w-full">
-          Sign out
+          Terminar sessão
         </Button>
       </form>
 
       <p className="pb-2 text-center text-xs leading-relaxed text-faint">
-        This application is a training log, not medical advice. Start light,
-        learn the technique, and stop if something hurts.
+        Esta aplicação é um registo de treino, não é aconselhamento médico.
+        Começa leve, aprende a técnica e pára se alguma coisa doer.
       </p>
     </div>
   );

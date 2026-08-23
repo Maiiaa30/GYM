@@ -46,7 +46,7 @@ async function persistPlan(
     .update({ is_active: false })
     .eq("is_active", true);
 
-  if (deactivateError) return "Could not replace the current block.";
+  if (deactivateError) return "Não foi possível substituir o bloco actual.";
 
   const { data: plan, error: planError } = await admin
     .from("plans")
@@ -64,7 +64,7 @@ async function persistPlan(
     .select("id")
     .single();
 
-  if (planError || !plan) return "Could not create the block.";
+  if (planError || !plan) return "Não foi possível criar o bloco.";
 
   for (const [index, day] of input.days.entries()) {
     const { data: planDay, error: dayError } = await admin
@@ -78,7 +78,7 @@ async function persistPlan(
       .select("id")
       .single();
 
-    if (dayError || !planDay) return "Could not create a training day.";
+    if (dayError || !planDay) return "Não foi possível criar um dia de treino.";
 
     const { error: itemError } = await admin.from("plan_items").insert(
       day.items.map((item, position) => ({
@@ -93,7 +93,7 @@ async function persistPlan(
       })),
     );
 
-    if (itemError) return "Could not add the exercises.";
+    if (itemError) return "Não foi possível adicionar os exercícios.";
   }
 
   return null;
@@ -133,14 +133,14 @@ export async function buildTemplatePlan(
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user) return { error: "Session expired. Sign in again.", source: null, notice: null };
+  if (!user) return { error: "A sessão expirou. Entra outra vez.", source: null, notice: null };
 
   const { data: settings } = await supabase
     .from("household_settings")
     .select("days_per_week, equipment")
     .maybeSingle();
 
-  if (!settings) return { error: "Settings are missing.", source: null, notice: null };
+  if (!settings) return { error: "Faltam as definições.", source: null, notice: null };
 
   const failure = await persistPlan(createAdminClient(), {
     name: templateName(settings.equipment),
@@ -189,14 +189,14 @@ export async function generateTailoredPlan(
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user) return { error: "Session expired. Sign in again.", source: null, notice: null };
+  if (!user) return { error: "A sessão expirou. Entra outra vez.", source: null, notice: null };
 
   const { data: settings } = await supabase
     .from("household_settings")
     .select("days_per_week, equipment, session_minutes")
     .maybeSingle();
 
-  if (!settings) return { error: "Settings are missing.", source: null, notice: null };
+  if (!settings) return { error: "Faltam as definições.", source: null, notice: null };
 
   const admin = createAdminClient();
 
@@ -227,7 +227,7 @@ export async function generateTailoredPlan(
     }));
 
   if (catalogue.length === 0) {
-    return { error: "The exercise catalogue is empty.", source: null, notice: null };
+    return { error: "O catálogo de exercícios está vazio.", source: null, notice: null };
   }
 
   const memberIds = (profiles ?? []).map((profile) => profile.id);
@@ -344,11 +344,12 @@ export async function generateTailoredPlan(
   revalidatePath("/");
 
   if (usingTemplate) {
-    const reason = problems[0] === "no_api_key" ? "not configured" : "unavailable";
+    const reason =
+      problems[0] === "no_api_key" ? "não está configurada" : "não estava disponível";
     return {
       error: null,
       source: "template",
-      notice: `Tailored generation was ${reason}, so the built-in template was used instead.`,
+      notice: `A criação personalizada ${reason}, por isso foi usado o programa padrão.`,
     };
   }
 

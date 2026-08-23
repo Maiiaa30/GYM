@@ -11,7 +11,7 @@ const serif = Instrument_Serif({
 
 export const metadata: Metadata = {
   title: "GYM",
-  description: "Private training log and programme for two.",
+  description: "Registo de treino e programa privado para dois.",
   manifest: "/manifest.webmanifest",
   applicationName: "GYM",
   appleWebApp: {
@@ -39,8 +39,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={serif.variable}>
-      <body className="app-shell">{children}</body>
+    <html lang="pt-PT" className={serif.variable} suppressHydrationWarning>
+      <body className="app-shell" suppressHydrationWarning>
+        {children}
+      </body>
     </html>
   );
 }

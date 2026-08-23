@@ -6,7 +6,7 @@ import { startSession } from "../(session)/session/actions";
 export const dynamic = "force-dynamic";
 
 function todayLabel() {
-  return new Date().toLocaleDateString("en-GB", {
+  return new Date().toLocaleDateString("pt-PT", {
     weekday: "long",
     day: "numeric",
     month: "long",
@@ -76,21 +76,21 @@ export default async function TodayPage() {
       <header>
         <p className="label">{todayLabel()}</p>
         <h1 className="mt-1 font-[family-name:var(--font-display)] text-4xl leading-tight">
-          {profile?.name ? `Good day, ${profile.name.split(" ")[0]}` : "Good day"}
+          {profile?.name ? `Olá, ${profile.name.split(" ")[0]}` : "Olá"}
         </h1>
       </header>
 
       {!plan || !nextDay ? (
         <Card className="p-5">
-          <p className="label">No programme yet</p>
+          <p className="label">Ainda sem programa</p>
           <p className="mt-2 text-sm leading-relaxed text-muted">
-            Set the training days and the equipment, then build the first block.
+            Define os dias de treino e o equipamento e cria o primeiro bloco.
           </p>
           <Link
             href="/plan"
             className="mt-4 inline-block text-sm text-brass underline underline-offset-4"
           >
-            Build a programme
+            Criar um programa
           </Link>
         </Card>
       ) : (
@@ -98,7 +98,7 @@ export default async function TodayPage() {
           <Card>
             <div className="flex items-baseline justify-between px-5 pt-5">
               <div>
-                <p className="label">Today</p>
+                <p className="label">Hoje</p>
                 <p className="mt-1 font-[family-name:var(--font-display)] text-3xl">
                   {nextDay.name}
                 </p>
@@ -131,7 +131,7 @@ export default async function TodayPage() {
                   href={`/session/${openSession.id}`}
                   className="block rounded-[var(--radius-md)] border border-brass bg-brass py-4 text-center font-medium text-ink"
                 >
-                  Resume the session
+                  Retomar o treino
                 </Link>
               ) : (
                 <form action={startSession}>
@@ -141,7 +141,7 @@ export default async function TodayPage() {
                     value={nextDay.id}
                   />
                   <Button type="submit" size="lg" className="w-full">
-                    Start training
+                    Começar o treino
                   </Button>
                 </form>
               )}
@@ -149,7 +149,7 @@ export default async function TodayPage() {
           </Card>
 
           <p className="text-center text-xs text-faint">
-            {completedCount ?? 0} sessions completed
+            {completedCount ?? 0} treinos concluídos
           </p>
         </>
       )}

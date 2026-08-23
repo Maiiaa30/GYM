@@ -55,26 +55,25 @@ export function BuildPlanForm({ replacing }: { replacing: boolean }) {
       <form action={tailoredAction}>
         <Submit
           variant="primary"
-          label={replacing ? "Build a new block for us" : "Build our first block"}
-          busy="Writing the block…"
+          label={replacing ? "Criar um bloco novo para nós" : "Criar o nosso primeiro bloco"}
+          busy="A escrever o bloco…"
         />
       </form>
 
       <form action={templateAction}>
         <Submit
           variant="quiet"
-          label="Use the standard programme instead"
-          busy="Building…"
+          label="Usar antes o programa padrão"
+          busy="A criar…"
         />
       </form>
 
       <p className="text-xs leading-relaxed text-faint">
-        A tailored block is written around your heights, body weights, the
-        weights you are currently lifting and anything you have flagged as
-        painful. The standard programme is the same proven full-body routine for
-        everyone.
+        Um bloco personalizado é escrito a partir das vossas alturas, pesos,
+        cargas actuais e do que tiverem assinalado como dolorido. O programa
+        padrão é a mesma rotina de corpo inteiro para toda a gente.
         {replacing
-          ? " Either way, your history and current working weights are kept."
+          ? " Em qualquer dos casos, o histórico e as cargas actuais mantêm-se."
           : ""}
       </p>
     </div>

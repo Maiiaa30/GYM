@@ -11,7 +11,7 @@ function Submit() {
   const { pending } = useFormStatus();
   return (
     <Button type="submit" variant="quiet" disabled={pending}>
-      {pending ? "Saving…" : "Record"}
+      {pending ? "A guardar…" : "Registar"}
     </Button>
   );
 }
@@ -24,7 +24,7 @@ export function WeightForm({ current }: { current: number | null }) {
       <div className="flex items-end gap-3">
         <div className="flex-1">
           <Field
-            label="Body weight today"
+            label="Peso de hoje"
             name="weight_kg"
             type="number"
             step="0.1"
@@ -37,7 +37,7 @@ export function WeightForm({ current }: { current: number | null }) {
         <Submit />
       </div>
       {state.error ? <Notice tone="error">{state.error}</Notice> : null}
-      {state.saved ? <Notice>Recorded.</Notice> : null}
+      {state.saved ? <Notice>Registado.</Notice> : null}
     </form>
   );
 }

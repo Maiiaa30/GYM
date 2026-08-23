@@ -118,16 +118,16 @@ export function planResponseSchema(allowedSlugs: string[]) {
 /* ------------------------------------------------------------------ prompt */
 
 const PROFILE_DESCRIPTION: Record<EquipmentProfile, string> = {
-  full_gym: "a commercial gym with barbells, a rack, dumbbells and machines",
-  hotel: "a hotel room with no equipment beyond bodyweight and furniture",
-  home_minimal: "home, with a pair of adjustable dumbbells and a mat",
+  full_gym: "um ginásio comercial com barras, rack, halteres e máquinas",
+  hotel: "um quarto de hotel, sem equipamento além do peso do corpo e mobília",
+  home_minimal: "em casa, com um par de halteres reguláveis e um colchão",
 };
 
 function describeMember(member: MemberContext): string {
   const parts = [
-    `${member.name}: ${member.experience}`,
-    member.age ? `${member.age} years old` : null,
-    member.sex && member.sex !== "undisclosed" ? member.sex : null,
+    `${member.name}: ${member.experience === "beginner" ? "principiante" : member.experience}`,
+    member.age ? `${member.age} anos` : null,
+    member.sex === "male" ? "homem" : member.sex === "female" ? "mulher" : null,
     member.heightCm ? `${member.heightCm} cm` : null,
     member.bodyWeightKg ? `${member.bodyWeightKg} kg` : null,
   ].filter(Boolean);
@@ -136,13 +136,13 @@ function describeMember(member: MemberContext): string {
     .filter((lift) => lift.workingKg > 0)
     .map(
       (lift) =>
-        `${lift.exercise} ${lift.workingKg} kg${lift.failCount > 0 ? " (stalling)" : ""}`,
+        `${lift.exercise} ${lift.workingKg} kg${lift.failCount > 0 ? " (estagnado)" : ""}`,
     );
 
   const lines = [`- ${parts.join(", ")}`];
-  if (member.injuryNotes) lines.push(`  Limitations: ${member.injuryNotes}`);
-  if (lifts.length > 0) lines.push(`  Current working weights: ${lifts.join("; ")}`);
-  else lines.push("  No training history yet.");
+  if (member.injuryNotes) lines.push(`  Limitações: ${member.injuryNotes}`);
+  if (lifts.length > 0) lines.push(`  Cargas actuais: ${lifts.join("; ")}`);
+  else lines.push("  Ainda sem histórico de treino.");
 
   return lines.join("\n");
 }
@@ -156,41 +156,43 @@ export function buildPrompt(context: PlanContext): string {
     .join("\n");
 
   const previous = context.previousBlock
-    ? `Previous block "${context.previousBlock.name}": ${context.previousBlock.completedSessions} sessions completed.${
+    ? `Bloco anterior "${context.previousBlock.name}": ${context.previousBlock.completedSessions} treinos concluídos.${
         context.previousBlock.stalledLifts.length > 0
-          ? ` Stalling on: ${context.previousBlock.stalledLifts.join(", ")}.`
+          ? ` Estagnados em: ${context.previousBlock.stalledLifts.join(", ")}.`
           : ""
       }`
-    : "This is their first block.";
+    : "Este é o primeiro bloco deles.";
 
-  return `You are an experienced strength coach writing a four-week training block for two friends who train together at the same time, in the same place, and want to do the same exercises in the same order. They are beginners.
+  return `És um treinador de força experiente e vais escrever um bloco de treino de quatro semanas para dois amigos que treinam juntos, à mesma hora e no mesmo sítio, e que querem fazer os mesmos exercícios pela mesma ordem. São principiantes.
 
-Setting: ${PROFILE_DESCRIPTION[context.equipment]}.
-Sessions per week: ${context.daysPerWeek}.
-Time available per session: about ${context.sessionMinutes} minutes.
+Local: ${PROFILE_DESCRIPTION[context.equipment]}.
+Treinos por semana: ${context.daysPerWeek}.
+Tempo disponível por treino: cerca de ${context.sessionMinutes} minutos.
 
-The people:
+As pessoas:
 ${context.members.map(describeMember).join("\n")}
 
 ${previous}
 
-Write exactly ${context.daysPerWeek} distinct training days.
+Escreve exactamente ${context.daysPerWeek} dias de treino distintos.
 
-Rules you must follow:
-- Choose exercises only from the catalogue below, using the exact slug.
-- Every day must be completable within the time available: ${LIMITS.minItemsPerDay} to ${LIMITS.maxItemsPerDay} exercises.
-- Order each day heaviest and most technical first, isolation and core last.
-- Between ${LIMITS.minSets} and ${LIMITS.maxSets} sets per exercise, rest between ${LIMITS.minRest} and ${LIMITS.maxRest} seconds.
-- Compound lifts belong in the 5 to 8 repetition range, accessories in 8 to 15, core work in 10 to 20. Timed holds use seconds in the repetition fields and must say so in the notes.
-- No exercise may appear twice on the same day.
-- Beginners need frequency, not variety: repeat the main lifts across the week rather than filling the block with novelty.
-- Do not exceed ${LIMITS.maxWeeklySetsPerMuscle} working sets per muscle group across the whole week.
-- Respect every limitation listed above: omit anything that loads an area a member has flagged.
-- Do not prescribe weights. Loads are set by the application.
+Regras que tens de cumprir:
+- Escolhe exercícios apenas do catálogo abaixo, usando exactamente o mesmo slug.
+- Cada dia tem de caber no tempo disponível: entre ${LIMITS.minItemsPerDay} e ${LIMITS.maxItemsPerDay} exercícios.
+- Ordena cada dia do mais pesado e técnico para o mais leve; isolamento e core no fim.
+- Entre ${LIMITS.minSets} e ${LIMITS.maxSets} séries por exercício e descanso entre ${LIMITS.minRest} e ${LIMITS.maxRest} segundos.
+- Exercícios compostos entre 5 e 8 repetições, acessórios entre 8 e 15, core entre 10 e 20. Isometrias usam segundos nos campos de repetições e têm de dizer isso nas notas.
+- Nenhum exercício pode aparecer duas vezes no mesmo dia.
+- Principiantes precisam de frequência, não de variedade: repete os exercícios principais ao longo da semana em vez de encher o bloco de novidades.
+- Não passes de ${LIMITS.maxWeeklySetsPerMuscle} séries de trabalho por grupo muscular em toda a semana.
+- Respeita todas as limitações indicadas acima: retira o que carregue uma zona assinalada por um dos dois.
+- Não prescrevas cargas. Os pesos são definidos pela aplicação.
 
-The rationale field: two or three sentences, plain language, explaining why this block suits these two people. Do not mention that it was generated.
+Escreve todo o texto em português europeu (de Portugal), sem termos do português do Brasil.
 
-Catalogue:
+Campo "name": o nome do bloco, curto. Campo "focus" de cada dia: três a cinco palavras. Campo "rationale": duas ou três frases, linguagem simples, a explicar porque é que este bloco serve a estes dois. Não menciones que foi gerado automaticamente.
+
+Catálogo:
 ${catalogue}`;
 }
 

@@ -24,13 +24,12 @@ export default async function OnboardingPage() {
     <div className="h-full w-full overflow-hidden">
       <div className="scroll-area mx-auto h-full w-full max-w-sm px-6 py-10">
         <header className="mb-8">
-          <p className="label">Welcome</p>
+          <p className="label">Bem-vindo</p>
           <h1 className="mt-2 font-[family-name:var(--font-display)] text-4xl leading-tight">
-            A few details
+            Alguns dados
           </h1>
           <p className="mt-3 text-sm text-muted">
-            Used to size the first programme and to track change over time. You
-            can edit any of it later.
+            Servem para calibrar o primeiro programa e para acompanhar a evolução. Podes alterar tudo mais tarde.
           </p>
         </header>
         <OnboardingForm defaultName={profile?.name ?? ""} />

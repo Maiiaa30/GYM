@@ -20,13 +20,13 @@ export async function updateSettings(
   const equipment = String(formData.get("equipment") ?? "") as EquipmentProfile;
 
   if (!Number.isInteger(days) || days < 1 || days > 6) {
-    return { error: "Training days must be between 1 and 6.", saved: false };
+    return { error: "Os dias de treino têm de estar entre 1 e 6.", saved: false };
   }
   if (!Number.isInteger(minutes) || minutes < 20 || minutes > 150) {
-    return { error: "Session length must be between 20 and 150 minutes.", saved: false };
+    return { error: "A duração do treino tem de estar entre 20 e 150 minutos.", saved: false };
   }
   if (!EQUIPMENT.includes(equipment)) {
-    return { error: "Choose a valid equipment profile.", saved: false };
+    return { error: "Escolhe um perfil de equipamento válido.", saved: false };
   }
 
   const supabase = await createClient();
@@ -40,7 +40,7 @@ export async function updateSettings(
     })
     .eq("id", "only");
 
-  if (error) return { error: "Could not save the settings.", saved: false };
+  if (error) return { error: "Não foi possível guardar as definições.", saved: false };
 
   revalidatePath("/settings");
   revalidatePath("/plan");
@@ -80,16 +80,16 @@ export async function createInvite(
     .trim()
     .toLowerCase();
 
-  if (!name || !email) return { error: "Name and email are required.", code: null };
+  if (!name || !email) return { error: "O nome e o email são obrigatórios.", code: null };
   if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
-    return { error: "That email address is not valid.", code: null };
+    return { error: "Esse email não é válido.", code: null };
   }
 
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return { error: "Session expired.", code: null };
+  if (!user) return { error: "A sessão expirou.", code: null };
 
   const { data: me } = await supabase
     .from("profiles")
@@ -98,7 +98,7 @@ export async function createInvite(
     .maybeSingle();
 
   if (!me?.is_owner) {
-    return { error: "Only the account owner can invite.", code: null };
+    return { error: "Só o dono da conta pode convidar.", code: null };
   }
 
   const admin = createAdminClient();
@@ -108,7 +108,7 @@ export async function createInvite(
     .select("id", { count: "exact", head: true });
 
   if ((count ?? 0) >= 2) {
-    return { error: "Both accounts already exist.", code: null };
+    return { error: "As duas contas já existem.", code: null };
   }
 
   const { data: existing } = await admin
@@ -118,7 +118,7 @@ export async function createInvite(
     .maybeSingle();
 
   if (existing) {
-    return { error: "An account already uses that email.", code: null };
+    return { error: "Já existe uma conta com esse email.", code: null };
   }
 
   const { data: created, error: createError } =
@@ -129,7 +129,7 @@ export async function createInvite(
     });
 
   if (createError || !created.user) {
-    return { error: "Could not create the account.", code: null };
+    return { error: "Não foi possível criar a conta.", code: null };
   }
 
   const { error: profileError } = await admin.from("profiles").insert({
@@ -141,7 +141,7 @@ export async function createInvite(
 
   if (profileError) {
     await admin.auth.admin.deleteUser(created.user.id);
-    return { error: "Could not create the profile.", code: null };
+    return { error: "Não foi possível criar o perfil.", code: null };
   }
 
   const code = generateCode();
@@ -153,7 +153,7 @@ export async function createInvite(
   });
 
   if (inviteError) {
-    return { error: "Account created, but the code failed. Try again.", code: null };
+    return { error: "Conta criada, mas o código falhou. Tenta outra vez.", code: null };
   }
 
   revalidatePath("/settings");

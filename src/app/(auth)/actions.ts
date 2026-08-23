@@ -7,7 +7,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 
 export type FormState = { error: string | null };
 
-const GENERIC_CREDENTIALS_ERROR = "Email or password is not correct.";
+const GENERIC_CREDENTIALS_ERROR = "Email ou palavra-passe incorrectos.";
 
 export async function signIn(
   _prev: FormState,
@@ -19,7 +19,7 @@ export async function signIn(
   const password = String(formData.get("password") ?? "");
 
   if (!email || !password) {
-    return { error: "Enter your email and password." };
+    return { error: "Escreve o email e a palavra-passe." };
   }
 
   const supabase = await createClient();
@@ -68,13 +68,13 @@ export async function redeemInvite(
   const confirm = String(formData.get("confirm") ?? "");
 
   if (!email || !code || !password) {
-    return { error: "Fill in every field." };
+    return { error: "Preenche todos os campos." };
   }
   if (password.length < 8) {
-    return { error: "Password must be at least 8 characters." };
+    return { error: "A palavra-passe tem de ter pelo menos 8 caracteres." };
   }
   if (password !== confirm) {
-    return { error: "The two passwords do not match." };
+    return { error: "As duas palavras-passe não coincidem." };
   }
 
   const admin = createAdminClient();
@@ -88,12 +88,12 @@ export async function redeemInvite(
     .limit(1);
 
   if (lookupError) {
-    return { error: "Could not verify the invitation. Try again." };
+    return { error: "Não foi possível verificar o convite. Tenta outra vez." };
   }
 
   const invite = invites?.[0];
   if (!invite || !constantTimeEquals(invite.code_hash, hashCode(code))) {
-    return { error: "That invitation code is not valid." };
+    return { error: "Esse código de convite não é válido." };
   }
 
   const { data: profile } = await admin
@@ -103,7 +103,7 @@ export async function redeemInvite(
     .maybeSingle();
 
   if (!profile) {
-    return { error: "No account is waiting for that email." };
+    return { error: "Não existe nenhuma conta à espera desse email." };
   }
 
   const { error: updateError } = await admin.auth.admin.updateUserById(
@@ -112,7 +112,7 @@ export async function redeemInvite(
   );
 
   if (updateError) {
-    return { error: "Could not set the password. Try again." };
+    return { error: "Não foi possível definir a palavra-passe. Tenta outra vez." };
   }
 
   await admin
@@ -127,7 +127,7 @@ export async function redeemInvite(
   });
 
   if (signInError) {
-    return { error: "Password set. Sign in to continue." };
+    return { error: "Palavra-passe definida. Entra para continuar." };
   }
 
   redirect("/onboarding");

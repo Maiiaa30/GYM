@@ -1,10 +1,10 @@
 /**
- * Built-in training templates.
+ * Programas de treino integrados.
  *
- * These are the fallback and the starting point: full-body sessions built
- * around a small number of compound movements, in the rep ranges a beginner
- * makes progress on. The generated programmes replace the day definitions but
- * never the progression rules.
+ * São o ponto de partida e a alternativa segura: treinos de corpo inteiro
+ * construídos à volta de poucos exercícios compostos, nas gamas de repetições
+ * em que um principiante progride. Os programas gerados substituem os dias,
+ * nunca as regras de progressão.
  */
 
 import type { EquipmentProfile } from "@/lib/database.types";
@@ -24,12 +24,12 @@ export type TemplateDay = {
   items: TemplateItem[];
 };
 
-const HOLD = "Hold for the number of seconds shown.";
+const HOLD = "Aguenta o número de segundos indicado.";
 
 const FULL_GYM: TemplateDay[] = [
   {
-    name: "Day A",
-    focus: "Squat and press",
+    name: "Dia A",
+    focus: "Agachamento e supino",
     items: [
       { exercise: "barbell-squat", sets: 3, repLow: 5, repHigh: 5, restSec: 180 },
       { exercise: "barbell-bench-press", sets: 3, repLow: 5, repHigh: 5, restSec: 180 },
@@ -39,8 +39,8 @@ const FULL_GYM: TemplateDay[] = [
     ],
   },
   {
-    name: "Day B",
-    focus: "Hinge and overhead",
+    name: "Dia B",
+    focus: "Dobra de anca e ombros",
     items: [
       { exercise: "romanian-deadlift", sets: 3, repLow: 8, repHigh: 8, restSec: 150 },
       { exercise: "overhead-press", sets: 3, repLow: 5, repHigh: 5, restSec: 180 },
@@ -50,8 +50,8 @@ const FULL_GYM: TemplateDay[] = [
     ],
   },
   {
-    name: "Day C",
-    focus: "Pull and upper body",
+    name: "Dia C",
+    focus: "Puxadas e tronco",
     items: [
       { exercise: "barbell-deadlift", sets: 2, repLow: 5, repHigh: 5, restSec: 210 },
       { exercise: "incline-bench-press", sets: 3, repLow: 8, repHigh: 8, restSec: 150 },
@@ -61,8 +61,8 @@ const FULL_GYM: TemplateDay[] = [
     ],
   },
   {
-    name: "Day D",
-    focus: "Front squat and chest",
+    name: "Dia D",
+    focus: "Agachamento frontal e peito",
     items: [
       { exercise: "front-squat", sets: 3, repLow: 5, repHigh: 5, restSec: 180 },
       { exercise: "dumbbell-bench-press", sets: 3, repLow: 8, repHigh: 10, restSec: 120 },
@@ -72,13 +72,13 @@ const FULL_GYM: TemplateDay[] = [
     ],
   },
   {
-    name: "Day E",
-    focus: "Hips and shoulders",
+    name: "Dia E",
+    focus: "Ancas e ombros",
     items: [
       { exercise: "barbell-hip-thrust", sets: 3, repLow: 8, repHigh: 10, restSec: 120 },
       { exercise: "dumbbell-shoulder-press", sets: 3, repLow: 8, repHigh: 10, restSec: 120 },
       { exercise: "dumbbell-row", sets: 3, repLow: 10, repHigh: 12, restSec: 90 },
-      { exercise: "split-squat", sets: 3, repLow: 8, repHigh: 10, restSec: 90, notes: "Repetitions per leg." },
+      { exercise: "split-squat", sets: 3, repLow: 8, repHigh: 10, restSec: 90, notes: "Repetições por perna." },
       { exercise: "side-plank", sets: 2, repLow: 30, repHigh: 40, restSec: 45, notes: HOLD },
     ],
   },
@@ -86,8 +86,8 @@ const FULL_GYM: TemplateDay[] = [
 
 const HOTEL: TemplateDay[] = [
   {
-    name: "Day A",
-    focus: "Push and legs",
+    name: "Dia A",
+    focus: "Empurrar e pernas",
     items: [
       { exercise: "push-up", sets: 4, repLow: 8, repHigh: 15, restSec: 90 },
       { exercise: "bodyweight-squat", sets: 4, repLow: 15, repHigh: 20, restSec: 90 },
@@ -97,19 +97,19 @@ const HOTEL: TemplateDay[] = [
     ],
   },
   {
-    name: "Day B",
-    focus: "Shoulders and single leg",
+    name: "Dia B",
+    focus: "Ombros e unilateral",
     items: [
       { exercise: "pike-push-up", sets: 4, repLow: 6, repHigh: 12, restSec: 90 },
-      { exercise: "walking-lunge", sets: 3, repLow: 10, repHigh: 12, restSec: 90, notes: "Repetitions per leg." },
+      { exercise: "walking-lunge", sets: 3, repLow: 10, repHigh: 12, restSec: 90, notes: "Repetições por perna." },
       { exercise: "inverted-row", sets: 3, repLow: 8, repHigh: 12, restSec: 90 },
       { exercise: "mountain-climber", sets: 3, repLow: 20, repHigh: 30, restSec: 60 },
       { exercise: "side-plank", sets: 2, repLow: 30, repHigh: 40, restSec: 45, notes: HOLD },
     ],
   },
   {
-    name: "Day C",
-    focus: "Full body",
+    name: "Dia C",
+    focus: "Corpo inteiro",
     items: [
       { exercise: "push-up", sets: 4, repLow: 10, repHigh: 20, restSec: 90 },
       { exercise: "bodyweight-squat", sets: 4, repLow: 20, repHigh: 25, restSec: 90 },
@@ -122,8 +122,8 @@ const HOTEL: TemplateDay[] = [
 
 const HOME_MINIMAL: TemplateDay[] = [
   {
-    name: "Day A",
-    focus: "Squat and press",
+    name: "Dia A",
+    focus: "Agachamento e supino",
     items: [
       { exercise: "goblet-squat", sets: 3, repLow: 10, repHigh: 12, restSec: 120 },
       { exercise: "dumbbell-bench-press", sets: 3, repLow: 8, repHigh: 12, restSec: 120 },
@@ -132,20 +132,20 @@ const HOME_MINIMAL: TemplateDay[] = [
     ],
   },
   {
-    name: "Day B",
-    focus: "Lunge and overhead",
+    name: "Dia B",
+    focus: "Afundos e ombros",
     items: [
-      { exercise: "dumbbell-lunge", sets: 3, repLow: 10, repHigh: 12, restSec: 120, notes: "Repetitions per leg." },
+      { exercise: "dumbbell-lunge", sets: 3, repLow: 10, repHigh: 12, restSec: 120, notes: "Repetições por perna." },
       { exercise: "dumbbell-shoulder-press", sets: 3, repLow: 8, repHigh: 12, restSec: 120 },
       { exercise: "dumbbell-curl", sets: 3, repLow: 10, repHigh: 12, restSec: 60 },
       { exercise: "glute-bridge", sets: 3, repLow: 15, repHigh: 20, restSec: 60 },
     ],
   },
   {
-    name: "Day C",
-    focus: "Single leg and push",
+    name: "Dia C",
+    focus: "Unilateral e empurrar",
     items: [
-      { exercise: "split-squat", sets: 3, repLow: 8, repHigh: 12, restSec: 120, notes: "Repetitions per leg." },
+      { exercise: "split-squat", sets: 3, repLow: 8, repHigh: 12, restSec: 120, notes: "Repetições por perna." },
       { exercise: "push-up", sets: 3, repLow: 10, repHigh: 15, restSec: 90 },
       { exercise: "dumbbell-row", sets: 3, repLow: 10, repHigh: 12, restSec: 90 },
       { exercise: "side-plank", sets: 2, repLow: 30, repHigh: 40, restSec: 45, notes: HOLD },
@@ -175,11 +175,11 @@ export function templateDays(
 export function templateName(profile: EquipmentProfile): string {
   switch (profile) {
     case "hotel":
-      return "Travelling block";
+      return "Bloco de viagem";
     case "home_minimal":
-      return "Home block";
+      return "Bloco em casa";
     default:
-      return "Foundation block";
+      return "Bloco de base";
   }
 }
 
@@ -189,10 +189,10 @@ export function templateRationale(
 ): string {
   const days = templateDays(profile, daysPerWeek).length;
   if (profile === "hotel") {
-    return `${days} bodyweight sessions to maintain what you have built while away from the gym. Loads are held, not increased.`;
+    return `${days} treinos com o peso do corpo para manteres o que já ganhaste enquanto estás fora do ginásio. As cargas ficam onde estão, não sobem.`;
   }
   if (profile === "home_minimal") {
-    return `${days} dumbbell sessions covering the whole body, in higher repetition ranges to make up for the lighter loads.`;
+    return `${days} treinos com halteres para o corpo inteiro, com mais repetições para compensar as cargas mais leves.`;
   }
-  return `${days} full-body sessions built on the squat, the hinge, a press and a pull. Add a small amount of weight whenever every repetition is completed.`;
+  return `${days} treinos de corpo inteiro assentes no agachamento, na dobra de anca, num empurrar e num puxar. Acrescenta um pouco de peso sempre que fizeres todas as repetições.`;
 }

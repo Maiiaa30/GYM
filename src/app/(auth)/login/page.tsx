@@ -12,7 +12,7 @@ function Submit() {
   const { pending } = useFormStatus();
   return (
     <Button type="submit" size="lg" className="w-full" disabled={pending}>
-      {pending ? "Signing in…" : "Sign in"}
+      {pending ? "A entrar…" : "Entrar"}
     </Button>
   );
 }
@@ -32,7 +32,7 @@ export default function LoginPage() {
         required
       />
       <Field
-        label="Password"
+        label="Palavra-passe"
         name="password"
         type="password"
         autoComplete="current-password"
@@ -41,9 +41,9 @@ export default function LoginPage() {
       {state.error ? <Notice tone="error">{state.error}</Notice> : null}
       <Submit />
       <p className="pt-2 text-center text-xs text-faint">
-        Invited?{" "}
+        Foste convidado?{" "}
         <Link href="/join" className="text-brass underline underline-offset-4">
-          Set up your account
+          Cria a tua conta
         </Link>
       </p>
     </form>

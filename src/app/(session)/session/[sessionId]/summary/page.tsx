@@ -96,17 +96,17 @@ export default async function SummaryPage({
         style={{ paddingTop: "max(1.5rem, env(safe-area-inset-top))" }}
       >
         <header>
-          <p className="label">{day?.name ?? "Session"} complete</p>
+          <p className="label">{day?.name ?? "Treino"} concluído</p>
           <h1 className="mt-1 font-[family-name:var(--font-display)] text-4xl">
-            Well done
+            Bom trabalho
           </h1>
         </header>
 
         <Card className="grid grid-cols-3 divide-x divide-line">
           <Metric label="Volume" value={`${Math.round(volume)}`} unit="kg" />
-          <Metric label="Sets" value={String(workingSets.length)} unit="" />
+          <Metric label="Séries" value={String(workingSets.length)} unit="" />
           <Metric
-            label="Duration"
+            label="Duração"
             value={minutes === null ? "—" : String(minutes)}
             unit={minutes === null ? "" : "min"}
           />
@@ -114,7 +114,7 @@ export default async function SummaryPage({
 
         {records && records.length > 0 ? (
           <Card className="p-5">
-            <p className="label">New personal records</p>
+            <p className="label">Novos recordes pessoais</p>
             <ul className="mt-3 space-y-2">
               {records.map((record) => (
                 <li key={record.exercise} className="text-sm">
@@ -129,7 +129,7 @@ export default async function SummaryPage({
         ) : null}
 
         <Card>
-          <p className="label px-5 pt-4">What you lifted</p>
+          <p className="label px-5 pt-4">O que levantaste</p>
           <ul className="mt-2 divide-y divide-line">
             {byExercise.map((row) => (
               <li
@@ -140,7 +140,7 @@ export default async function SummaryPage({
                   {nameBySlug.get(row.slug) ?? row.slug}
                 </span>
                 <span className="tabular text-sm text-muted">
-                  {row.sets} sets · {row.reps} reps
+                  {row.sets} séries · {row.reps} reps
                   {row.heaviest > 0 ? ` · ${row.heaviest} kg` : ""}
                 </span>
               </li>
@@ -149,11 +149,11 @@ export default async function SummaryPage({
         </Card>
 
         <Card className="p-5">
-          <p className="label">Next session</p>
+          <p className="label">Próximo treino</p>
           <p className="mt-2 text-sm leading-relaxed text-muted">
-            Every exercise where you completed all the repetitions has gone up
-            for next time. Anything you missed stays where it is; miss it twice
-            and it drops ten per cent so you can build back up.
+            Todos os exercícios em que fizeste as repetições todas sobem de
+            carga para a próxima. O que falhaste fica na mesma; se falhares duas
+            vezes seguidas, desce dez por cento para voltares a subir.
           </p>
         </Card>
 
@@ -161,7 +161,7 @@ export default async function SummaryPage({
           href="/"
           className="block rounded-[var(--radius-md)] border border-brass bg-brass py-4 text-center font-medium text-ink"
         >
-          Done
+          Feito
         </Link>
       </div>
     </div>

@@ -217,7 +217,7 @@ export function SessionRunner({
               type="submit"
               className="text-xs uppercase tracking-[0.14em] text-faint"
             >
-              Abandon
+              Abandonar
             </button>
           </form>
         </div>
@@ -265,7 +265,7 @@ export function SessionRunner({
             onClick={() => setShowDemo((value) => !value)}
             className="text-sm text-brass underline underline-offset-4"
           >
-            {showDemo ? "Hide the technique" : "How to do it"}
+            {showDemo ? "Esconder a técnica" : "Como se faz"}
           </button>
 
           {showDemo ? (
@@ -275,7 +275,7 @@ export function SessionRunner({
                   <Image
                     key={src}
                     src={src}
-                    alt={`${exercise.name}, position ${imageIndex + 1}`}
+                    alt={`${exercise.name}, posição ${imageIndex + 1}`}
                     width={400}
                     height={300}
                     className="h-auto w-full bg-raised object-cover"
@@ -297,20 +297,20 @@ export function SessionRunner({
           {/* ------------------------------------------------- load */}
           {isBodyweight ? (
             <Card className="p-5">
-              <p className="label">Bodyweight</p>
+              <p className="label">Peso do corpo</p>
               <p className="mt-1 text-sm text-muted">
-                Progress by repetitions. Add one repetition per set before you
-                add difficulty.
+                Progride por repetições. Acrescenta uma repetição por série
+                antes de tornar o exercício mais difícil.
               </p>
             </Card>
           ) : (
             <Card className="p-5">
-              <p className="label">Working weight</p>
+              <p className="label">Carga de trabalho</p>
               <div className="mt-3 flex items-center justify-between gap-4">
                 <Button
                   variant="quiet"
                   size="lg"
-                  aria-label="Reduce the weight"
+                  aria-label="Reduzir a carga"
                   onClick={() => adjustTarget(-exercise.increment)}
                   className="w-14"
                 >
@@ -323,7 +323,7 @@ export function SessionRunner({
                 <Button
                   variant="quiet"
                   size="lg"
-                  aria-label="Increase the weight"
+                  aria-label="Aumentar a carga"
                   onClick={() => adjustTarget(exercise.increment)}
                   className="w-14"
                 >
@@ -333,30 +333,30 @@ export function SessionRunner({
 
               {target === null ? (
                 <p className="mt-3 text-sm text-muted">
-                  First time on this movement. Start light enough to complete
-                  every repetition with clean technique.
+                  Primeira vez neste exercício. Começa leve o suficiente para
+                  fazeres todas as repetições com técnica limpa.
                 </p>
               ) : null}
 
               {plates?.loadable && plates.perSide.length > 0 ? (
                 <p className="mt-3 text-xs text-faint">
-                  Per side: {plates.perSide.join(" + ")} kg on a{" "}
-                  {plates.barKg} kg bar
+                  Por lado: {plates.perSide.join(" + ")} kg numa barra de{" "}
+                  {plates.barKg} kg
                 </p>
               ) : null}
 
               <div className="mt-4 flex flex-wrap gap-x-5 gap-y-1 text-xs text-faint">
                 {exercise.last ? (
                   <span>
-                    Last time: {exercise.last.weightKg ?? "—"} kg ×{" "}
-                    {exercise.last.reps ?? "—"} on {exercise.last.on}
+                    Da última vez: {exercise.last.weightKg ?? "—"} kg ×{" "}
+                    {exercise.last.reps ?? "—"} em {exercise.last.on}
                   </span>
                 ) : (
-                  <span>No history yet</span>
+                  <span>Ainda sem histórico</span>
                 )}
                 {exercise.partner ? (
                   <span>
-                    {exercise.partner.name ?? "Partner"}:{" "}
+                    {exercise.partner.name ?? "Parceiro"}:{" "}
                     {exercise.partner.weightKg ?? "—"} kg
                   </span>
                 ) : null}
@@ -367,7 +367,7 @@ export function SessionRunner({
           {/* ------------------------------------------------- sets */}
           {warmups.length > 0 ? (
             <section>
-              <p className="label mb-2">Warm-up</p>
+              <p className="label mb-2">Aquecimento</p>
               <Card className="divide-y divide-line">
                 {warmups.map((set) => (
                   <SetRow
@@ -384,7 +384,7 @@ export function SessionRunner({
           ) : null}
 
           <section>
-            <p className="label mb-2">Working sets</p>
+            <p className="label mb-2">Séries de trabalho</p>
             <Card className="divide-y divide-line">
               {workingSets.map((set) => (
                 <SetRow
@@ -411,11 +411,11 @@ export function SessionRunner({
             onClick={() => setRest(null)}
             className="mb-3 flex w-full items-center justify-between rounded-[var(--radius-md)] border border-brass-dim px-4 py-2"
           >
-            <span className="label">Rest</span>
+            <span className="label">Descanso</span>
             <span className="tabular font-[family-name:var(--font-display)] text-2xl text-brass">
               {formatClock(rest)}
             </span>
-            <span className="text-xs text-faint">Tap to skip</span>
+            <span className="text-xs text-faint">Toca para saltar</span>
           </button>
         ) : null}
 
@@ -426,21 +426,21 @@ export function SessionRunner({
             disabled={index === 0}
             className="w-24"
           >
-            Back
+            Recuar
           </Button>
           <span className="tabular flex-1 text-center text-xs text-faint">
-            {completedCount} of {exercises.length} done
+            {completedCount} de {exercises.length} feitos
           </span>
           {isLast ? (
             <form action={finishSession}>
               <input type="hidden" name="session_id" value={sessionId} />
               <Button type="submit" className="w-28">
-                Finish
+                Terminar
               </Button>
             </form>
           ) : (
             <Button onClick={() => goTo(index + 1)} className="w-28">
-              Next
+              Seguinte
             </Button>
           )}
         </div>
@@ -475,7 +475,7 @@ function SetRow({
       ) : null}
 
       <label className="flex flex-1 items-center gap-2">
-        <span className="sr-only">Repetitions</span>
+        <span className="sr-only">Repetições</span>
         <input
           type="number"
           inputMode="numeric"
@@ -490,7 +490,7 @@ function SetRow({
       <button
         onClick={onToggle}
         aria-pressed={set.completed}
-        aria-label={set.completed ? "Mark as not done" : "Mark as done"}
+        aria-label={set.completed ? "Marcar como não feita" : "Marcar como feita"}
         className={cx(
           "flex h-11 w-11 items-center justify-center rounded-[var(--radius-md)] border transition-colors",
           set.completed

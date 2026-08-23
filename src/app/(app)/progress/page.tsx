@@ -25,16 +25,16 @@ export default async function ProgressPage() {
   return (
     <div className="space-y-6">
       <header>
-        <p className="label">History</p>
+        <p className="label">Histórico</p>
         <h1 className="mt-1 font-[family-name:var(--font-display)] text-4xl">
-          Progress
+          Progresso
         </h1>
       </header>
 
       <Card className="p-5">
         <div className="flex items-baseline justify-between">
           <div>
-            <p className="label">Latest</p>
+            <p className="label">Último registo</p>
             <p className="tabular mt-1 font-[family-name:var(--font-display)] text-5xl">
               {latest !== null ? Number(latest).toFixed(1) : "—"}
               <span className="ml-1 text-lg text-muted">kg</span>
@@ -43,7 +43,7 @@ export default async function ProgressPage() {
           {delta !== null ? (
             <p className="tabular text-sm text-muted">
               {delta >= 0 ? "+" : ""}
-              {delta.toFixed(1)} kg over {logs?.length ?? 0} entries
+              {delta.toFixed(1)} kg em {logs?.length ?? 0} registos
             </p>
           ) : null}
         </div>
@@ -53,7 +53,7 @@ export default async function ProgressPage() {
       </Card>
 
       <Card>
-        <p className="label px-5 pt-4">Recent entries</p>
+        <p className="label px-5 pt-4">Registos recentes</p>
         {logs && logs.length > 0 ? (
           <ul className="mt-2 divide-y divide-line">
             {logs.map((log) => (
@@ -71,7 +71,7 @@ export default async function ProgressPage() {
             ))}
           </ul>
         ) : (
-          <p className="px-5 py-4 text-sm text-muted">Nothing recorded yet.</p>
+          <p className="px-5 py-4 text-sm text-muted">Ainda não há registos.</p>
         )}
       </Card>
     </div>

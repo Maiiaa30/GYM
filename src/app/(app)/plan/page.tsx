@@ -8,9 +8,9 @@ export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
 const PROFILE_LABEL: Record<string, string> = {
-  full_gym: "Full gym",
-  hotel: "Travelling",
-  home_minimal: "Home",
+  full_gym: "Ginásio",
+  hotel: "Em viagem",
+  home_minimal: "Em casa",
 };
 
 function repRange(low: number, high: number) {
@@ -63,23 +63,23 @@ export default async function PlanPage() {
   return (
     <div className="space-y-6">
       <header>
-        <p className="label">Programme</p>
+        <p className="label">Programa</p>
         <h1 className="mt-1 font-[family-name:var(--font-display)] text-4xl">
-          Plan
+          Plano
         </h1>
       </header>
 
       <Card className="divide-y divide-line">
         <Row
-          label="Days per week"
+          label="Dias por semana"
           value={settings ? String(settings.days_per_week) : "—"}
         />
         <Row
-          label="Equipment"
+          label="Equipamento"
           value={settings ? PROFILE_LABEL[settings.equipment] : "—"}
         />
         <Row
-          label="Session length"
+          label="Duração do treino"
           value={settings ? `${settings.session_minutes} min` : "—"}
         />
       </Card>
@@ -88,14 +88,14 @@ export default async function PlanPage() {
         <>
           <Card className="p-5">
             <div className="flex items-baseline justify-between gap-3">
-              <p className="label">Active block</p>
+              <p className="label">Bloco activo</p>
               <p className="label text-brass-dim">
-                {plan.source === "generated" ? "Tailored" : "Standard"}
+                {plan.source === "generated" ? "Personalizado" : "Padrão"}
               </p>
             </div>
             <p className="mt-2 text-lg">{plan.name}</p>
             <p className="mt-1 text-sm text-muted">
-              {plan.weeks} weeks from {plan.block_start}
+              {plan.weeks} semanas a partir de {plan.block_start}
             </p>
             {plan.rationale ? (
               <p className="mt-3 text-sm leading-relaxed text-muted">
@@ -142,9 +142,7 @@ export default async function PlanPage() {
       ) : (
         <Card className="space-y-4 p-5">
           <p className="text-sm leading-relaxed text-muted">
-            No block yet. The built-in template is a full-body programme around
-            the squat, the hinge, a press and a pull — the fastest way for a
-            beginner to get strong without guesswork.
+            Ainda não há bloco. O programa padrão é de corpo inteiro, à volta do agachamento, da dobra de anca, de um empurrar e de um puxar — o caminho mais rápido para um principiante ficar forte sem adivinhar.
           </p>
           <BuildPlanForm replacing={false} />
         </Card>

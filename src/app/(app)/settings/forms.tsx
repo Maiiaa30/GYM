@@ -24,9 +24,9 @@ function Submit({ label, busy }: { label: string; busy: string }) {
 }
 
 const EQUIPMENT_OPTIONS: Array<{ value: EquipmentProfile; label: string }> = [
-  { value: "full_gym", label: "Full gym" },
-  { value: "hotel", label: "Travelling" },
-  { value: "home_minimal", label: "Home" },
+  { value: "full_gym", label: "Ginásio" },
+  { value: "hotel", label: "Em viagem" },
+  { value: "home_minimal", label: "Em casa" },
 ];
 
 export function SettingsForm({
@@ -43,7 +43,7 @@ export function SettingsForm({
   return (
     <form action={formAction} className="space-y-5 p-5">
       <div>
-        <span className="label mb-2 block">Training days per week</span>
+        <span className="label mb-2 block">Dias de treino por semana</span>
         <div className="flex gap-2">
           {[2, 3, 4, 5].map((n) => (
             <label key={n} className="flex-1">
@@ -63,7 +63,7 @@ export function SettingsForm({
       </div>
 
       <div>
-        <span className="label mb-2 block">Equipment</span>
+        <span className="label mb-2 block">Equipamento</span>
         <div className="flex gap-2">
           {EQUIPMENT_OPTIONS.map((option) => (
             <label key={option.value} className="flex-1">
@@ -83,7 +83,7 @@ export function SettingsForm({
       </div>
 
       <Field
-        label="Session length"
+        label="Duração do treino"
         name="session_minutes"
         type="number"
         inputMode="numeric"
@@ -93,8 +93,8 @@ export function SettingsForm({
       />
 
       {state.error ? <Notice tone="error">{state.error}</Notice> : null}
-      {state.saved ? <Notice>Saved.</Notice> : null}
-      <Submit label="Save settings" busy="Saving…" />
+      {state.saved ? <Notice>Guardado.</Notice> : null}
+      <Submit label="Guardar definições" busy="A guardar…" />
     </form>
   );
 }
@@ -105,14 +105,15 @@ export function InviteForm() {
   if (state.code) {
     return (
       <div className="space-y-3 p-5">
-        <p className="label">Invitation code</p>
+        <p className="label">Código de convite</p>
         <p className="tabular font-[family-name:var(--font-display)] text-3xl tracking-[0.2em] text-brass">
           {state.code}
         </p>
         <p className="text-sm text-muted">
-          Give this code to them in person. It is shown once and cannot be read
-          again. They enter it at <span className="text-parchment">/join</span>{" "}
-          together with their email to choose a password.
+          Dá-lhe este código em pessoa. Só aparece uma vez e não pode ser lido
+          outra vez. Ele introduz o código em{" "}
+          <span className="text-parchment">/join</span>, junto com o email, para
+          escolher a palavra-passe.
         </p>
       </div>
     );
@@ -120,9 +121,9 @@ export function InviteForm() {
 
   return (
     <form action={formAction} className="space-y-4 p-5">
-      <Field label="Their name" name="name" autoComplete="off" required />
+      <Field label="Nome dele" name="name" autoComplete="off" required />
       <Field
-        label="Their email"
+        label="Email dele"
         name="email"
         type="email"
         inputMode="email"
@@ -131,7 +132,7 @@ export function InviteForm() {
         required
       />
       {state.error ? <Notice tone="error">{state.error}</Notice> : null}
-      <Submit label="Create their account" busy="Creating…" />
+      <Submit label="Criar a conta dele" busy="A criar…" />
     </form>
   );
 }

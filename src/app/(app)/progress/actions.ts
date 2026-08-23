@@ -13,7 +13,7 @@ export async function logBodyWeight(
   const notes = String(formData.get("notes") ?? "").trim() || null;
 
   if (!Number.isFinite(weight) || weight < 25 || weight > 300) {
-    return { error: "Enter a body weight between 25 and 300 kg.", saved: false };
+    return { error: "Indica um peso entre 25 e 300 kg.", saved: false };
   }
 
   const supabase = await createClient();
@@ -21,7 +21,7 @@ export async function logBodyWeight(
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user) return { error: "Session expired. Sign in again.", saved: false };
+  if (!user) return { error: "A sessão expirou. Entra outra vez.", saved: false };
 
   const { error } = await supabase.from("body_logs").upsert(
     {
@@ -33,7 +33,7 @@ export async function logBodyWeight(
     { onConflict: "user_id,measured_on" },
   );
 
-  if (error) return { error: "Could not save. Try again.", saved: false };
+  if (error) return { error: "Não foi possível guardar. Tenta outra vez.", saved: false };
 
   revalidatePath("/progress");
   return { error: null, saved: true };

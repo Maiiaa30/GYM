@@ -4,10 +4,11 @@ export default function manifest(): MetadataRoute.Manifest {
   return {
     name: "GYM",
     short_name: "GYM",
-    description: "Private training log and programme for two.",
+    description: "Registo de treino e programa privado para dois.",
     start_url: "/",
     display: "standalone",
     orientation: "portrait",
+    lang: "pt-PT",
     background_color: "#0b0c0a",
     theme_color: "#0b0c0a",
     icons: [

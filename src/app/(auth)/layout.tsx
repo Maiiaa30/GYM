@@ -11,7 +11,7 @@ export default function AuthLayout({
         <header className="mb-10">
           <Wordmark />
           <p className="mt-3 text-sm text-muted">
-            Training log for two. Invitation only.
+            Registo de treino para dois. Só por convite.
           </p>
         </header>
         {children}

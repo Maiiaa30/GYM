@@ -177,9 +177,10 @@ test("the prompt carries the constraints and the catalogue", () => {
     previousBlock: null,
   });
 
-  assert.match(prompt, /exactly 3 distinct training days/);
+  assert.match(prompt, /exactamente 3 dias de treino distintos/);
   assert.match(prompt, /barbell-squat/);
   assert.match(prompt, /sore left knee/);
-  assert.match(prompt, /60 kg \(stalling\)/);
-  assert.match(prompt, /Do not prescribe weights/);
+  assert.match(prompt, /60 kg \(estagnado\)/);
+  assert.match(prompt, /Não prescrevas cargas/);
+  assert.match(prompt, /português europeu/);
 });

@@ -12,7 +12,7 @@ function Submit() {
   const { pending } = useFormStatus();
   return (
     <Button type="submit" size="lg" className="w-full" disabled={pending}>
-      {pending ? "Setting up…" : "Create my password"}
+      {pending ? "A criar…" : "Criar a minha palavra-passe"}
     </Button>
   );
 }
@@ -23,8 +23,7 @@ export default function JoinPage() {
   return (
     <form action={formAction} className="space-y-5">
       <Notice>
-        Use the email your account was created with and the invitation code you
-        were given.
+        Usa o email com que a tua conta foi criada e o código de convite que te deram.
       </Notice>
       <Field
         label="Email"
@@ -36,7 +35,7 @@ export default function JoinPage() {
         required
       />
       <Field
-        label="Invitation code"
+        label="Código de convite"
         name="code"
         autoCapitalize="characters"
         autoComplete="one-time-code"
@@ -44,15 +43,15 @@ export default function JoinPage() {
         required
       />
       <Field
-        label="Password"
+        label="Palavra-passe"
         name="password"
         type="password"
         autoComplete="new-password"
-        hint="At least 8 characters."
+        hint="Pelo menos 8 caracteres."
         required
       />
       <Field
-        label="Repeat password"
+        label="Repete a palavra-passe"
         name="confirm"
         type="password"
         autoComplete="new-password"
@@ -61,9 +60,9 @@ export default function JoinPage() {
       {state.error ? <Notice tone="error">{state.error}</Notice> : null}
       <Submit />
       <p className="pt-2 text-center text-xs text-faint">
-        Already set up?{" "}
+        Já tens conta?{" "}
         <Link href="/login" className="text-brass underline underline-offset-4">
-          Sign in
+          Entrar
         </Link>
       </p>
     </form>

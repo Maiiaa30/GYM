@@ -5,10 +5,10 @@ import { usePathname } from "next/navigation";
 import { cx } from "@/components/ui";
 
 const ITEMS = [
-  { href: "/", label: "Today", icon: TodayIcon },
-  { href: "/plan", label: "Plan", icon: PlanIcon },
-  { href: "/progress", label: "Progress", icon: ProgressIcon },
-  { href: "/settings", label: "Settings", icon: SettingsIcon },
+  { href: "/", label: "Hoje", icon: DumbbellIcon },
+  { href: "/plan", label: "Plano", icon: CalendarIcon },
+  { href: "/progress", label: "Progresso", icon: ChartIcon },
+  { href: "/settings", label: "Definições", icon: SlidersIcon },
 ];
 
 export function BottomNav() {
@@ -46,54 +46,61 @@ export function BottomNav() {
   );
 }
 
-/* Line icons, 1px strokes, no fills. */
+/* Line icons drawn on a 24 unit grid, 1.5 unit strokes, no fills. */
 
-function svgProps() {
-  return {
-    width: 20,
-    height: 20,
-    viewBox: "0 0 24 24",
-    fill: "none",
-    stroke: "currentColor",
-    strokeWidth: 1.25,
-    strokeLinecap: "round" as const,
-    strokeLinejoin: "round" as const,
-    "aria-hidden": true,
-  };
-}
-
-function TodayIcon() {
+function Svg({ children }: { children: React.ReactNode }) {
   return (
-    <svg {...svgProps()}>
-      <path d="M3 12h2M19 12h2M7 8v8M17 8v8" />
-      <rect x="7" y="9.5" width="10" height="5" rx="1" />
+    <svg
+      width="22"
+      height="22"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      {children}
     </svg>
   );
 }
 
-function PlanIcon() {
+function DumbbellIcon() {
   return (
-    <svg {...svgProps()}>
-      <rect x="4" y="4" width="16" height="16" rx="1.5" />
-      <path d="M4 9h16M9 9v11" />
-    </svg>
+    <Svg>
+      <path d="M3 10v4M21 10v4" />
+      <rect x="5.5" y="7.5" width="3" height="9" rx="1" />
+      <rect x="15.5" y="7.5" width="3" height="9" rx="1" />
+      <path d="M8.5 12h7" />
+    </Svg>
   );
 }
 
-function ProgressIcon() {
+function CalendarIcon() {
   return (
-    <svg {...svgProps()}>
-      <path d="M4 19V5M4 19h16" />
-      <path d="M7 15l4-5 3 3 4-6" />
-    </svg>
+    <Svg>
+      <rect x="3.5" y="5.5" width="17" height="15" rx="2" />
+      <path d="M3.5 10h17M8.5 3v4M15.5 3v4" />
+    </Svg>
   );
 }
 
-function SettingsIcon() {
+function ChartIcon() {
   return (
-    <svg {...svgProps()}>
-      <circle cx="12" cy="12" r="3" />
-      <path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6l1.4 1.4M17 17l1.4 1.4M18.4 5.6L17 7M7 17l-1.4 1.4" />
-    </svg>
+    <Svg>
+      <path d="M4 4v16h16" />
+      <path d="M8.5 17v-4M13 17V9M17.5 17v-6" />
+    </Svg>
+  );
+}
+
+function SlidersIcon() {
+  return (
+    <Svg>
+      <path d="M4 9h7M17 9h3M4 15h3M13 15h7" />
+      <circle cx="14" cy="9" r="2.2" />
+      <circle cx="10" cy="15" r="2.2" />
+    </Svg>
   );
 }

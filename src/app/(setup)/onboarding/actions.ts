@@ -16,22 +16,22 @@ export async function completeOnboarding(
   const sex = String(formData.get("sex") ?? "undisclosed");
   const injuryNotes = String(formData.get("injury_notes") ?? "").trim() || null;
 
-  if (!name) return { error: "Enter your name." };
+  if (!name) return { error: "Escreve o teu nome." };
   if (!Number.isFinite(height) || height < 120 || height > 230) {
-    return { error: "Enter a height between 120 and 230 cm." };
+    return { error: "Indica uma altura entre 120 e 230 cm." };
   }
   if (!Number.isFinite(weight) || weight < 25 || weight > 300) {
-    return { error: "Enter a body weight between 25 and 300 kg." };
+    return { error: "Indica um peso entre 25 e 300 kg." };
   }
   if (!["male", "female", "other", "undisclosed"].includes(sex)) {
-    return { error: "Choose a valid option." };
+    return { error: "Escolhe uma opção válida." };
   }
 
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return { error: "Session expired. Sign in again." };
+  if (!user) return { error: "A sessão expirou. Entra outra vez." };
 
   const { error: profileError } = await supabase
     .from("profiles")
@@ -45,7 +45,7 @@ export async function completeOnboarding(
     })
     .eq("id", user.id);
 
-  if (profileError) return { error: "Could not save your details." };
+  if (profileError) return { error: "Não foi possível guardar os teus dados." };
 
   const { error: bodyError } = await supabase.from("body_logs").upsert(
     {
@@ -56,7 +56,7 @@ export async function completeOnboarding(
     { onConflict: "user_id,measured_on" },
   );
 
-  if (bodyError) return { error: "Could not save your body weight." };
+  if (bodyError) return { error: "Não foi possível guardar o teu peso." };
 
   redirect("/");
 }
