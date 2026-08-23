@@ -4,6 +4,9 @@ import { BuildPlanForm } from "./build-form";
 
 export const dynamic = "force-dynamic";
 
+// Writing a tailored block calls an external model; give it room.
+export const maxDuration = 60;
+
 const PROFILE_LABEL: Record<string, string> = {
   full_gym: "Full gym",
   hotel: "Travelling",
@@ -84,7 +87,12 @@ export default async function PlanPage() {
       {plan ? (
         <>
           <Card className="p-5">
-            <p className="label">Active block</p>
+            <div className="flex items-baseline justify-between gap-3">
+              <p className="label">Active block</p>
+              <p className="label text-brass-dim">
+                {plan.source === "generated" ? "Tailored" : "Standard"}
+              </p>
+            </div>
             <p className="mt-2 text-lg">{plan.name}</p>
             <p className="mt-1 text-sm text-muted">
               {plan.weeks} weeks from {plan.block_start}
