@@ -128,3 +128,25 @@ for (const [name, size] of [
   writeFileSync(resolve(OUT_DIR, name), encodePng(size, draw(size)));
   console.log(`wrote public/icons/${name}`);
 }
+
+/** Wraps a 32 pixel PNG in an ICO container for /favicon.ico. */
+function encodeIco(png) {
+  const header = Buffer.alloc(6);
+  header.writeUInt16LE(0, 0); // reserved
+  header.writeUInt16LE(1, 2); // type: icon
+  header.writeUInt16LE(1, 4); // one image
+  const entry = Buffer.alloc(16);
+  entry[0] = 32; // width
+  entry[1] = 32; // height
+  entry[2] = 0; // palette
+  entry[3] = 0; // reserved
+  entry.writeUInt16LE(1, 4); // colour planes
+  entry.writeUInt16LE(32, 6); // bits per pixel
+  entry.writeUInt32LE(png.length, 8);
+  entry.writeUInt32LE(header.length + entry.length, 12);
+  return Buffer.concat([header, entry, png]);
+}
+
+const FAVICON = resolve(ROOT, "src/app/favicon.ico");
+writeFileSync(FAVICON, encodeIco(encodePng(32, draw(32))));
+console.log("wrote src/app/favicon.ico");

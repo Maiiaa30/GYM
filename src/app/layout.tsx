@@ -19,6 +19,10 @@ export const metadata: Metadata = {
     title: "GYM",
     statusBarStyle: "black-translucent",
   },
+  icons: {
+    icon: [{ url: "/icons/icon-192.png", type: "image/png", sizes: "192x192" }],
+    apple: "/icons/apple-touch-icon.png",
+  },
   robots: { index: false, follow: false },
 };
 
