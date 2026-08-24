@@ -1,5 +1,5 @@
 /**
- * Catálogo de exercícios seleccionado.
+ * Catálogo de exercícios selecionado.
  *
  * `source` refere-se a uma entrada do conjunto de dados free-exercise-db
  * (domínio público), de onde vêm as imagens. Tudo o resto — a família, o
@@ -9,7 +9,9 @@
  *   family:     define o passo de progressão (ver src/lib/progression.ts)
  *   increment:  quilos acrescentados quando todas as repetições são feitas
  *   profiles:   perfis de equipamento em que o exercício pode ser prescrito
- *   cues:       três lembretes curtos, mostrados no ecrã de treino
+ *   cues:       três lembretes curtos, mostrados junto às séries
+ *   steps:      o movimento por ordem, escrito para quem nunca o fez
+ *   mistakes:   o que costuma correr mal, mostrado a seguir aos passos
  *   timed:      a série é uma isometria; os campos de repetições são segundos
  *   perSide:    o movimento é unilateral; regista-se o total das duas pernas
  *               ou dos dois braços e a aplicação mostra a divisão
@@ -30,6 +32,19 @@ export const CATALOGUE = [
       "Desce a dobrar as ancas e os joelhos ao mesmo tempo, joelhos na linha dos pés.",
       "Desce até a anca ficar abaixo do joelho, com o tronco firme.",
     ],
+    steps: [
+      "Coloca a barra na rack um pouco abaixo dos ombros e carrega o peso.",
+      "Passa por baixo da barra e apoia-a nos trapézios, nunca no pescoço.",
+      "Levanta a barra a empurrar com as pernas e dá um ou dois passos atrás.",
+      "Pés à largura dos ombros, pontas ligeiramente para fora.",
+      "Desce a dobrar ancas e joelhos ao mesmo tempo, tronco firme e olhar em frente.",
+      "Sobe a empurrar o chão com o meio do pé até ficares direito.",
+    ],
+    mistakes: [
+      "Joelhos a cair para dentro na subida.",
+      "Calcanhares a levantar do chão.",
+      "Costas a arredondar no fundo do movimento.",
+    ],
   },
   {
     slug: "barbell-bench-press",
@@ -43,6 +58,19 @@ export const CATALOGUE = [
       "Omoplatas juntas e encostadas ao banco.",
       "A barra toca no peito baixo, cotovelos a cerca de 45 graus.",
       "Usa sempre ajuda ou as barras de segurança nas séries pesadas.",
+    ],
+    steps: [
+      "Deita-te no banco com os olhos por baixo da barra.",
+      "Junta as omoplatas e encosta-as ao banco, pés bem assentes no chão.",
+      "Pega na barra com as mãos um pouco mais afastadas que os ombros.",
+      "Tira a barra do suporte e leva-a até ficar sobre o peito, braços esticados.",
+      "Desce devagar até a barra tocar no peito baixo, cotovelos a cerca de 45 graus.",
+      "Empurra até esticar os braços e volta a descer.",
+    ],
+    mistakes: [
+      "Descer a barra ao pescoço em vez do peito baixo.",
+      "Abrir os cotovelos a 90 graus do corpo.",
+      "Levantar as ancas do banco para empurrar mais peso.",
     ],
   },
   {
@@ -58,6 +86,18 @@ export const CATALOGUE = [
       "Puxa a barra às costelas de baixo, cotovelos para trás.",
       "Não dês impulso com a lombar: o tronco fica parado.",
     ],
+    steps: [
+      "Pega na barra com as palmas para baixo, mãos à largura dos ombros.",
+      "Dobra ligeiramente os joelhos e inclina o tronco cerca de 45 graus.",
+      "Costas direitas e barra pendurada com os braços esticados.",
+      "Puxa a barra às costelas de baixo, cotovelos para trás e junto ao corpo.",
+      "Aperta as costas em cima e desce devagar até esticar os braços.",
+    ],
+    mistakes: [
+      "Levantar o tronco a cada repetição para dar impulso.",
+      "Arredondar a lombar.",
+      "Puxar com os braços em vez das costas.",
+    ],
   },
   {
     slug: "barbell-deadlift",
@@ -71,6 +111,19 @@ export const CATALOGUE = [
       "Barra sobre o meio do pé, quase a tocar nas canelas.",
       "Tira a folga da barra e empurra o chão com os pés.",
       "Costas direitas do início ao fim; pára a série se curvarem.",
+    ],
+    steps: [
+      "Põe-te de pé com o meio do pé por baixo da barra, pés à largura das ancas.",
+      "Dobra as ancas e os joelhos e agarra a barra por fora das pernas.",
+      "Peito para fora, costas direitas e ombros ligeiramente à frente da barra.",
+      "Levanta a empurrar o chão com as pernas, a barra a subir colada às pernas.",
+      "Termina de pé e direito, sem inclinar o tronco para trás.",
+      "Desce a empurrar as ancas para trás e só depois dobra os joelhos.",
+    ],
+    mistakes: [
+      "Arredondar a lombar ao levantar.",
+      "Deixar a barra afastar-se das pernas.",
+      "Puxar com as costas antes de as pernas esticarem.",
     ],
   },
   {
@@ -86,6 +139,19 @@ export const CATALOGUE = [
       "Aperta os glúteos para a lombar não arquear.",
       "Passa a cabeça à frente da barra assim que ela sobe acima da testa.",
     ],
+    steps: [
+      "Barra à altura do peito na rack, mãos um pouco mais afastadas que os ombros.",
+      "Tira a barra, apoia-a à frente dos ombros e dá um passo atrás.",
+      "Pés à largura das ancas, glúteos e abdominais apertados.",
+      "Empurra a barra para cima, afastando um pouco a cabeça para trás.",
+      "Em cima, estica os braços com a barra sobre o meio da cabeça.",
+      "Desce controlado até aos ombros.",
+    ],
+    mistakes: [
+      "Arquear a lombar para trás para empurrar.",
+      "Empurrar a barra à frente da cara em vez de por cima.",
+      "Dobrar e esticar as pernas para dar impulso.",
+    ],
   },
   {
     slug: "romanian-deadlift",
@@ -99,6 +165,18 @@ export const CATALOGUE = [
       "Joelhos levemente destravados e ancas para trás, não para baixo.",
       "A barra desliza junto às coxas durante todo o movimento.",
       "Pára onde sentes o alongamento atrás da coxa, antes de curvar as costas.",
+    ],
+    steps: [
+      "De pé, barra à frente das pernas, mãos à largura dos ombros.",
+      "Dobra ligeiramente os joelhos e deixa-os assim até ao fim da série.",
+      "Empurra as ancas para trás e desce a barra colada às pernas.",
+      "Pára quando sentires os isquiotibiais esticados, por volta do meio da canela.",
+      "Sobe a empurrar as ancas para a frente até ficares direito.",
+    ],
+    mistakes: [
+      "Dobrar os joelhos como num agachamento.",
+      "Deixar a barra afastar-se das pernas.",
+      "Descer mais do que as costas direitas permitem.",
     ],
   },
   {
@@ -114,6 +192,19 @@ export const CATALOGUE = [
       "Tronco direito e cotovelos a subir na saída do fundo.",
       "Se os cotovelos caem, o peso é demasiado.",
     ],
+    steps: [
+      "Barra na rack à altura do peito, mãos um pouco mais afastadas que os ombros.",
+      "Passa os braços por baixo da barra e apoia-a à frente dos ombros.",
+      "Levanta os cotovelos até ficarem apontados em frente.",
+      "Tira a barra da rack e dá um ou dois passos atrás, pés à largura dos ombros.",
+      "Desce a dobrar ancas e joelhos, tronco o mais direito possível.",
+      "Sobe a empurrar o chão, com os cotovelos sempre levantados.",
+    ],
+    mistakes: [
+      "Deixar cair os cotovelos, o que faz a barra rolar à frente.",
+      "Inclinar o tronco para a frente na subida.",
+      "Segurar a barra com as mãos em vez de a apoiar nos ombros.",
+    ],
   },
   {
     slug: "incline-bench-press",
@@ -128,6 +219,18 @@ export const CATALOGUE = [
       "A barra toca no peito alto, logo abaixo das clavículas.",
       "Mantém as omoplatas juntas contra o banco.",
     ],
+    steps: [
+      "Regula o banco entre 30 e 45 graus.",
+      "Deita-te, junta as omoplatas e assenta bem os pés no chão.",
+      "Pega na barra um pouco mais afastado que os ombros e tira-a do suporte.",
+      "Desce devagar até a barra tocar na parte de cima do peito.",
+      "Empurra até esticar os braços.",
+    ],
+    mistakes: [
+      "Inclinar o banco a mais de 45 graus, o que passa o trabalho para os ombros.",
+      "Descer a barra ao meio do peito em vez da parte de cima.",
+      "Levantar as ancas do banco.",
+    ],
   },
   {
     slug: "barbell-hip-thrust",
@@ -141,6 +244,18 @@ export const CATALOGUE = [
       "Banco por baixo das omoplatas e almofada sobre a anca.",
       "Costelas em baixo e queixo recolhido; acaba com o tronco paralelo ao chão.",
       "Aperta os glúteos no topo em vez de arquear a lombar.",
+    ],
+    steps: [
+      "Senta-te no chão com as costas encostadas a um banco, a meio das omoplatas.",
+      "Passa a barra por cima das ancas, com uma almofada por baixo.",
+      "Pés à largura das ancas e calcanhares por baixo dos joelhos.",
+      "Empurra o chão com os calcanhares e sobe as ancas até o tronco ficar paralelo ao chão.",
+      "Aperta os glúteos em cima durante um segundo e desce controlado.",
+    ],
+    mistakes: [
+      "Arquear a lombar em vez de apertar os glúteos.",
+      "Levantar o queixo em vez de manter o olhar à frente.",
+      "Pés demasiado à frente, o que passa o trabalho para os isquiotibiais.",
     ],
   },
 
@@ -158,6 +273,18 @@ export const CATALOGUE = [
       "Desce a direito entre as ancas, calcanhares no chão.",
       "Peito alto: o peso puxa-te para a frente se deixares.",
     ],
+    steps: [
+      "Segura um haltere ou kettlebell junto ao peito, com as duas mãos.",
+      "Pés à largura dos ombros, pontas ligeiramente para fora.",
+      "Desce entre as pernas com o peito para cima e as costas direitas.",
+      "No fundo, usa os cotovelos para empurrar os joelhos para fora.",
+      "Sobe a empurrar o chão até ficares direito.",
+    ],
+    mistakes: [
+      "Deixar o peso afastar-se do peito.",
+      "Inclinar o tronco para a frente.",
+      "Joelhos a cair para dentro.",
+    ],
   },
   {
     slug: "dumbbell-bench-press",
@@ -171,6 +298,18 @@ export const CATALOGUE = [
       "Leva os halteres ao banco com os joelhos, não com os ombros.",
       "Desce até os cotovelos ficarem à altura do tronco.",
       "Pulsos sempre por cima dos cotovelos.",
+    ],
+    steps: [
+      "Senta-te no banco com um haltere apoiado em cada coxa.",
+      "Deita-te para trás e usa as pernas para levar os halteres à altura do peito.",
+      "Junta as omoplatas e assenta os pés no chão.",
+      "Empurra os halteres para cima até esticar os braços, sem os bater um no outro.",
+      "Desce devagar até os cotovelos ficarem à altura do tronco.",
+    ],
+    mistakes: [
+      "Descer demasiado e forçar a frente do ombro.",
+      "Abrir os cotovelos a 90 graus do corpo.",
+      "Deixar os halteres oscilar sem controlo.",
     ],
   },
   {
@@ -186,6 +325,18 @@ export const CATALOGUE = [
       "Sobe ligeiramente para dentro até quase se tocarem em cima.",
       "Abdominal contraído para a lombar ficar neutra.",
     ],
+    steps: [
+      "Senta-te num banco com encosto, um haltere em cada mão.",
+      "Sobe os halteres até à altura dos ombros, palmas para a frente.",
+      "Abdominais apertados e costas encostadas ao banco.",
+      "Empurra para cima até esticar os braços.",
+      "Desce controlado até aos ombros.",
+    ],
+    mistakes: [
+      "Arquear a lombar para empurrar mais peso.",
+      "Descer os halteres muito abaixo dos ombros.",
+      "Bater os halteres um no outro em cima.",
+    ],
   },
   {
     slug: "dumbbell-row",
@@ -198,8 +349,20 @@ export const CATALOGUE = [
     profiles: ["full_gym", "home_minimal"],
     cues: [
       "Costas direitas, mão e joelho apoiados no banco.",
-      "Puxa o haltere em direcção à anca, cotovelo junto às costelas.",
+      "Puxa o haltere em direção à anca, cotovelo junto às costelas.",
       "Não rodes o tronco para levantar mais peso.",
+    ],
+    steps: [
+      "Apoia um joelho e a mão do mesmo lado num banco.",
+      "O outro pé fica no chão e o haltere na mão desse lado, braço esticado.",
+      "Costas direitas e tronco paralelo ao chão.",
+      "Puxa o haltere à anca, com o cotovelo junto ao corpo.",
+      "Desce devagar. Faz todas as repetições de um lado antes de trocar.",
+    ],
+    mistakes: [
+      "Rodar o tronco para ajudar a puxar.",
+      "Puxar o haltere ao ombro em vez da anca.",
+      "Arredondar as costas.",
     ],
   },
   {
@@ -216,6 +379,18 @@ export const CATALOGUE = [
       "Desce até o joelho de trás quase tocar no chão.",
       "Sobe a empurrar com o calcanhar da frente.",
     ],
+    steps: [
+      "De pé, um haltere em cada mão ao lado do corpo.",
+      "Dá um passo à frente com uma perna.",
+      "Desce até o joelho de trás quase tocar no chão.",
+      "Empurra com o pé da frente para voltar à posição inicial.",
+      "Alterna as pernas. O número que registas é o total das duas.",
+    ],
+    mistakes: [
+      "Passo demasiado curto, o que força o joelho da frente.",
+      "Inclinar o tronco para a frente.",
+      "Bater com o joelho de trás no chão.",
+    ],
   },
   {
     slug: "split-squat",
@@ -231,6 +406,18 @@ export const CATALOGUE = [
       "Tronco direito, peso na perna da frente.",
       "Faz todas as repetições de uma perna antes de trocar.",
     ],
+    steps: [
+      "Põe um pé à frente e o outro atrás, cerca de um passo largo.",
+      "O pé de trás fica apoiado na ponta.",
+      "Desce a direito até o joelho de trás quase tocar no chão.",
+      "Sobe a empurrar com o calcanhar do pé da frente.",
+      "Faz todas as repetições de um lado antes de trocar.",
+    ],
+    mistakes: [
+      "Dar um passo novo a cada repetição: os pés ficam parados.",
+      "Inclinar o tronco para a frente.",
+      "Joelho da frente a cair para dentro.",
+    ],
   },
   {
     slug: "lateral-raise",
@@ -244,6 +431,17 @@ export const CATALOGUE = [
       "Cotovelos com uma ligeira flexão, sempre igual.",
       "Sobe até à altura dos ombros, não mais.",
       "Peso leve: se tens de balançar, é pesado demais.",
+    ],
+    steps: [
+      "De pé, um haltere em cada mão ao lado do corpo.",
+      "Cotovelos ligeiramente dobrados e fixos assim.",
+      "Sobe os braços para os lados até ficarem à altura dos ombros.",
+      "Desce devagar, a contar até dois.",
+    ],
+    mistakes: [
+      "Usar impulso do tronco para atirar os halteres.",
+      "Subir acima da altura dos ombros.",
+      "Peso a mais, que transforma o exercício num encolher de ombros.",
     ],
   },
   {
@@ -259,6 +457,17 @@ export const CATALOGUE = [
       "Sobe sem balançar o corpo.",
       "Desce devagar e até ao fim.",
     ],
+    steps: [
+      "De pé, um haltere em cada mão, palmas viradas para a frente.",
+      "Cotovelos junto ao tronco e parados.",
+      "Dobra os braços até os halteres chegarem aos ombros.",
+      "Desce devagar até esticar o braço por completo.",
+    ],
+    mistakes: [
+      "Balançar o tronco para dar impulso.",
+      "Deixar os cotovelos ir para a frente.",
+      "Não esticar o braço no fim de cada repetição.",
+    ],
   },
   {
     slug: "hammer-curl",
@@ -272,6 +481,17 @@ export const CATALOGUE = [
       "Palmas viradas uma para a outra durante toda a série.",
       "Cotovelos fixos junto às costelas.",
       "Controla a descida; não largues o peso.",
+    ],
+    steps: [
+      "De pé, um haltere em cada mão, palmas viradas uma para a outra.",
+      "Cotovelos junto ao tronco e parados.",
+      "Dobra os braços com as palmas sempre viradas para dentro.",
+      "Desce devagar até esticar o braço.",
+    ],
+    mistakes: [
+      "Rodar o pulso durante a subida.",
+      "Balançar o tronco.",
+      "Deixar os cotovelos afastar-se do corpo.",
     ],
   },
   {
@@ -287,6 +507,18 @@ export const CATALOGUE = [
       "O braço fica vertical e parado.",
       "Desce atrás da cabeça até o antebraço tocar no bíceps.",
       "Pára se sentires o cotovelo a picar.",
+    ],
+    steps: [
+      "Sentado ou de pé, segura um haltere com uma mão acima da cabeça.",
+      "Braço esticado, com o cotovelo apontado ao tecto.",
+      "Dobra o cotovelo e desce o haltere atrás da cabeça.",
+      "Estica o braço de volta, com o cotovelo sempre no mesmo sítio.",
+      "Faz todas as repetições de um lado antes de trocar.",
+    ],
+    mistakes: [
+      "Abrir o cotovelo para fora durante o movimento.",
+      "Arquear a lombar para compensar.",
+      "Descer demasiado depressa junto à nuca.",
     ],
   },
 
@@ -304,6 +536,18 @@ export const CATALOGUE = [
       "Puxa a barra às clavículas, cotovelos para baixo e para trás.",
       "Inclina-te ligeiramente para trás, mas mantém o tronco parado.",
     ],
+    steps: [
+      "Regula o apoio das coxas para as pernas ficarem presas.",
+      "Pega na barra com as mãos mais afastadas que os ombros, palmas para a frente.",
+      "Senta-te com o tronco ligeiramente inclinado para trás e o peito para fora.",
+      "Puxa a barra até à parte de cima do peito, com os cotovelos para baixo.",
+      "Deixa a barra subir devagar até esticares os braços.",
+    ],
+    mistakes: [
+      "Puxar a barra atrás da nuca.",
+      "Inclinar muito o tronco para trás e transformar o exercício numa remada.",
+      "Deixar a barra subir de repente no fim.",
+    ],
   },
   {
     slug: "seated-cable-row",
@@ -317,6 +561,18 @@ export const CATALOGUE = [
       "Peito alto; só te inclinas à frente no alongamento.",
       "Puxa o pega ao umbigo, a juntar as omoplatas.",
       "Sem balanço para a frente e para trás.",
+    ],
+    steps: [
+      "Senta-te com os pés apoiados e os joelhos ligeiramente dobrados.",
+      "Agarra a pega com os braços esticados e o tronco direito.",
+      "Puxa a pega à barriga, com os cotovelos junto ao corpo.",
+      "Aperta as omoplatas uma contra a outra.",
+      "Deixa voltar devagar até esticares os braços.",
+    ],
+    mistakes: [
+      "Inclinar o tronco para trás para puxar mais peso.",
+      "Arredondar as costas quando o peso volta.",
+      "Encolher os ombros durante a puxada.",
     ],
   },
   {
@@ -332,6 +588,18 @@ export const CATALOGUE = [
       "Desce até os joelhos ficarem a cerca de 90 graus.",
       "A lombar nunca levanta do apoio.",
     ],
+    steps: [
+      "Senta-te com as costas e as ancas bem encostadas ao apoio.",
+      "Põe os pés na plataforma à largura dos ombros, a meia altura.",
+      "Solta as travas de segurança.",
+      "Desce até os joelhos ficarem a cerca de 90 graus.",
+      "Empurra até quase esticar as pernas, sem travar os joelhos.",
+    ],
+    mistakes: [
+      "Esticar os joelhos com força no fim de cada repetição.",
+      "Descer tanto que as ancas descolam do apoio.",
+      "Empurrar com as pontas dos pés em vez de todo o pé.",
+    ],
   },
   {
     slug: "leg-extension",
@@ -345,6 +613,17 @@ export const CATALOGUE = [
       "Joelho alinhado com o eixo da máquina.",
       "Estica sem pancada e faz uma pausa curta no topo.",
       "Desce controlado em vez de deixar cair o peso.",
+    ],
+    steps: [
+      "Senta-te com as costas encostadas e os joelhos alinhados com o eixo da máquina.",
+      "Ajusta o apoio para ficar em cima dos tornozelos.",
+      "Estica as pernas até ficarem direitas.",
+      "Aperta durante um segundo em cima e desce devagar.",
+    ],
+    mistakes: [
+      "Atirar o peso e deixá-lo cair na descida.",
+      "Levantar as ancas do banco.",
+      "Amplitude curta, sem esticar em cima.",
     ],
   },
   {
@@ -360,6 +639,17 @@ export const CATALOGUE = [
       "Leva os calcanhares aos glúteos.",
       "Três segundos a descer em cada repetição.",
     ],
+    steps: [
+      "Deita-te de barriga para baixo com os joelhos logo a seguir ao fim do banco.",
+      "Ajusta o apoio para ficar acima dos calcanhares.",
+      "Dobra os joelhos e leva os calcanhares na direção dos glúteos.",
+      "Desce devagar até quase esticar as pernas.",
+    ],
+    mistakes: [
+      "Levantar as ancas do banco para ajudar.",
+      "Deixar o peso descer de repente.",
+      "Amplitude curta, sem chegar perto dos glúteos.",
+    ],
   },
   {
     slug: "chest-press-machine",
@@ -374,6 +664,17 @@ export const CATALOGUE = [
       "Empurra sem travar os cotovelos com força.",
       "Omoplatas encostadas ao apoio.",
     ],
+    steps: [
+      "Regula o banco para as pegas ficarem à altura do meio do peito.",
+      "Senta-te com as costas encostadas e os pés no chão.",
+      "Empurra as pegas até esticar os braços.",
+      "Deixa voltar devagar até os cotovelos ficarem à altura do tronco.",
+    ],
+    mistakes: [
+      "Banco demasiado baixo ou alto, o que passa o trabalho para os ombros.",
+      "Descolar as costas do apoio para empurrar.",
+      "Travar os cotovelos com força no fim.",
+    ],
   },
   {
     slug: "face-pull",
@@ -385,8 +686,20 @@ export const CATALOGUE = [
     profiles: ["full_gym"],
     cues: [
       "Polia à altura da cara.",
-      "Puxa a corda em direcção aos olhos, mãos a abrir no fim.",
+      "Puxa a corda em direção aos olhos, mãos a abrir no fim.",
       "Peso leve e muitas repetições: isto é para a saúde do ombro.",
+    ],
+    steps: [
+      "Põe a corda na polia à altura da cara.",
+      "Agarra as duas pontas com as palmas viradas uma para a outra.",
+      "Dá um passo atrás até o cabo ficar em tensão, com os braços esticados.",
+      "Puxa a corda à cara, a afastar as mãos e a levar os cotovelos para fora.",
+      "Deixa voltar devagar.",
+    ],
+    mistakes: [
+      "Puxar com peso a mais e usar o tronco.",
+      "Cotovelos apontados para baixo em vez de para fora.",
+      "Polia demasiado baixa.",
     ],
   },
   {
@@ -402,6 +715,18 @@ export const CATALOGUE = [
       "Estica por completo e volta só até aos 90 graus.",
       "Tronco direito, sem te deitares sobre a barra.",
     ],
+    steps: [
+      "Põe a barra ou a corda na polia alta.",
+      "De pé, agarra com as mãos à largura dos ombros.",
+      "Cotovelos junto ao tronco e parados.",
+      "Estica os braços para baixo até ficarem direitos.",
+      "Deixa subir devagar até os antebraços ficarem paralelos ao chão.",
+    ],
+    mistakes: [
+      "Deixar os cotovelos ir para a frente ou para fora.",
+      "Inclinar o tronco para empurrar com o peso do corpo.",
+      "Amplitude curta, sem esticar em baixo.",
+    ],
   },
   {
     slug: "calf-raise",
@@ -412,9 +737,20 @@ export const CATALOGUE = [
     increment: 5,
     profiles: ["full_gym"],
     cues: [
-      "Alongamento total em baixo, contracção total em cima.",
+      "Alongamento total em baixo, contração total em cima.",
       "Um segundo de pausa no topo de cada repetição.",
       "Joelhos esticados mas não travados.",
+    ],
+    steps: [
+      "Põe as pontas dos pés numa elevação, com os calcanhares no ar.",
+      "Desce os calcanhares até sentires os gémeos esticados.",
+      "Sobe o mais alto que conseguires em cima das pontas dos pés.",
+      "Aperta durante um segundo em cima e desce devagar.",
+    ],
+    mistakes: [
+      "Fazer o movimento aos saltos, sem controlo.",
+      "Amplitude curta, sem descer o calcanhar.",
+      "Dobrar os joelhos durante a subida.",
     ],
   },
   {
@@ -427,8 +763,19 @@ export const CATALOGUE = [
     profiles: ["full_gym"],
     cues: [
       "Ajoelha longe o suficiente para sentires tensão no início.",
-      "Enrola as costelas em direcção à anca; a anca não se mexe.",
+      "Enrola as costelas em direção à anca; a anca não se mexe.",
       "Volta devagar em vez de te deixares puxar.",
+    ],
+    steps: [
+      "Põe a corda na polia alta e ajoelha-te de frente para ela.",
+      "Segura a corda ao lado da cabeça.",
+      "Dobra o tronco a levar as costelas às ancas, só com os abdominais.",
+      "Volta devagar até sentires a barriga esticada.",
+    ],
+    mistakes: [
+      "Puxar com os braços em vez do abdominal.",
+      "Dobrar pelas ancas em vez de enrolar a coluna.",
+      "Peso a mais, que impede o tronco de enrolar.",
     ],
   },
 
@@ -442,9 +789,21 @@ export const CATALOGUE = [
     increment: 0,
     profiles: ["full_gym", "home_minimal"],
     cues: [
-      "Braços esticados em baixo, ombros activos.",
+      "Braços esticados em baixo, ombros ativos.",
       "O queixo passa a barra sem esticar o pescoço.",
       "Usa elástico ou máquina assistida enquanto ganhas força.",
+    ],
+    steps: [
+      "Agarra a barra com as palmas para a frente, mãos um pouco mais afastadas que os ombros.",
+      "Fica pendurado com os braços esticados.",
+      "Puxa a levar os cotovelos para baixo e o peito na direção da barra.",
+      "Sobe até o queixo passar a barra.",
+      "Desce devagar até esticares os braços outra vez.",
+    ],
+    mistakes: [
+      "Balançar as pernas para dar impulso.",
+      "Não esticar os braços em baixo.",
+      "Encolher os ombros até às orelhas na subida.",
     ],
   },
   {
@@ -457,8 +816,20 @@ export const CATALOGUE = [
     profiles: ["full_gym", "home_minimal"],
     cues: [
       "Palmas viradas para ti, mãos à largura dos ombros.",
-      "Puxa os cotovelos para baixo, em direcção às costelas.",
+      "Puxa os cotovelos para baixo, em direção às costelas.",
       "Controla a descida; é aí que ganhas força.",
+    ],
+    steps: [
+      "Agarra a barra com as palmas viradas para ti, mãos à largura dos ombros.",
+      "Fica pendurado com os braços esticados.",
+      "Puxa a levar os cotovelos ao tronco.",
+      "Sobe até o queixo passar a barra.",
+      "Desce devagar até esticares os braços.",
+    ],
+    mistakes: [
+      "Balançar o corpo para subir.",
+      "Parar a meio da descida.",
+      "Mãos demasiado juntas, o que força os pulsos.",
     ],
   },
   {
@@ -474,6 +845,17 @@ export const CATALOGUE = [
       "Desce até os braços ficarem paralelos ao chão.",
       "Pára a série se a frente do ombro picar.",
     ],
+    steps: [
+      "Sobe para as paralelas com os braços esticados a segurar o peso do corpo.",
+      "Tronco quase direito e pernas dobradas atrás.",
+      "Desce até os cotovelos ficarem a cerca de 90 graus.",
+      "Empurra para cima até esticar os braços.",
+    ],
+    mistakes: [
+      "Descer demasiado e forçar a frente do ombro.",
+      "Abrir muito os cotovelos para fora.",
+      "Deixar os ombros subir até às orelhas em baixo.",
+    ],
   },
   {
     slug: "push-up",
@@ -488,6 +870,17 @@ export const CATALOGUE = [
       "Cotovelos a cerca de 45 graus, não abertos de lado.",
       "Peito ao chão e empurra o chão para longe.",
     ],
+    steps: [
+      "Mãos no chão um pouco mais afastadas que os ombros.",
+      "Corpo em linha recta da cabeça aos calcanhares, abdominais apertados.",
+      "Desce até o peito ficar perto do chão, cotovelos a cerca de 45 graus.",
+      "Empurra até esticar os braços.",
+    ],
+    mistakes: [
+      "Ancas a descair ou levantadas de mais.",
+      "Abrir os cotovelos a 90 graus do corpo.",
+      "Descer só metade do caminho.",
+    ],
   },
   {
     slug: "bodyweight-squat",
@@ -501,6 +894,18 @@ export const CATALOGUE = [
       "Pés à largura dos ombros, pontas ligeiramente para fora.",
       "Ancas para trás e para baixo, calcanhares no chão.",
       "Devagar a descer, três segundos.",
+    ],
+    steps: [
+      "Pés à largura dos ombros, pontas ligeiramente para fora.",
+      "Braços à frente para equilibrar.",
+      "Desce a dobrar ancas e joelhos, com o peito para cima.",
+      "Desce até as coxas ficarem pelo menos paralelas ao chão.",
+      "Sobe a empurrar o chão com todo o pé.",
+    ],
+    mistakes: [
+      "Calcanhares a levantar do chão.",
+      "Joelhos a cair para dentro.",
+      "Costas a arredondar no fundo.",
     ],
   },
   {
@@ -517,6 +922,18 @@ export const CATALOGUE = [
       "O joelho de trás toca ao de leve no chão.",
       "Conta as repetições por perna, não no total.",
     ],
+    steps: [
+      "De pé, pés à largura das ancas.",
+      "Dá um passo largo à frente e desce até o joelho de trás quase tocar no chão.",
+      "Empurra com o pé da frente e traz a perna de trás para o passo seguinte.",
+      "Continua a andar, a alternar as pernas.",
+      "O número que registas é o total dos dois lados.",
+    ],
+    mistakes: [
+      "Passos curtos, o que força o joelho da frente.",
+      "Inclinar o tronco para a frente.",
+      "Perder o equilíbrio por olhares para baixo.",
+    ],
   },
   {
     slug: "glute-bridge",
@@ -530,6 +947,17 @@ export const CATALOGUE = [
       "Calcanhares perto dos glúteos, pontas dos pés levantadas.",
       "Empurra com os calcanhares e aperta no topo.",
       "Costelas em baixo: não arqueies a lombar.",
+    ],
+    steps: [
+      "Deita-te de costas com os joelhos dobrados e os pés assentes no chão.",
+      "Calcanhares por baixo dos joelhos e braços ao lado do corpo.",
+      "Empurra o chão com os calcanhares e sobe as ancas.",
+      "Aperta os glúteos em cima e desce devagar.",
+    ],
+    mistakes: [
+      "Arquear a lombar em vez de apertar os glúteos.",
+      "Pés demasiado à frente.",
+      "Subir tão depressa que não há aperto em cima.",
     ],
   },
   {
@@ -545,6 +973,18 @@ export const CATALOGUE = [
       "Puxa o peito à barra ou ao rebordo da mesa.",
       "Aproxima os pés do corpo para ficar mais fácil.",
     ],
+    steps: [
+      "Põe uma barra à altura da cintura numa rack ou no Smith.",
+      "Deita-te por baixo e agarra a barra com as mãos à largura dos ombros.",
+      "Corpo em linha recta, com os calcanhares no chão.",
+      "Puxa o peito à barra, com os cotovelos junto ao corpo.",
+      "Desce devagar até esticares os braços.",
+    ],
+    mistakes: [
+      "Ancas a descair a meio da puxada.",
+      "Não chegar com o peito à barra.",
+      "Encolher os ombros em vez de juntar as omoplatas.",
+    ],
   },
   {
     slug: "pike-push-up",
@@ -556,8 +996,19 @@ export const CATALOGUE = [
     profiles: ["hotel", "home_minimal"],
     cues: [
       "Ancas altas, corpo em V invertido.",
-      "Desce o topo da cabeça em direcção ao chão.",
+      "Desce o topo da cabeça em direção ao chão.",
       "Põe os pés numa cama ou cadeira para ficar mais difícil.",
+    ],
+    steps: [
+      "Começa em posição de flexão e leva as ancas para cima, a formar um V.",
+      "Mãos à largura dos ombros e cabeça entre os braços.",
+      "Dobra os cotovelos e desce a cabeça na direção do chão.",
+      "Empurra até esticar os braços.",
+    ],
+    mistakes: [
+      "Deixar as ancas descer e voltar à flexão normal.",
+      "Descer o peito em vez da cabeça.",
+      "Abrir demasiado os cotovelos para fora.",
     ],
   },
   {
@@ -574,6 +1025,17 @@ export const CATALOGUE = [
       "Aperta os glúteos e mete as costelas para baixo.",
       "Aguenta o tempo indicado; pára quando a anca começa a cair.",
     ],
+    steps: [
+      "Apoia os antebraços no chão, com os cotovelos por baixo dos ombros.",
+      "Estica as pernas e apoia as pontas dos pés.",
+      "Corpo em linha recta da cabeça aos calcanhares.",
+      "Aperta abdominais e glúteos e aguenta o tempo marcado, a respirar normalmente.",
+    ],
+    mistakes: [
+      "Ancas a descair, o que carrega a lombar.",
+      "Ancas demasiado levantadas.",
+      "Prender a respiração.",
+    ],
   },
   {
     slug: "side-plank",
@@ -589,6 +1051,17 @@ export const CATALOGUE = [
       "Levanta a anca e aguenta, a respirar normalmente.",
       "Tempo igual dos dois lados.",
     ],
+    steps: [
+      "Deita-te de lado com o cotovelo por baixo do ombro.",
+      "Pernas esticadas, um pé em cima do outro.",
+      "Sobe as ancas até o corpo ficar em linha recta.",
+      "Aguenta o tempo marcado e depois troca de lado.",
+    ],
+    mistakes: [
+      "Ancas a descair para o chão.",
+      "Rodar o tronco para a frente.",
+      "Cotovelo à frente ou atrás da linha do ombro.",
+    ],
   },
   {
     slug: "hanging-leg-raise",
@@ -602,6 +1075,17 @@ export const CATALOGUE = [
       "Pendurado sem balançar.",
       "Enrola a bacia para cima em vez de só levantar as pernas.",
       "Dobra os joelhos para ficar mais fácil.",
+    ],
+    steps: [
+      "Fica pendurado numa barra com os braços esticados.",
+      "Aperta os abdominais para o corpo deixar de balançar.",
+      "Sobe as pernas à frente até à altura das ancas, dobradas se for mais fácil.",
+      "Desce devagar, sem deixar as pernas cair.",
+    ],
+    mistakes: [
+      "Balançar para atirar as pernas para cima.",
+      "Subir só com as ancas, sem enrolar a bacia.",
+      "Deixar as pernas cair de repente.",
     ],
   },
   {
@@ -617,6 +1101,17 @@ export const CATALOGUE = [
       "Leva os joelhos ao peito, um de cada vez.",
       "Ritmo constante; a anca não salta.",
     ],
+    steps: [
+      "Começa em posição de flexão, braços esticados e mãos por baixo dos ombros.",
+      "Corpo em linha recta e abdominais apertados.",
+      "Traz um joelho ao peito e volta a esticar a perna.",
+      "Alterna as pernas a um ritmo constante.",
+    ],
+    mistakes: [
+      "Levantar as ancas a cada joelho.",
+      "Mãos à frente da linha dos ombros.",
+      "Ir tão depressa que o corpo deixa de estar em linha.",
+    ],
   },
   {
     slug: "superman",
@@ -631,6 +1126,17 @@ export const CATALOGUE = [
       "De barriga para baixo, braços esticados à frente.",
       "Levanta o peito e as coxas apenas alguns centímetros.",
       "Olha para o chão para manter o pescoço neutro.",
+    ],
+    steps: [
+      "Deita-te de barriga para baixo com os braços esticados à frente.",
+      "Levanta ao mesmo tempo os braços, o peito e as pernas do chão.",
+      "Olha para o chão, sem levantar o queixo.",
+      "Aguenta o tempo marcado, a respirar normalmente.",
+    ],
+    mistakes: [
+      "Levantar o queixo e forçar o pescoço.",
+      "Prender a respiração.",
+      "Subir aos solavancos em vez de aguentar parado.",
     ],
   },
 ];

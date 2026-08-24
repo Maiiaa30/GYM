@@ -59,6 +59,17 @@ for (const entry of CATALOGUE) {
     process.exit(1);
   }
   slugs.add(entry.slug);
+
+  // The training screen shows these to someone who has never done the
+  // movement; an entry without them would be worse than no explanation.
+  if (!Array.isArray(entry.steps) || entry.steps.length < 3) {
+    console.error(`${entry.slug}: needs at least three steps`);
+    process.exit(1);
+  }
+  if (!Array.isArray(entry.mistakes) || entry.mistakes.length < 2) {
+    console.error(`${entry.slug}: needs at least two common mistakes`);
+    process.exit(1);
+  }
 }
 
 await mkdir(IMAGE_DIR, { recursive: true });
@@ -97,6 +108,8 @@ for (const entry of CATALOGUE) {
     increment_kg: entry.increment,
     images,
     cues: entry.cues,
+    steps: entry.steps ?? [],
+    mistakes: entry.mistakes ?? [],
     instructions: (source.instructions ?? []).join(" "),
     profiles_ok: entry.profiles,
     is_timed: Boolean(entry.timed),
