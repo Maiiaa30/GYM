@@ -67,6 +67,22 @@ progression rules count, and the interface shows the split ("10 por lado").
 When an unloaded exercise finishes every set at the top of its range, the next
 session says to add a set rather than another repetition.
 
+## Progress
+
+Four readings of the same history, one screen each:
+
+- **Peso** — body weight over time with a goal line, each change coloured by
+  whether it moves towards the goal
+- **Actividade** — a year of training as a grid, one square per day, shaded by
+  how many sets it held, plus volume per session
+- **Músculos** — a schematic body, front and back, shaded by where the week's
+  work went, naming the groups that received none
+- **Força** — current working weight per lift, with the best set behind it and
+  the estimated one-repetition maximum
+
+Every chart is server-rendered SVG: no charting library, nothing to hydrate,
+and they still draw with no connection.
+
 ## Programme generation
 
 `GEMINI_API_KEY` enables tailored blocks. The model chooses the movements, the

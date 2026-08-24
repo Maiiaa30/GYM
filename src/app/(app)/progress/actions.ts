@@ -38,3 +38,35 @@ export async function logBodyWeight(
   revalidatePath("/progress");
   return { error: null, saved: true };
 }
+
+export type GoalState = { error: string | null; saved: boolean };
+
+/** Sets, or clears, the body-weight goal the chart draws a line for. */
+export async function setWeightGoal(
+  _prev: GoalState,
+  formData: FormData,
+): Promise<GoalState> {
+  const raw = String(formData.get("weight_goal_kg") ?? "").trim();
+  const goal = raw === "" ? null : Number(raw);
+
+  if (goal !== null && (!Number.isFinite(goal) || goal < 25 || goal > 300)) {
+    return { error: "Indica um objectivo entre 25 e 300 kg.", saved: false };
+  }
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) return { error: "A sessão expirou. Entra outra vez.", saved: false };
+
+  const { error } = await supabase
+    .from("profiles")
+    .update({ weight_goal_kg: goal })
+    .eq("id", user.id);
+
+  if (error) return { error: "Não foi possível guardar o objectivo.", saved: false };
+
+  revalidatePath("/progress");
+  return { error: null, saved: true };
+}

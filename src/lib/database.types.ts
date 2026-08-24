@@ -21,6 +21,7 @@ export type Profile = {
   sex: "male" | "female" | "other" | "undisclosed" | null;
   experience: "beginner" | "novice" | "intermediate";
   injury_notes: string | null;
+  weight_goal_kg: number | null;
   is_owner: boolean;
   onboarded_at: string | null;
   created_at: string;
