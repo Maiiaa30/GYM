@@ -9,6 +9,9 @@
  *
  * Nothing else is touched: writes go through the application's own offline
  * queue, which owns the retry.
+ *
+ * It also carries notifications, which is the only way to reach a phone that
+ * is locked in a pocket between sets or sitting on a table all evening.
  */
 
 const VERSION = "gym-v1";
@@ -74,4 +77,51 @@ self.addEventListener("fetch", (event) => {
   if (request.mode === "navigate") {
     event.respondWith(networkFirst(request, PAGES));
   }
+});
+
+
+/* ------------------------------------------------------------ notifications */
+
+self.addEventListener("push", (event) => {
+  let message = { title: "GYM", body: "" };
+  try {
+    if (event.data) message = { ...message, ...event.data.json() };
+  } catch {
+    // A payload that will not parse is still worth showing as a nudge.
+  }
+
+  event.waitUntil(
+    self.registration.showNotification(message.title, {
+      body: message.body,
+      icon: "/icons/icon-192.png",
+      badge: "/icons/icon-192.png",
+      // Same tag replaces rather than stacks: nobody wants six of these.
+      tag: message.tag || "gym",
+      renotify: true,
+      data: { url: message.url || "/" },
+    }),
+  );
+});
+
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  const target = new URL(event.notification.data?.url || "/", self.location.origin);
+
+  event.waitUntil(
+    (async () => {
+      const clients = await self.clients.matchAll({
+        type: "window",
+        includeUncontrolled: true,
+      });
+      // Reuse the window that is already open rather than stacking tabs.
+      for (const client of clients) {
+        if (new URL(client.url).origin === target.origin) {
+          await client.focus();
+          if ("navigate" in client) await client.navigate(target.href);
+          return;
+        }
+      }
+      await self.clients.openWindow(target.href);
+    })(),
+  );
 });

@@ -3,6 +3,7 @@ import { Card } from "@/components/ui";
 import { createClient } from "@/lib/supabase/server";
 import { InviteForm, SettingsForm } from "./forms";
 import { InstallPrompt } from "./install";
+import { NotificationSetting } from "./notifications";
 import { SignOutButton } from "./sign-out";
 
 export const dynamic = "force-dynamic";
@@ -84,6 +85,12 @@ export default async function SettingsPage() {
           <InstallPrompt />
         </Card>
       </section>
+
+      <Card className="p-5">
+        <NotificationSetting
+          publicKey={process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? null}
+        />
+      </Card>
 
       <Card className="p-5">
         <p className="label">Os teus dados</p>

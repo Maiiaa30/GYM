@@ -12,6 +12,7 @@ import {
 } from "@/lib/progression";
 import { groupForPairing, pairMembers } from "@/lib/blocks";
 import { pickAlternative, swapDay, type SwapCandidate } from "@/lib/swap";
+import { sendToPartnerOf } from "@/lib/push";
 import type { LiftFamily } from "@/lib/database.types";
 
 /**
@@ -605,6 +606,26 @@ export async function finishSession(formData: FormData) {
     .update({ status: "completed", ended_at: new Date().toISOString() })
     .eq("id", sessionId)
     .eq("user_id", user.id);
+
+  // The point of training as a pair: the other one hears about it. Nothing is
+  // said that they could not already read, and a push service having a bad day
+  // must never cost somebody their session, so this is best effort and the
+  // redirect does not wait on it.
+  const { data: me } = await supabase
+    .from("profiles")
+    .select("name")
+    .eq("id", user.id)
+    .maybeSingle();
+
+  const firstName = me?.name?.split(" ")[0] ?? "O teu parceiro";
+  await sendToPartnerOf(user.id, {
+    title: "GYM",
+    body: `${firstName} acabou de treinar.`,
+    url: "/",
+    tag: "trained",
+  }).catch(() => {
+    // Never let a notification stand between somebody and their summary.
+  });
 
   revalidatePath("/");
   revalidatePath("/progress");

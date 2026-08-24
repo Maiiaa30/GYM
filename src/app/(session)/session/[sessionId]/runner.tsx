@@ -112,6 +112,35 @@ function beep() {
   }
 }
 
+/**
+ * A notification when the rest is up.
+ *
+ * The beep needs the phone awake and the tab in front; this reaches it in a
+ * pocket. It is raised from the page rather than pushed from the server —
+ * ninety seconds is far below anything a scheduler can aim at — which means it
+ * fires reliably while the tab is backgrounded on Android and not at all once
+ * iOS has suspended it. Better than nothing, and honest about which.
+ */
+function notifyRestOver() {
+  try {
+    if (typeof Notification === "undefined") return;
+    if (Notification.permission !== "granted") return;
+    if (document.visibilityState === "visible") return;
+
+    void navigator.serviceWorker?.ready.then((registration) =>
+      registration.showNotification("GYM", {
+        body: "Descanso terminado.",
+        icon: "/icons/icon-192.png",
+        badge: "/icons/icon-192.png",
+        tag: "rest",
+        silent: false,
+      }),
+    );
+  } catch {
+    // A notification is a convenience; never let it break the session.
+  }
+}
+
 function formatClock(seconds: number) {
   const minutes = Math.floor(seconds / 60);
   return `${minutes}:${String(seconds % 60).padStart(2, "0")}`;
@@ -189,6 +218,7 @@ export function SessionRunner({
     if (rest === null) return;
     if (rest <= 0) {
       beep();
+      notifyRestOver();
       setRest(null);
       return;
     }

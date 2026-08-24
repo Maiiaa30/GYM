@@ -169,6 +169,15 @@ export type PersonalRecord = {
   achieved_on: string;
 }
 
+export type PushSubscription = {
+  endpoint: string;
+  user_id: string;
+  p256dh: string;
+  auth: string;
+  user_agent: string | null;
+  created_at: string;
+}
+
 export type BodyLog = {
   id: string;
   user_id: string;
@@ -205,6 +214,7 @@ export type Database = {
       progression: Table<Progression>;
       personal_records: Table<PersonalRecord>;
       body_logs: Table<BodyLog>;
+      push_subscriptions: Table<PushSubscription>;
     };
     Views: { [_ in never]: never };
     Functions: { [_ in never]: never };
