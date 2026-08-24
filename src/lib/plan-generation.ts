@@ -8,6 +8,8 @@
  */
 
 import type { EquipmentProfile, LiftFamily } from "@/lib/database.types";
+import { estimateMinutes, fitsSession } from "./duration.ts";
+import { trainingDayNames } from "./schedule.ts";
 
 export type GeneratedItem = {
   exercise: string;
@@ -18,8 +20,11 @@ export type GeneratedItem = {
   notes?: string;
 };
 
+/**
+ * The model chooses the movements and describes the day; the name comes from
+ * the weekday the day falls on, which is decided here rather than invented.
+ */
 export type GeneratedDay = {
-  name: string;
   focus: string;
   items: GeneratedItem[];
 };
@@ -48,6 +53,7 @@ export type MemberContext = {
   sex: string | null;
   experience: string;
   injuryNotes: string | null;
+  weightGoalKg: number | null;
   lifts: Array<{ exercise: string; workingKg: number; failCount: number }>;
 };
 
@@ -61,10 +67,37 @@ export type PlanContext = {
     name: string;
     completedSessions: number;
     stalledLifts: string[];
+    /** Every exercise the last plan used, so this one is not a copy of it. */
+    exercises: string[];
   } | null;
 };
 
 /* ------------------------------------------------------------------ limits */
+
+/**
+ * The repetition ranges that follow from what these two actually want: some
+ * muscle and a habit, not a competition total. They asked for sets of ten or
+ * more, which is also what makes a set worth doing at a weight light enough to
+ * learn the movement on.
+ *
+ * Bounds are wider than the prompt asks for, so only a genuinely wrong answer
+ * is rejected rather than a slightly-off one. Unilateral work is halved first,
+ * because it is logged as the total across both sides.
+ */
+export const REP_RANGES: Record<string, { low: number; high: number }> = {
+  timed: { low: 15, high: 90 },
+  // Pull-ups and dips are the exception: you cannot take weight off yourself,
+  // so ten is not a floor a beginner can meet on those.
+  bodyweight: { low: 5, high: 30 },
+  lower_compound: { low: 10, high: 20 },
+  upper_compound: { low: 10, high: 20 },
+  accessory: { low: 10, high: 25 },
+};
+
+export function repRangeFor(entry: CatalogueEntry) {
+  if (entry.isTimed) return REP_RANGES.timed;
+  return REP_RANGES[entry.family] ?? REP_RANGES.accessory;
+}
 
 export const LIMITS = {
   minItemsPerDay: 3,
@@ -91,9 +124,8 @@ export function planResponseSchema(allowedSlugs: string[]) {
         type: "array",
         items: {
           type: "object",
-          required: ["name", "focus", "items"],
+          required: ["focus", "items"],
           properties: {
-            name: { type: "string" },
             focus: { type: "string" },
             items: {
               type: "array",
@@ -132,6 +164,12 @@ function describeMember(member: MemberContext): string {
     member.sex === "male" ? "homem" : member.sex === "female" ? "mulher" : null,
     member.heightCm ? `${member.heightCm} cm` : null,
     member.bodyWeightKg ? `${member.bodyWeightKg} kg` : null,
+    // The clearest statement of intent either of them has made.
+    member.weightGoalKg && member.bodyWeightKg
+      ? `quer chegar aos ${member.weightGoalKg} kg`
+      : member.weightGoalKg
+        ? `objetivo ${member.weightGoalKg} kg`
+        : null,
   ].filter(Boolean);
 
   const lifts = member.lifts
@@ -143,7 +181,7 @@ function describeMember(member: MemberContext): string {
 
   const lines = [`- ${parts.join(", ")}`];
   if (member.injuryNotes) lines.push(`  Limitações: ${member.injuryNotes}`);
-  if (lifts.length > 0) lines.push(`  Cargas actuais: ${lifts.join("; ")}`);
+  if (lifts.length > 0) lines.push(`  Cargas atuais: ${lifts.join("; ")}`);
   else lines.push("  Ainda sem histórico de treino.");
 
   return lines.join("\n");
@@ -158,43 +196,60 @@ export function buildPrompt(context: PlanContext): string {
     .join("\n");
 
   const previous = context.previousBlock
-    ? `Bloco anterior "${context.previousBlock.name}": ${context.previousBlock.completedSessions} treinos concluídos.${
+    ? [
+        `Plano anterior "${context.previousBlock.name}": ${context.previousBlock.completedSessions} treinos concluídos.`,
         context.previousBlock.stalledLifts.length > 0
-          ? ` Estagnados em: ${context.previousBlock.stalledLifts.join(", ")}.`
-          : ""
-      }`
-    : "Este é o primeiro bloco deles.";
+          ? `Estagnados em: ${context.previousBlock.stalledLifts.join(", ")}.`
+          : null,
+        context.previousBlock.exercises.length > 0
+          ? `Exercícios que já andaram a fazer: ${context.previousBlock.exercises.join(", ")}.`
+          : null,
+      ]
+        .filter(Boolean)
+        .join("\n")
+    : "É o primeiro plano deles: nunca treinaram a sério.";
 
-  return `És um treinador de força experiente e vais escrever um bloco de treino de quatro semanas para dois amigos que treinam juntos, à mesma hora e no mesmo sítio, e que querem fazer os mesmos exercícios pela mesma ordem. São principiantes.
+  return `Vais escrever um plano de treino de quatro semanas para dois amigos que treinam juntos, à mesma hora e no mesmo sítio, e que querem fazer os mesmos exercícios pela mesma ordem.
+
+São principiantes e são magros. Querem ganhar algum músculo, ficar mais fortes pelo caminho e, acima de tudo, criar o hábito de ir ao ginásio. Não querem treinar como atletas nem ficar enormes — querem um plano que consigam manter durante meses e que não os deixe de rastos.
 
 Local: ${PROFILE_DESCRIPTION[context.equipment]}.
-Treinos por semana: ${context.daysPerWeek}.
-Tempo disponível por treino: cerca de ${context.sessionMinutes} minutos.
+Treinos por semana: ${context.daysPerWeek}, em ${trainingDayNames(context.daysPerWeek).join(", ")}.
+Duração de cada treino: pelo menos ${context.sessionMinutes} minutos. Podem passar um pouco disso, mas nunca ficar abaixo.
 
 As pessoas:
 ${context.members.map(describeMember).join("\n")}
 
 ${previous}
 
-Escreve exactamente ${context.daysPerWeek} dias de treino distintos.
+Escreve exatamente ${context.daysPerWeek} dias de treino distintos.
 
 Regras que tens de cumprir:
-- Escolhe exercícios apenas do catálogo abaixo, usando exactamente o mesmo slug.
-- Cada dia tem de caber no tempo disponível: entre ${LIMITS.minItemsPerDay} e ${LIMITS.maxItemsPerDay} exercícios.
+- Escolhe exercícios apenas do catálogo abaixo, usando exatamente o mesmo slug.
+- Entre ${LIMITS.minItemsPerDay} e ${LIMITS.maxItemsPerDay} exercícios por dia.
+- Cada dia tem de encher os ${context.sessionMinutes} minutos. Na prática são cerca de ${Math.max(3, Math.round(context.sessionMinutes / 10))} exercícios com 3 ou 4 séries cada. Com menos do que isso o treino acaba cedo demais e é recusado.
 - Ordena cada dia do mais pesado e técnico para o mais leve; isolamento e core no fim.
 - Entre ${LIMITS.minSets} e ${LIMITS.maxSets} séries por exercício e descanso entre ${LIMITS.minRest} e ${LIMITS.maxRest} segundos.
-- Exercícios compostos entre 5 e 8 repetições, acessórios entre 8 e 15, core entre 10 e 20.
+- Nunca prescrevas séries com menos de 10 repetições. É a forma como eles gostam de treinar e é o que lhes dá músculo com pesos que ainda conseguem controlar. Séries de 3 a 5 repetições são para levantadores experientes.
+- Exercícios compostos entre 10 e 15 repetições, acessórios entre 12 e 20, core entre 15 e 25.
+- Exceção: exercícios com o peso do corpo em que se puxa o próprio peso — elevações na barra, fundos — podem levar menos, porque não se lhes pode tirar carga. Aí escreve 6 a 10.
 - Exercícios marcados como isometria usam segundos nos campos de repetições: entre 20 e 60.
 - Exercícios marcados como unilaterais levam o total dos dois lados, sempre um número par: 16 a 24 em vez de 8 a 12 por perna.
 - Nenhum exercício pode aparecer duas vezes no mesmo dia.
-- Principiantes precisam de frequência, não de variedade: repete os exercícios principais ao longo da semana em vez de encher o bloco de novidades.
+- Dentro da mesma semana, repete os exercícios principais em vez de encher os dias de novidades: principiantes precisam de praticar o mesmo movimento várias vezes.
+- Entre planos é ao contrário. Mantém os movimentos grandes que já andam a fazer — é neles que estão a progredir — mas troca boa parte dos acessórios por outros que trabalhem os mesmos músculos. Fazer o mesmo plano outra vez farta-os e não acrescenta nada.
+- Se algum exercício aparecer na lista de estagnados, troca-o por outro para o mesmo músculo: já não está a dar.
 - Não passes de ${LIMITS.maxWeeklySetsPerMuscle} séries de trabalho por grupo muscular em toda a semana.
 - Respeita todas as limitações indicadas acima: retira o que carregue uma zona assinalada por um dos dois.
 - Não prescrevas cargas. Os pesos são definidos pela aplicação.
 
 Escreve todo o texto em português europeu (de Portugal), sem termos do português do Brasil.
 
-Campo "name": o nome do bloco, curto. Campo "focus" de cada dia: três a cinco palavras. Campo "rationale": duas ou três frases, linguagem simples, a explicar porque é que este bloco serve a estes dois. Não menciones que foi gerado automaticamente.
+Campo "name": o nome do plano, curto e simples. Não lhe chames "bloco" nem uses palavras de ginásio como "força" ou "hipertrofia".
+
+Campo "focus" de cada dia: só os grupos musculares que se treinam nesse dia, por palavras simples e do dia a dia, ligados por "e". Escreve "Pernas, peito e costas" ou "Ombros e braços". Nunca uses nomes de movimentos nem termos técnicos: nada de "dobra de anca", "empurrar horizontal", "cadeia posterior" ou "unilateral". No máximo quatro palavras.
+
+Campo "rationale": duas ou três frases a explicar porque é que este plano serve a estes dois. Fala com eles por tu, em linguagem do dia a dia, como se explicasses a um amigo que nunca pôs os pés num ginásio. Não menciones que foi gerado automaticamente.
 
 Catálogo:
 ${catalogue}`;
@@ -208,7 +263,11 @@ export type ValidationResult =
 
 export function validateGeneratedPlan(
   candidate: unknown,
-  context: { expectedDays: number; catalogue: CatalogueEntry[] },
+  context: {
+    expectedDays: number;
+    catalogue: CatalogueEntry[];
+    sessionMinutes?: number;
+  },
 ): ValidationResult {
   const errors: string[] = [];
   const bySlug = new Map(context.catalogue.map((entry) => [entry.slug, entry]));
@@ -239,8 +298,8 @@ export function validateGeneratedPlan(
   plan.days.forEach((day, dayIndex) => {
     const where = `day ${dayIndex + 1}`;
 
-    if (typeof day?.name !== "string" || day.name.trim().length === 0) {
-      errors.push(`${where}: missing name`);
+    if (typeof day?.focus !== "string" || day.focus.trim().length === 0) {
+      errors.push(`${where}: missing focus`);
     }
     if (!Array.isArray(day?.items)) {
       errors.push(`${where}: missing items`);
@@ -283,6 +342,20 @@ export function validateGeneratedPlan(
         item.rep_high < item.rep_low
       ) {
         errors.push(`${at}: repetition range ${item.rep_low}–${item.rep_high} is invalid`);
+      } else {
+        // The goal is muscle and a habit, so a strength block is the wrong
+        // answer however well formed it is. Unilateral work is logged as the
+        // total across both sides, so it is halved before comparing.
+        const range = repRangeFor(entry);
+        const divisor = entry.perSide && !entry.isTimed ? 2 : 1;
+        const low = item.rep_low / divisor;
+        const high = item.rep_high / divisor;
+
+        if (low < range.low || high > range.high) {
+          errors.push(
+            `${at}: ${item.rep_low}–${item.rep_high} is outside the ${range.low}–${range.high} wanted for ${entry.family}${entry.perSide ? " (per side)" : ""}`,
+          );
+        }
       }
       if (
         !Number.isInteger(item.rest_sec) ||
@@ -298,6 +371,28 @@ export function validateGeneratedPlan(
         (weeklySetsPerMuscle.get(entry.primary_muscle) ?? 0) + sets,
       );
     });
+
+    // They set aside an hour and expect to use it. Running over is fine; a day
+    // that would be over in forty minutes is not what was asked for.
+    if (context.sessionMinutes && errors.length === 0) {
+      const shape = day.items.map((item) => {
+        const entry = bySlug.get(item.exercise);
+        return {
+          sets: item.sets,
+          repLow: item.rep_low,
+          repHigh: item.rep_high,
+          restSec: item.rest_sec,
+          isTimed: entry?.isTimed,
+          family: entry?.family,
+        };
+      });
+
+      if (!fitsSession(shape, context.sessionMinutes)) {
+        errors.push(
+          `${where}: about ${estimateMinutes(shape)} min, short of the ${context.sessionMinutes} min asked for`,
+        );
+      }
+    }
   });
 
   for (const [muscle, sets] of weeklySetsPerMuscle) {

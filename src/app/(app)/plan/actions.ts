@@ -17,6 +17,7 @@ import {
   templateName,
   templateRationale,
 } from "@/lib/templates";
+import { trainingDayNames } from "@/lib/schedule";
 import type { EquipmentProfile, PlanSource } from "@/lib/database.types";
 
 export type PlanState = {
@@ -46,7 +47,7 @@ async function persistPlan(
     .update({ is_active: false })
     .eq("is_active", true);
 
-  if (deactivateError) return "Não foi possível substituir o bloco actual.";
+  if (deactivateError) return "Não deu para substituir o plano que está a dar.";
 
   const { data: plan, error: planError } = await admin
     .from("plans")
@@ -64,7 +65,11 @@ async function persistPlan(
     .select("id")
     .single();
 
-  if (planError || !plan) return "Não foi possível criar o bloco.";
+  if (planError || !plan) return "Não deu para criar o plano.";
+
+  // The weekday a day falls on is decided here, not by whatever produced the
+  // days: a template and a generated block are named the same way.
+  const dayNames = trainingDayNames(input.days.length);
 
   for (const [index, day] of input.days.entries()) {
     const { data: planDay, error: dayError } = await admin
@@ -72,13 +77,13 @@ async function persistPlan(
       .insert({
         plan_id: plan.id,
         day_index: index,
-        name: day.name,
+        name: dayNames[index] ?? `Dia ${index + 1}`,
         focus: day.focus,
       })
       .select("id")
       .single();
 
-    if (dayError || !planDay) return "Não foi possível criar um dia de treino.";
+    if (dayError || !planDay) return "Não deu para criar um dia de treino.";
 
     const { error: itemError } = await admin.from("plan_items").insert(
       day.items.map((item, position) => ({
@@ -93,7 +98,7 @@ async function persistPlan(
       })),
     );
 
-    if (itemError) return "Não foi possível adicionar os exercícios.";
+    if (itemError) return "Não deu para adicionar os exercícios.";
   }
 
   return null;
@@ -204,7 +209,9 @@ export async function generateTailoredPlan(
     await Promise.all([
       admin
         .from("profiles")
-        .select("id, name, height_cm, birth_date, sex, experience, injury_notes")
+        .select(
+          "id, name, height_cm, birth_date, sex, experience, injury_notes, weight_goal_kg",
+        )
         .order("created_at"),
       admin
         .from("exercises")
@@ -265,6 +272,8 @@ export async function generateTailoredPlan(
     sex: profile.sex,
     experience: profile.experience,
     injuryNotes: profile.injury_notes,
+    weightGoalKg:
+      profile.weight_goal_kg === null ? null : Number(profile.weight_goal_kg),
     lifts: (progression ?? [])
       .filter((row) => row.user_id === profile.id)
       .map((row) => ({
@@ -273,6 +282,25 @@ export async function generateTailoredPlan(
         failCount: row.fail_count,
       })),
   }));
+
+  // What the last plan actually prescribed, so the next one is not a copy.
+  const { data: previousDays } = activePlan
+    ? await admin.from("plan_days").select("id").eq("plan_id", activePlan.id)
+    : { data: null };
+
+  const { data: previousItems } = previousDays?.length
+    ? await admin
+        .from("plan_items")
+        .select("exercise")
+        .in(
+          "plan_day_id",
+          previousDays.map((day) => day.id),
+        )
+    : { data: null };
+
+  const previousExercises = [
+    ...new Set((previousItems ?? []).map((item) => item.exercise)),
+  ];
 
   const stalledLifts = [
     ...new Set(
@@ -293,6 +321,7 @@ export async function generateTailoredPlan(
           name: activePlan.name,
           completedSessions: completedSessions ?? 0,
           stalledLifts,
+          exercises: previousExercises,
         }
       : null,
   });
@@ -314,6 +343,7 @@ export async function generateTailoredPlan(
     const validation = validateGeneratedPlan(response.value, {
       expectedDays: settings.days_per_week,
       catalogue,
+      sessionMinutes: settings.session_minutes,
     });
 
     if (validation.ok) {

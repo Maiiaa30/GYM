@@ -55,27 +55,32 @@ export function BuildPlanForm({ replacing }: { replacing: boolean }) {
       <form action={tailoredAction}>
         <Submit
           variant="primary"
-          label={replacing ? "Criar um bloco novo para nós" : "Criar o nosso primeiro bloco"}
-          busy="A escrever o bloco…"
+          label={replacing ? "Criar um plano novo para nós" : "Criar o nosso primeiro plano"}
+          busy="A escrever o plano…"
         />
       </form>
 
       <form action={templateAction}>
         <Submit
           variant="quiet"
-          label="Usar antes o programa padrão"
+          label="Usar o plano de base"
           busy="A criar…"
         />
       </form>
 
-      <p className="text-xs leading-relaxed text-faint">
-        Um bloco personalizado é escrito a partir das vossas alturas, pesos,
-        cargas actuais e do que tiverem assinalado como dolorido. O programa
-        padrão é a mesma rotina de corpo inteiro para toda a gente.
-        {replacing
-          ? " Em qualquer dos casos, o histórico e as cargas actuais mantêm-se."
-          : ""}
-      </p>
+      <details className="disclosure">
+        <summary className="text-xs uppercase tracking-[0.14em] text-faint">
+          Qual é a diferença
+        </summary>
+        <p className="pb-1 text-xs leading-relaxed text-faint">
+          O plano à vossa medida é feito a partir das vossas alturas, pesos, dos
+          pesos que já levantam e do que tiverem dito que dói. O de base é a
+          mesma rotina de corpo inteiro para toda a gente.
+          {replacing
+            ? " Seja qual for, não perdes nada: o histórico e os pesos a que chegaste ficam na mesma."
+            : ""}
+        </p>
+      </details>
     </div>
   );
 }
