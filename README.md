@@ -136,6 +136,25 @@ built-in template is used instead, so there is always a plan.
 | `node scripts/seed-catalogue.mjs` | Upload the catalogue to the database |
 | `npm test` | Unit tests for progression and plan validation |
 
+## Deployment
+
+Vercel, behind Cloudflare DNS. `gym.<domain>` is a CNAME to
+`cname.vercel-dns.com`, DNS only — proxying it through Cloudflare breaks the
+certificate Vercel issues.
+
+Functions run in `dub1` (Dublin), next door to the Supabase project in
+`eu-west-1`: the round trips to the database dominate, so the function belongs
+beside it rather than beside the user.
+
+Environment variables to set on the project, for every environment:
+
+| Variable | Value |
+| --- | --- |
+| `NEXT_PUBLIC_SUPABASE_URL` | the project URL |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | the publishable key |
+| `SUPABASE_SERVICE_ROLE_KEY` | the secret key |
+| `GEMINI_API_KEY` | optional, for tailored blocks |
+
 ## Notes
 
 This application is a training log. It does not provide medical advice.
