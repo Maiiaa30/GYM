@@ -30,6 +30,12 @@ export async function updateSettings(
   }
 
   const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) return { error: "A sessão expirou. Entra outra vez.", saved: false };
+
   const { error } = await supabase
     .from("household_settings")
     .update({

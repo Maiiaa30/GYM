@@ -222,6 +222,33 @@ export async function logSet(input: {
 
 export type MutateSessionResult = { ok: boolean; error: string | null };
 
+/**
+ * The caller's own session, and only while it is still running.
+ *
+ * Every mutation goes through this. Without it a finished session could be
+ * rewritten after the fact — its sets replaced by an exercise nobody did,
+ * while the progression computed at the time stayed as it was — and a session
+ * id belonging to somebody else was accepted and silently did nothing.
+ */
+async function assertOpenSession(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  sessionId: string,
+  userId: string,
+): Promise<string | null> {
+  const { data: session } = await supabase
+    .from("sessions")
+    .select("id, status")
+    .eq("id", sessionId)
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  if (!session) return "Este treino não existe.";
+  if (session.status !== "in_progress") {
+    return "Este treino já não está a decorrer.";
+  }
+  return null;
+}
+
 /** Adds an exercise to a session already under way. */
 export async function addExerciseToSession(input: {
   sessionId: string;
@@ -233,16 +260,8 @@ export async function addExerciseToSession(input: {
   } = await supabase.auth.getUser();
   if (!user) return { ok: false, error: "A sessão expirou." };
 
-  const { data: session } = await supabase
-    .from("sessions")
-    .select("id, status")
-    .eq("id", input.sessionId)
-    .eq("user_id", user.id)
-    .maybeSingle();
-
-  if (!session || session.status !== "in_progress") {
-    return { ok: false, error: "Este treino já não está a decorrer." };
-  }
+  const closed = await assertOpenSession(supabase, input.sessionId, user.id);
+  if (closed) return { ok: false, error: closed };
 
   const { data: exercise } = await supabase
     .from("exercises")
@@ -316,6 +335,9 @@ export async function pairWithPrevious(input: {
   } = await supabase.auth.getUser();
   if (!user) return { ok: false, error: "A sessão expirou." };
 
+  const closed = await assertOpenSession(supabase, input.sessionId, user.id);
+  if (closed) return { ok: false, error: closed };
+
   const { data: items } = await supabase
     .from("session_items")
     .select("exercise, position, superset_group")
@@ -359,6 +381,9 @@ export async function unpairExercise(input: {
   } = await supabase.auth.getUser();
   if (!user) return { ok: false, error: "A sessão expirou." };
 
+  const closed = await assertOpenSession(supabase, input.sessionId, user.id);
+  if (closed) return { ok: false, error: closed };
+
   const { error } = await supabase
     .from("session_items")
     .update({ superset_group: null })
@@ -381,6 +406,9 @@ export async function removeExerciseFromSession(input: {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return { ok: false, error: "A sessão expirou." };
+
+  const closed = await assertOpenSession(supabase, input.sessionId, user.id);
+  if (closed) return { ok: false, error: closed };
 
   const { count } = await supabase
     .from("session_items")
@@ -618,6 +646,7 @@ async function swapContext(
       .from("session_items")
       .select("position, exercise, swapped_from")
       .eq("session_id", sessionId)
+      .eq("user_id", userId)
       .order("position"),
     supabase
       .from("set_logs")
@@ -720,6 +749,9 @@ export async function swapExerciseInSession(input: {
   } = await supabase.auth.getUser();
   if (!user) return { ok: false, error: "A sessão expirou." };
 
+  const closed = await assertOpenSession(supabase, input.sessionId, user.id);
+  if (closed) return { ok: false, error: closed };
+
   const { items, catalogue, touched } = await swapContext(
     supabase,
     input.sessionId,
@@ -781,6 +813,9 @@ export async function swapWholeSession(input: {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return { ok: false, error: "A sessão expirou." };
+
+  const closed = await assertOpenSession(supabase, input.sessionId, user.id);
+  if (closed) return { ok: false, error: closed };
 
   const { items, catalogue, touched } = await swapContext(
     supabase,
