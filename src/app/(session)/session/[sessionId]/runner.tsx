@@ -408,7 +408,7 @@ export function SessionRunner({
     <div className="grid h-full grid-rows-[auto_1fr_auto]">
       {/* ------------------------------------------------------- header */}
       <header
-        className="border-b border-line px-5 pb-3"
+        className="min-w-0 overflow-hidden border-b border-line px-5 pb-3"
         style={{ paddingTop: "max(1rem, env(safe-area-inset-top))" }}
       >
         <div className="flex items-center gap-3">
@@ -453,7 +453,7 @@ export function SessionRunner({
 
           <button
             onClick={() => setAdjusting(true)}
-            className="-mr-2 flex h-11 shrink-0 items-center px-2 text-xs uppercase tracking-[0.14em] text-brass"
+            className="-mr-2 flex h-11 shrink-0 items-center px-2 text-[0.6875rem] uppercase tracking-[0.08em] text-brass"
           >
             Ajustar
           </button>
@@ -480,7 +480,7 @@ export function SessionRunner({
       </header>
 
       {/* --------------------------------------------------------- body */}
-      <div className="scroll-area px-5 py-5">
+      <div className="scroll-area min-w-0 px-5 py-5">
         <div className="mx-auto w-full max-w-md space-y-5">
           {needsBodyWeight && index === 0 ? <BodyWeightPrompt /> : null}
 
@@ -540,15 +540,15 @@ export function SessionRunner({
 
       {/* -------------------------------------------------------- footer */}
       <footer
-        className="border-t border-line bg-ink px-5 pt-3"
+        className="min-w-0 overflow-hidden border-t border-line bg-ink px-5 pt-3"
         style={{ paddingBottom: "max(0.75rem, env(safe-area-inset-bottom))" }}
       >
-        <div className="flex items-center gap-3">
+        <div className="flex w-full items-center gap-3 overflow-hidden">
           <Button
             variant="ghost"
             onClick={() => goTo(Math.max(0, index - 1))}
             disabled={index === 0}
-            className="w-24"
+            className="w-20 shrink-0"
           >
             Recuar
           </Button>
@@ -561,17 +561,17 @@ export function SessionRunner({
             <button
               onClick={() => setRest(null)}
               aria-label="Saltar o descanso"
-              className="flex flex-1 flex-col items-center justify-center leading-none"
+              className="flex min-w-0 flex-1 flex-col items-center justify-center leading-none"
             >
               <span className="tabular font-[family-name:var(--font-display)] text-2xl text-brass">
                 {formatClock(rest)}
               </span>
-              <span className="mt-1 text-[0.625rem] uppercase tracking-[0.14em] text-faint">
-                descanso · saltar
+              <span className="mt-1 w-full truncate text-center text-[0.625rem] uppercase tracking-[0.1em] text-faint">
+                saltar
               </span>
             </button>
           ) : (
-            <span className="tabular flex-1 text-center text-xs text-faint">
+            <span className="tabular min-w-0 flex-1 truncate text-center text-xs text-faint">
               {completedCount} de {blocks.length} feitos
             </span>
           )}
@@ -580,7 +580,7 @@ export function SessionRunner({
               <input type="hidden" name="session_id" value={sessionId} />
               <Button
                 type="button"
-                className="w-28"
+                className="w-24 shrink-0"
                 disabled={blocks.length === 0}
                 onClick={async () => {
                   // Finishing with sets still queued would compute the
@@ -600,7 +600,7 @@ export function SessionRunner({
               </Button>
             </form>
           ) : (
-            <Button onClick={() => goTo(index + 1)} className="w-28">
+            <Button onClick={() => goTo(index + 1)} className="w-24 shrink-0">
               Seguinte
             </Button>
           )}
@@ -1239,18 +1239,18 @@ function LoadCard({
   );
 
   const weightField = (
-    <span className="flex items-baseline gap-1">
+    <span className="flex min-w-0 flex-1 items-baseline justify-center gap-1">
       <NumericInput
         decimal
         value={target}
         onChange={onSet}
         aria-label="Carga em quilos"
         className={cx(
-          "border-transparent bg-transparent font-[family-name:var(--font-display)]",
-          compact ? "h-12 w-24 text-4xl" : "h-14 w-28 text-5xl",
+          "min-w-0 border-transparent bg-transparent font-[family-name:var(--font-display)]",
+          compact ? "h-12 w-20 text-4xl" : "h-14 w-24 text-5xl",
         )}
       />
-      <span className="text-lg text-muted">kg</span>
+      <span className="shrink-0 text-lg text-muted">kg</span>
     </span>
   );
 
@@ -1291,7 +1291,7 @@ function LoadCard({
           size={compact ? "md" : "lg"}
           aria-label="Reduzir a carga"
           onClick={() => onAdjust(-exercise.increment)}
-          className="w-14"
+          className="w-12 shrink-0"
         >
           −
         </Button>
@@ -1301,7 +1301,7 @@ function LoadCard({
           size={compact ? "md" : "lg"}
           aria-label="Aumentar a carga"
           onClick={() => onAdjust(exercise.increment)}
-          className="w-14"
+          className="w-12 shrink-0"
         >
           +
         </Button>
@@ -1358,18 +1358,18 @@ function RepsCard({
 
   return (
     <Card className="flex items-center justify-between gap-3 py-2 pl-5 pr-2">
-      <div>
+      <div className="min-w-0 flex-1">
         <p className="label">{exercise.isTimed ? "Tempo" : "Repetições"}</p>
-        <p className="mt-0.5 text-xs text-faint">
+        <p className="mt-0.5 text-xs leading-snug text-faint">
           {exercise.isTimed
-            ? "Por série, em segundos"
+            ? "Segundos por série"
             : exercise.perSide
-              ? "Por série, total dos dois lados"
+              ? "Por série, os dois lados"
               : "Por série"}
         </p>
       </div>
 
-      <div className="flex items-center gap-1">
+      <div className="flex shrink-0 items-center gap-1">
         <Button
           variant="quiet"
           aria-label={exercise.isTimed ? "Menos tempo" : "Menos repetições"}
@@ -1486,39 +1486,43 @@ function SetRow({
   };
 
   return (
-    <div className="px-4 py-3">
-      <div className="flex items-center gap-3">
-        <span className="tabular w-6 text-sm text-faint">{set.setNo}</span>
+    <div className="overflow-hidden px-4 py-3">
+      {/* Every fixed width here is `shrink-0` and the one flexible column
+          carries `min-w-0`, because a flex item defaults to refusing to shrink
+          below its own content. Without that a superset row came to 392 px
+          inside a 288 px card and pushed the tick button off the screen, where
+          it could not be reached at all. */}
+      <div className="flex items-center gap-2">
+        <span className="tabular w-5 shrink-0 text-sm text-faint">
+          {set.setNo}
+        </span>
 
-        {label ? (
-          <span className="w-24 shrink-0 truncate text-xs text-muted">
-            {label}
-          </span>
-        ) : null}
+        <span className="min-w-0 flex-1 truncate text-xs text-muted">
+          {label ?? ""}
+        </span>
 
         {!bodyweight ? (
-          <span className="tabular w-20 text-sm">
+          <span className="tabular w-16 shrink-0 text-right text-sm">
             {weight === null ? "—" : `${weight} kg`}
           </span>
         ) : null}
 
-        <label className="flex flex-1 items-center gap-2">
+        <label className="shrink-0">
           <span className="sr-only">{timed ? "Segundos" : "Repetições"}</span>
           <NumericInput
             value={elapsed !== null ? elapsed : set.reps}
             placeholder={repTarget !== null ? String(repTarget) : "—"}
             readOnly={elapsed !== null}
             onChange={onReps}
-            className="h-11 w-16 px-2"
+            className="h-11 w-14 px-1"
           />
-          <span className="text-xs text-faint">{timed ? "s" : "reps"}</span>
         </label>
 
         {timed ? (
           <button
             onClick={() => (elapsed === null ? setElapsed(0) : stopTimer())}
             className={cx(
-              "h-11 w-20 shrink-0 rounded-[var(--radius-md)] border text-xs uppercase tracking-[0.14em]",
+              "h-11 w-16 shrink-0 rounded-[var(--radius-md)] border text-[0.625rem] uppercase tracking-[0.1em]",
               elapsed === null
                 ? "border-line-strong text-muted"
                 : "border-brass text-brass",
@@ -1533,7 +1537,7 @@ function SetRow({
           aria-pressed={set.completed}
           aria-label={set.completed ? "Marcar como não feita" : "Marcar como feita"}
           className={cx(
-            "flex h-11 w-11 items-center justify-center rounded-[var(--radius-md)] border transition-colors",
+            "flex h-11 w-11 shrink-0 items-center justify-center rounded-[var(--radius-md)] border transition-colors",
             set.completed
               ? "border-brass bg-brass text-ink"
               : "border-line-strong text-faint",
@@ -1552,7 +1556,7 @@ function SetRow({
       </div>
 
       {perSide ? (
-        <p className="mt-1 h-4 pl-9 text-xs text-faint">{split}</p>
+        <p className="mt-1 h-4 pl-7 text-xs text-faint">{split}</p>
       ) : null}
     </div>
   );

@@ -73,7 +73,7 @@ export function Field({
   ...props
 }: FieldProps) {
   const input = (
-    <span className="relative block flex-1">
+    <span className="relative block min-w-0 flex-1">
       <input
         id={props.id ?? (typeof props.name === "string" ? props.name : undefined)}
         className={cx(
