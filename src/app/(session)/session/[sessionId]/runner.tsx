@@ -540,22 +540,9 @@ export function SessionRunner({
 
       {/* -------------------------------------------------------- footer */}
       <footer
-        className="relative border-t border-line bg-ink px-5 pt-3"
+        className="border-t border-line bg-ink px-5 pt-3"
         style={{ paddingBottom: "max(0.75rem, env(safe-area-inset-bottom))" }}
       >
-        {rest !== null ? (
-          <button
-            onClick={() => setRest(null)}
-            className="absolute bottom-full left-0 right-0 flex w-full items-center justify-between gap-3 border-t border-brass-dim bg-ink px-5 py-2.5"
-          >
-            <span className="label">Descanso</span>
-            <span className="tabular font-[family-name:var(--font-display)] text-2xl text-brass">
-              {formatClock(rest)}
-            </span>
-            <span className="text-xs text-faint">Toca para saltar</span>
-          </button>
-        ) : null}
-
         <div className="flex items-center gap-3">
           <Button
             variant="ghost"
@@ -565,9 +552,29 @@ export function SessionRunner({
           >
             Recuar
           </Button>
-          <span className="tabular flex-1 text-center text-xs text-faint">
-            {completedCount} de {blocks.length} feitos
-          </span>
+          {/* The countdown takes the middle slot instead of arriving above the
+              footer. Sitting in the flow it used to push the whole screen up
+              when a set was ticked; floating over it, it covered the last
+              rows. In the slot it is always the same height and hides nothing,
+              and it is between the two buttons, which is where the eye is. */}
+          {rest !== null ? (
+            <button
+              onClick={() => setRest(null)}
+              aria-label="Saltar o descanso"
+              className="flex flex-1 flex-col items-center justify-center leading-none"
+            >
+              <span className="tabular font-[family-name:var(--font-display)] text-2xl text-brass">
+                {formatClock(rest)}
+              </span>
+              <span className="mt-1 text-[0.625rem] uppercase tracking-[0.14em] text-faint">
+                descanso · saltar
+              </span>
+            </button>
+          ) : (
+            <span className="tabular flex-1 text-center text-xs text-faint">
+              {completedCount} de {blocks.length} feitos
+            </span>
+          )}
           {isLast || blocks.length === 0 ? (
             <form action={finishSession} ref={finishForm}>
               <input type="hidden" name="session_id" value={sessionId} />
