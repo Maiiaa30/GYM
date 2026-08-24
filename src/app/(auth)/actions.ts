@@ -7,7 +7,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 
 export type FormState = { error: string | null };
 
-const GENERIC_CREDENTIALS_ERROR = "Email ou palavra-passe incorrectos.";
+const GENERIC_CREDENTIALS_ERROR = "Email ou palavra-passe incorretos.";
 
 export async function signIn(
   _prev: FormState,
@@ -88,7 +88,7 @@ export async function redeemInvite(
     .limit(1);
 
   if (lookupError) {
-    return { error: "Não foi possível verificar o convite. Tenta outra vez." };
+    return { error: "Não deu para verificar o convite. Tenta outra vez." };
   }
 
   const invite = invites?.[0];
@@ -112,7 +112,7 @@ export async function redeemInvite(
   );
 
   if (updateError) {
-    return { error: "Não foi possível definir a palavra-passe. Tenta outra vez." };
+    return { error: "Não deu para definir a palavra-passe. Tenta outra vez." };
   }
 
   await admin

@@ -32,8 +32,8 @@ export default function ErrorPage({
           <p className="label">Alguma coisa correu mal</p>
           <p className="mt-2 text-sm leading-relaxed text-muted">
             {stale
-              ? "Esta página ficou aberta desde uma versão anterior da aplicação. Recarrega para ficares com a versão actual."
-              : "Não foi possível mostrar este ecrã. Tenta outra vez; se voltar a acontecer, recarrega a página."}
+              ? "Deixaste esta página aberta e entretanto saiu uma versão nova. Recarrega para ficares com a mais recente."
+              : "Não deu para mostrar este ecrã. Tenta outra vez. Se voltar a acontecer, recarrega a página."}
           </p>
           <div className="mt-5 space-y-3">
             <Button

@@ -33,7 +33,7 @@ export async function logBodyWeight(
     { onConflict: "user_id,measured_on" },
   );
 
-  if (error) return { error: "Não foi possível guardar. Tenta outra vez.", saved: false };
+  if (error) return { error: "Não deu para guardar. Tenta outra vez.", saved: false };
 
   revalidatePath("/progress");
   return { error: null, saved: true };
@@ -50,7 +50,7 @@ export async function setWeightGoal(
   const goal = raw === "" ? null : Number(raw);
 
   if (goal !== null && (!Number.isFinite(goal) || goal < 25 || goal > 300)) {
-    return { error: "Indica um objectivo entre 25 e 300 kg.", saved: false };
+    return { error: "Indica um objetivo entre 25 e 300 kg.", saved: false };
   }
 
   const supabase = await createClient();
@@ -65,7 +65,7 @@ export async function setWeightGoal(
     .update({ weight_goal_kg: goal })
     .eq("id", user.id);
 
-  if (error) return { error: "Não foi possível guardar o objectivo.", saved: false };
+  if (error) return { error: "Não deu para guardar o objetivo.", saved: false };
 
   revalidatePath("/progress");
   return { error: null, saved: true };

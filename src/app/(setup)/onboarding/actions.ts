@@ -45,7 +45,7 @@ export async function completeOnboarding(
     })
     .eq("id", user.id);
 
-  if (profileError) return { error: "Não foi possível guardar os teus dados." };
+  if (profileError) return { error: "Não deu para guardar os teus dados." };
 
   const { error: bodyError } = await supabase.from("body_logs").upsert(
     {
@@ -56,7 +56,7 @@ export async function completeOnboarding(
     { onConflict: "user_id,measured_on" },
   );
 
-  if (bodyError) return { error: "Não foi possível guardar o teu peso." };
+  if (bodyError) return { error: "Não deu para guardar o teu peso." };
 
   redirect("/");
 }

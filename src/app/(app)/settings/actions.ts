@@ -40,7 +40,7 @@ export async function updateSettings(
     })
     .eq("id", "only");
 
-  if (error) return { error: "Não foi possível guardar as definições.", saved: false };
+  if (error) return { error: "Não deu para guardar as definições.", saved: false };
 
   revalidatePath("/settings");
   revalidatePath("/plan");
@@ -129,7 +129,7 @@ export async function createInvite(
     });
 
   if (createError || !created.user) {
-    return { error: "Não foi possível criar a conta.", code: null };
+    return { error: "Não deu para criar a conta.", code: null };
   }
 
   const { error: profileError } = await admin.from("profiles").insert({
@@ -141,7 +141,7 @@ export async function createInvite(
 
   if (profileError) {
     await admin.auth.admin.deleteUser(created.user.id);
-    return { error: "Não foi possível criar o perfil.", code: null };
+    return { error: "Não deu para criar o perfil.", code: null };
   }
 
   const code = generateCode();
@@ -153,7 +153,7 @@ export async function createInvite(
   });
 
   if (inviteError) {
-    return { error: "Conta criada, mas o código falhou. Tenta outra vez.", code: null };
+    return { error: "A conta foi criada, mas o código não funcionou. Tenta outra vez.", code: null };
   }
 
   revalidatePath("/settings");
