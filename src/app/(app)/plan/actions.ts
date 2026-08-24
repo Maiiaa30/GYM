@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { today as todayInGym } from "@/lib/clock";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { generateJson } from "@/lib/gemini";
 import {
@@ -30,6 +31,17 @@ type SupabaseAdmin = ReturnType<typeof createAdminClient>;
 
 /* ------------------------------------------------------------ persistence */
 
+/**
+ * Writes a plan and makes it the active one.
+ *
+ * The order matters. This used to deactivate the current plan first and then
+ * build the new one, so anything that went wrong in between — a bad day, a
+ * rejected exercise, a dropped connection — left the pair with no plan at all
+ * and a screen telling them to make one. The new plan is now built complete
+ * but inactive, and only swapped in once there is something to swap to. A
+ * failure at any point before that leaves the plan they are following alone,
+ * and the worst case is an unused draft row.
+ */
 async function persistPlan(
   admin: SupabaseAdmin,
   input: {
@@ -42,30 +54,29 @@ async function persistPlan(
     raw: unknown;
   },
 ): Promise<string | null> {
-  const { error: deactivateError } = await admin
-    .from("plans")
-    .update({ is_active: false })
-    .eq("is_active", true);
-
-  if (deactivateError) return "Não deu para substituir o plano que está a dar.";
-
   const { data: plan, error: planError } = await admin
     .from("plans")
     .insert({
       name: input.name,
-      block_start: new Date().toISOString().slice(0, 10),
+      block_start: todayInGym(),
       weeks: 4,
       equipment: input.equipment,
       source: input.source,
       rationale: input.rationale,
       raw_json: input.raw ?? null,
-      is_active: true,
+      // Only one plan may be active at a time, so this one waits its turn.
+      is_active: false,
       created_by: input.createdBy,
     })
     .select("id")
     .single();
 
   if (planError || !plan) return "Não deu para criar o plano.";
+
+  /** Removes the half-built plan, so a failure leaves no wreckage behind. */
+  const discard = async () => {
+    await admin.from("plans").delete().eq("id", plan.id);
+  };
 
   // The weekday a day falls on is decided here, not by whatever produced the
   // days: a template and a generated block are named the same way.
@@ -83,7 +94,10 @@ async function persistPlan(
       .select("id")
       .single();
 
-    if (dayError || !planDay) return "Não deu para criar um dia de treino.";
+    if (dayError || !planDay) {
+      await discard();
+      return "Não deu para criar um dia de treino.";
+    }
 
     const { error: itemError } = await admin.from("plan_items").insert(
       day.items.map((item, position) => ({
@@ -98,8 +112,29 @@ async function persistPlan(
       })),
     );
 
-    if (itemError) return "Não deu para adicionar os exercícios.";
+    if (itemError) {
+      await discard();
+      return "Não deu para adicionar os exercícios.";
+    }
   }
+
+  // Everything is in place; now the swap, narrow enough to be safe.
+  const { error: deactivateError } = await admin
+    .from("plans")
+    .update({ is_active: false })
+    .eq("is_active", true);
+
+  if (deactivateError) {
+    await discard();
+    return "Não deu para substituir o plano que está a dar.";
+  }
+
+  const { error: activateError } = await admin
+    .from("plans")
+    .update({ is_active: true })
+    .eq("id", plan.id);
+
+  if (activateError) return "Não deu para ativar o plano novo.";
 
   return null;
 }
