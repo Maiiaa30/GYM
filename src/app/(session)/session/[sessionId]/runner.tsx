@@ -1493,17 +1493,34 @@ function SetRow({
           inside a 288 px card and pushed the tick button off the screen, where
           it could not be reached at all. */}
       <div className="flex items-center gap-2">
-        <span className="tabular w-5 shrink-0 text-sm text-faint">
-          {set.setNo}
-        </span>
+        {/* Inside a superset the round heading already gives the number, and
+            every row under it repeats it; the space is worth far more to the
+            exercise name, which is the only thing telling the rows apart. */}
+        {label ? null : (
+          <span className="tabular w-5 shrink-0 text-sm text-faint">
+            {set.setNo}
+          </span>
+        )}
 
-        <span className="min-w-0 flex-1 truncate text-xs text-muted">
+        {/* Two lines rather than an ellipsis: "Supino ..." and "Remada..."
+            were indistinguishable, and the row is tall enough for both. */}
+        <span className="line-clamp-2 min-w-0 flex-1 text-xs leading-tight text-muted">
           {label ?? ""}
         </span>
 
         {!bodyweight ? (
-          <span className="tabular w-16 shrink-0 text-right text-sm">
-            {weight === null ? "—" : `${weight} kg`}
+          // Right-aligned and hard against the repetitions box, the unit read
+          // as part of the next number. The margin gives it room and the unit
+          // is dimmed, so the eye separates the load from the repetitions.
+          <span className="tabular mr-2 w-16 shrink-0 text-right text-sm">
+            {weight === null ? (
+              "—"
+            ) : (
+              <>
+                {weight}
+                <span className="ml-1 text-xs text-faint">kg</span>
+              </>
+            )}
           </span>
         ) : null}
 
