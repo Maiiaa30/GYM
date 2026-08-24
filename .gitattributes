@@ -1,0 +1,7 @@
+# The project is edited from both Windows and WSL. Without this, a file
+# rewritten on one of them flips every line ending and shows up as a diff
+# touching the whole file, which buries the real change.
+* text=auto eol=lf
+*.png binary
+*.jpg binary
+*.ico binary
