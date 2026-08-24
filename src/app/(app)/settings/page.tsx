@@ -1,9 +1,9 @@
 import { redirect } from "next/navigation";
-import { Button, Card } from "@/components/ui";
+import { Card } from "@/components/ui";
 import { createClient } from "@/lib/supabase/server";
-import { signOut } from "../../(auth)/actions";
 import { InviteForm, SettingsForm } from "./forms";
 import { InstallPrompt } from "./install";
+import { SignOutButton } from "./sign-out";
 
 export const dynamic = "force-dynamic";
 
@@ -85,11 +85,7 @@ export default async function SettingsPage() {
         </Card>
       </section>
 
-      <form action={signOut}>
-        <Button type="submit" variant="ghost" className="w-full">
-          Terminar sessão
-        </Button>
-      </form>
+      <SignOutButton />
 
       <p className="pb-2 text-center text-xs leading-relaxed text-faint">
         Esta aplicação é um registo de treino, não é aconselhamento médico.
