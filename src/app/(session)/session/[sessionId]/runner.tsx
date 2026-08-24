@@ -132,6 +132,7 @@ export function SessionRunner({
   blocks: initial,
   available,
   needsBodyWeight,
+  startedAt,
 }: {
   sessionId: string;
   dayName: string;
@@ -139,6 +140,7 @@ export function SessionRunner({
   blocks: RunnerBlock[];
   available: CatalogueOption[];
   needsBodyWeight: boolean;
+  startedAt: string;
 }) {
   const router = useRouter();
   const [blocks, setBlocks] = useState(initial);
@@ -403,6 +405,8 @@ export function SessionRunner({
             <p className="label truncate">{dayName}</p>
             <p className="truncate text-xs text-faint">{focus}</p>
           </div>
+
+          <Elapsed since={startedAt} />
 
           {!queue.online || queue.pending > 0 ? (
             <span
@@ -797,6 +801,46 @@ function FilterChip({
     >
       {children}
     </button>
+  );
+}
+
+/**
+ * How long this has been going on.
+ *
+ * The whole plan is built around an hour and `started_at` was only ever read
+ * once the session was over, so the one moment the number is useful — while
+ * deciding whether there is time for another exercise — was the one moment it
+ * was not shown.
+ */
+function Elapsed({ since }: { since: string }) {
+  const started = Date.parse(since);
+  const [minutes, setMinutes] = useState(() =>
+    Math.max(0, Math.floor((Date.now() - started) / 60_000)),
+  );
+
+  useEffect(() => {
+    const tick = () =>
+      setMinutes(Math.max(0, Math.floor((Date.now() - started) / 60_000)));
+    tick();
+    // Re-reads the clock rather than counting, so a phone that slept through
+    // twenty minutes comes back with the right number.
+    const timer = window.setInterval(tick, 20_000);
+    const onVisible = () => {
+      if (document.visibilityState === "visible") tick();
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => {
+      window.clearInterval(timer);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
+  }, [started]);
+
+  if (Number.isNaN(started)) return null;
+
+  return (
+    <span className="tabular shrink-0 text-xs text-faint" aria-label="Tempo de treino">
+      {minutes} min
+    </span>
   );
 }
 

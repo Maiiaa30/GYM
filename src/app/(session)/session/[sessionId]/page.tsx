@@ -23,7 +23,7 @@ export default async function SessionPage({
 
   const { data: session } = await supabase
     .from("sessions")
-    .select("id, plan_day_id, status, performed_on")
+    .select("id, plan_day_id, status, performed_on, started_at")
     .eq("id", sessionId)
     .eq("user_id", user.id)
     .maybeSingle();
@@ -248,6 +248,7 @@ export default async function SessionPage({
       blocks={blocks}
       available={available}
       needsBodyWeight={!todayWeight}
+      startedAt={session.started_at}
     />
   );
 }

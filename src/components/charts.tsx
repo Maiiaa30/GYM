@@ -162,6 +162,44 @@ export function LineChart({
   );
 }
 
+/* -------------------------------------------------------------- sparkline */
+
+const SPARK: ChartBox = {
+  width: 240,
+  height: 34,
+  padTop: 4,
+  padBottom: 4,
+  padLeft: 2,
+  padRight: 2,
+};
+
+/** A line small enough to live inside a list row, with no axes to read. */
+export function Sparkline({ values }: { values: number[] }) {
+  const series = buildSeries(values, SPARK);
+  if (!series) return null;
+
+  const last = series.points[series.points.length - 1];
+  const rose = values[values.length - 1] > values[0];
+
+  return (
+    <svg
+      viewBox={`0 0 ${SPARK.width} ${SPARK.height}`}
+      className="h-8 w-full"
+      role="img"
+      aria-label={`De ${values[0]} a ${values[values.length - 1]} kg`}
+    >
+      <path
+        d={series.path}
+        className={cx(
+          "fill-none [stroke-linecap:round] [stroke-linejoin:round] [stroke-width:1.5]",
+          rose ? "stroke-brass" : "stroke-brass-dim",
+        )}
+      />
+      <circle cx={last.x} cy={last.y} r={2.5} className="fill-brass" />
+    </svg>
+  );
+}
+
 /* ------------------------------------------------------------- bar chart */
 
 const BAR_BOX: ChartBox = {

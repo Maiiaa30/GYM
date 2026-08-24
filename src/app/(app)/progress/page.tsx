@@ -3,6 +3,7 @@ import { Card, Panel, cx } from "@/components/ui";
 import { BodyMap } from "@/components/body-map";
 import {
   BarChart,
+  Sparkline,
   Heatmap,
   HeatmapLegend,
   LineChart,
@@ -83,7 +84,7 @@ export default async function ProgressPage() {
       .order("estimated_1rm", { ascending: false }),
     supabase
       .from("progression")
-      .select("exercise, working_kg, updated_at")
+      .select("exercise, working_kg, updated_at, fail_count, last_action")
       .eq("user_id", user.id)
       .order("updated_at", { ascending: false }),
   ]);
@@ -390,10 +391,63 @@ export default async function ProgressPage() {
       name: nameBySlug.get(row.exercise) ?? row.exercise,
       working: Number(row.working_kg),
       best: bestBySlug.get(row.exercise) ?? null,
+      action: row.last_action,
+      failCount: row.fail_count,
     }));
+
+  // The engine has recorded a missed session and a deload since the beginning
+  // and nothing ever said so out loud. A lift that held or came down is not a
+  // failure, but it is the one thing worth reading on this screen.
+  /**
+   * The heaviest working set of each session, per exercise, oldest first.
+   * The records were always stored; nothing ever drew the line between them.
+   */
+  const historyBySlug = new Map<string, number[]>();
+  for (const slug of lifts.map((lift) => lift.slug)) {
+    const perDay = new Map<string, number>();
+    for (const set of workingSets) {
+      if (set.exercise !== slug) continue;
+      const day = set.logged_at.slice(0, 10);
+      const kg = Number(set.weight_kg ?? 0);
+      if (kg <= 0) continue;
+      perDay.set(day, Math.max(perDay.get(day) ?? 0, kg));
+    }
+    const series = [...perDay.entries()].sort().map(([, kg]) => kg);
+    if (series.length >= 3) historyBySlug.set(slug, series.slice(-16));
+  }
+
+  const stalled = lifts.filter(
+    (lift) => lift.action === "hold" || lift.action === "deload",
+  );
 
   const strengthSection = (
     <div className="space-y-5">
+      {stalled.length > 0 ? (
+        <Panel
+          title="Parados"
+          meta={`${stalled.length} de ${lifts.length}`}
+          note="Um peso que não sobe quase nunca é o treino: é dormir pouco, comer pouco, ou ter subido depressa demais. Fecha as repetições todas antes de voltares a acrescentar peso."
+        >
+          <ul className="-mt-1 divide-y divide-line">
+            {stalled.map((lift) => (
+              <li key={lift.slug} className="py-2.5">
+                <div className="flex items-baseline justify-between gap-3">
+                  <span className="text-sm">{lift.name}</span>
+                  <span className="tabular shrink-0 text-sm text-oxblood">
+                    {lift.action === "deload" ? "desceu" : "sem subir"}
+                  </span>
+                </div>
+                <p className="mt-0.5 text-xs text-faint">
+                  {lift.action === "deload"
+                    ? `Desceu para ${lift.working} kg depois de duas vezes sem fechar as repetições.`
+                    : `Está nos ${lift.working} kg à espera de uma sessão com tudo feito.`}
+                </p>
+              </li>
+            ))}
+          </ul>
+        </Panel>
+      ) : null}
+
       <Panel
         title="Cargas de trabalho"
         meta={lifts.length > 0 ? `${lifts.length} exercícios` : null}
@@ -419,6 +473,11 @@ export default async function ProgressPage() {
                     Melhor série {lift.best.kg} kg × {lift.best.reps} · 1RM ~
                     {lift.best.oneRm} kg
                   </p>
+                ) : null}
+                {historyBySlug.has(lift.slug) ? (
+                  <div className="-mx-1 mt-2">
+                    <Sparkline values={historyBySlug.get(lift.slug)!} />
+                  </div>
                 ) : null}
               </li>
             ))}

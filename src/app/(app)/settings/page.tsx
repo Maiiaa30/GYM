@@ -85,6 +85,21 @@ export default async function SettingsPage() {
         </Card>
       </section>
 
+      <Card className="p-5">
+        <p className="label">Os teus dados</p>
+        <p className="mt-2 text-sm leading-relaxed text-muted">
+          Descarrega tudo o que já registaste — treinos, séries, pesos e
+          planos — num ficheiro só teu.
+        </p>
+        <a
+          href="/settings/export"
+          download
+          className="mt-3 inline-block text-sm text-brass underline underline-offset-4"
+        >
+          Descarregar
+        </a>
+      </Card>
+
       <SignOutButton />
 
       <p className="pb-2 text-center text-xs leading-relaxed text-faint">
