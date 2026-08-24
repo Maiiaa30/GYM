@@ -3,7 +3,10 @@
 import { useState } from "react";
 import { Button, Card } from "@/components/ui";
 import { Sheet } from "@/components/sheet";
-import { startSession } from "../(session)/session/actions";
+import {
+  startFreestyleSession,
+  startSession,
+} from "../(session)/session/actions";
 
 export type TodayDay = {
   id: string;
@@ -68,14 +71,24 @@ export function TodayCard({
             </Button>
           </form>
 
-          {days.length > 1 ? (
-            <button
-              onClick={() => setPicking(true)}
-              className="w-full text-center text-xs uppercase tracking-[0.14em] text-faint"
-            >
-              Treinar outro dia
-            </button>
-          ) : null}
+          <div className="flex items-center justify-center gap-5">
+            {days.length > 1 ? (
+              <button
+                onClick={() => setPicking(true)}
+                className="text-xs uppercase tracking-[0.14em] text-faint"
+              >
+                Treinar outro dia
+              </button>
+            ) : null}
+            <form action={startFreestyleSession}>
+              <button
+                type="submit"
+                className="text-xs uppercase tracking-[0.14em] text-faint"
+              >
+                Treino livre
+              </button>
+            </form>
+          </div>
         </div>
       </Card>
 

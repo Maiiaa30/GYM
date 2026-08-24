@@ -97,6 +97,7 @@ export type PlanItem = {
   rep_high: number;
   rest_sec: number;
   notes: string | null;
+  superset_group: number | null;
 }
 
 export type Session = {
@@ -152,6 +153,7 @@ export type SessionItem = {
   rest_sec: number;
   notes: string | null;
   added_mid_session: boolean;
+  superset_group: number | null;
 }
 
 export type PersonalRecord = {

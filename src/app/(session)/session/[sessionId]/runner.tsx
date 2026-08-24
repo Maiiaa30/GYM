@@ -29,7 +29,9 @@ import {
   addExerciseToSession,
   finishSession,
   logSet,
+  pairWithPrevious,
   removeExerciseFromSession,
+  unpairExercise,
 } from "../actions";
 
 export type RunnerSet = {
@@ -55,6 +57,8 @@ export type RunnerExercise = {
   restSec: number;
   notes: string | null;
   addedMidSession: boolean;
+  position: number;
+  supersetGroup: number | null;
   isTimed: boolean;
   perSide: boolean;
   reason: string;
@@ -63,11 +67,13 @@ export type RunnerExercise = {
   sets: RunnerSet[];
 };
 
-export type CatalogueOption = {
-  slug: string;
-  name: string;
-  muscle: string;
+export type RunnerBlock = {
+  key: string;
+  group: number | null;
+  exercises: RunnerExercise[];
 };
+
+export type CatalogueOption = { slug: string; name: string; muscle: string };
 
 /** A short tone at the end of the rest period. No audio file to download. */
 function beep() {
@@ -99,25 +105,33 @@ function formatClock(seconds: number) {
   return `${minutes}:${String(seconds % 60).padStart(2, "0")}`;
 }
 
+const working = (exercise: RunnerExercise) =>
+  exercise.sets.filter((set) => !set.isWarmup);
+
+const blockDone = (block: RunnerBlock) =>
+  block.exercises.every((exercise) =>
+    working(exercise).every((set) => set.completed),
+  );
+
 export function SessionRunner({
   sessionId,
   dayName,
   focus,
-  exercises: initial,
+  blocks: initial,
   available,
   needsBodyWeight,
 }: {
   sessionId: string;
   dayName: string;
   focus: string | null;
-  exercises: RunnerExercise[];
+  blocks: RunnerBlock[];
   available: CatalogueOption[];
   needsBodyWeight: boolean;
 }) {
   const router = useRouter();
-  const [exercises, setExercises] = useState(initial);
+  const [blocks, setBlocks] = useState(initial);
   const [index, setIndex] = useState(0);
-  const [showDemo, setShowDemo] = useState(false);
+  const [showDemo, setShowDemo] = useState<string | null>(null);
   const [rest, setRest] = useState<number | null>(null);
   const [adjusting, setAdjusting] = useState(false);
   const [search, setSearch] = useState("");
@@ -139,30 +153,16 @@ export function SessionRunner({
   const queue = useOfflineQueue(send);
   const finishForm = useRef<HTMLFormElement>(null);
 
-  // The server owns the exercise list: adding or dropping one refreshes the
-  // route and the new prescription arrives as a prop.
+  // The server owns the exercise list: adding, dropping or pairing refreshes
+  // the route and the new prescription arrives as a prop.
   useEffect(() => {
-    setExercises(initial);
+    setBlocks(initial);
     setIndex((current) => Math.min(current, Math.max(initial.length - 1, 0)));
   }, [initial]);
 
-  const exercise = exercises[index];
-  const isLast = index === exercises.length - 1;
-  const isBodyweight = exercise?.family === "bodyweight";
-
-  const workingSets = useMemo(
-    () => exercise?.sets.filter((set) => !set.isWarmup) ?? [],
-    [exercise],
-  );
-  const warmups = useMemo(
-    () => exercise?.sets.filter((set) => set.isWarmup) ?? [],
-    [exercise],
-  );
-
-  const target =
-    workingSets.find((set) => !set.completed)?.targetKg ??
-    workingSets[0]?.targetKg ??
-    null;
+  const block = blocks[index];
+  const isLast = index === blocks.length - 1;
+  const flat = useMemo(() => blocks.flatMap((item) => item.exercises), [blocks]);
 
   /* ------------------------------------------------------------- timer */
 
@@ -183,12 +183,15 @@ export function SessionRunner({
   /* ------------------------------------------------------------ actions */
 
   const patchSet = useCallback((setId: string, patch: Partial<RunnerSet>) => {
-    setExercises((current) =>
+    setBlocks((current) =>
       current.map((item) => ({
         ...item,
-        sets: item.sets.map((set) =>
-          set.id === setId ? { ...set, ...patch } : set,
-        ),
+        exercises: item.exercises.map((exercise) => ({
+          ...exercise,
+          sets: exercise.sets.map((set) =>
+            set.id === setId ? { ...set, ...patch } : set,
+          ),
+        })),
       })),
     );
   }, []);
@@ -206,14 +209,15 @@ export function SessionRunner({
     [queue],
   );
 
-  const adjustTarget = useCallback(
-    (delta: number) => {
-      setExercises((current) =>
-        current.map((item, itemIndex) => {
-          if (itemIndex !== index) return item;
+  const adjustTarget = useCallback((slug: string, delta: number) => {
+    setBlocks((current) =>
+      current.map((item) => ({
+        ...item,
+        exercises: item.exercises.map((exercise) => {
+          if (exercise.slug !== slug) return exercise;
           return {
-            ...item,
-            sets: item.sets.map((set) => {
+            ...exercise,
+            sets: exercise.sets.map((set) => {
               if (set.isWarmup || set.completed) return set;
               const base = set.targetKg ?? 0;
               const next = Math.max(0, Math.round((base + delta) * 2) / 2);
@@ -221,13 +225,16 @@ export function SessionRunner({
             }),
           };
         }),
-      );
-    },
-    [index],
-  );
+      })),
+    );
+  }, []);
 
+  /**
+   * Rest starts when the round is finished, which in a superset means after
+   * the last exercise of the group rather than after every set.
+   */
   const toggleSet = useCallback(
-    (set: RunnerSet) => {
+    (exercise: RunnerExercise, set: RunnerSet) => {
       if (set.completed) {
         patchSet(set.id, { completed: false });
         persist(set, { completed: false });
@@ -240,9 +247,16 @@ export function SessionRunner({
       patchSet(set.id, { completed: true, reps, weightKg: weight });
       persist(set, { completed: true, reps, weightKg: weight });
 
-      if (!set.isWarmup) setRest(exercise.restSec);
+      if (set.isWarmup) return;
+
+      const members = block?.exercises ?? [];
+      const lastOfRound =
+        members.length <= 1 ||
+        members[members.length - 1]?.slug === exercise.slug;
+
+      if (lastOfRound) setRest(exercise.restSec);
     },
-    [exercise, patchSet, persist],
+    [block, patchSet, persist],
   );
 
   const changeReps = useCallback(
@@ -256,42 +270,26 @@ export function SessionRunner({
 
   const goTo = useCallback((next: number) => {
     setIndex(next);
-    setShowDemo(false);
+    setShowDemo(null);
   }, []);
 
-  const addExercise = useCallback(
-    (slug: string) => {
+  const run = useCallback(
+    (
+      task: () => Promise<{ ok: boolean; error: string | null }>,
+      close = false,
+    ) => {
       setMutation(null);
       startTransition(async () => {
-        const result = await addExerciseToSession({ sessionId, exercise: slug });
+        const result = await task();
         if (!result.ok) {
           setMutation(result.error);
           return;
         }
-        setSearch("");
-        setAdjusting(false);
+        if (close) setAdjusting(false);
         router.refresh();
       });
     },
-    [router, sessionId],
-  );
-
-  const removeExercise = useCallback(
-    (slug: string) => {
-      setMutation(null);
-      startTransition(async () => {
-        const result = await removeExerciseFromSession({
-          sessionId,
-          exercise: slug,
-        });
-        if (!result.ok) {
-          setMutation(result.error);
-          return;
-        }
-        router.refresh();
-      });
-    },
-    [router, sessionId],
+    [router],
   );
 
   const filtered = useMemo(() => {
@@ -306,12 +304,7 @@ export function SessionRunner({
     return list.slice(0, 40);
   }, [available, search]);
 
-  if (!exercise) return null;
-
-  const plates = target !== null && target > 0 ? platesForWeight(target) : null;
-  const completedCount = exercises.filter((item) =>
-    item.sets.filter((set) => !set.isWarmup).every((set) => set.completed),
-  ).length;
+  const completedCount = blocks.filter(blockDone).length;
 
   return (
     <div className="grid h-full grid-rows-[auto_1fr_auto]">
@@ -335,9 +328,7 @@ export function SessionRunner({
                     : "border-line-strong text-faint",
                 )}
               >
-                {queue.online
-                  ? `${queue.pending} por enviar`
-                  : "Sem rede"}
+                {queue.online ? `${queue.pending} por enviar` : "Sem rede"}
               </span>
             ) : null}
             <button
@@ -357,28 +348,25 @@ export function SessionRunner({
             </form>
           </div>
         </div>
-        <div className="mt-3 flex gap-1">
-          {exercises.map((item, itemIndex) => {
-            const done = item.sets
-              .filter((set) => !set.isWarmup)
-              .every((set) => set.completed);
-            return (
+        {blocks.length > 0 ? (
+          <div className="mt-3 flex gap-1">
+            {blocks.map((item, itemIndex) => (
               <button
-                key={item.slug}
+                key={item.key}
                 onClick={() => goTo(itemIndex)}
-                aria-label={item.name}
+                aria-label={item.exercises.map((e) => e.name).join(" + ")}
                 className={cx(
                   "h-1 flex-1 rounded-full transition-colors",
                   itemIndex === index
                     ? "bg-brass"
-                    : done
+                    : blockDone(item)
                       ? "bg-brass-dim"
                       : "bg-line",
                 )}
               />
-            );
-          })}
-        </div>
+            ))}
+          </div>
+        ) : null}
       </header>
 
       {/* --------------------------------------------------------- body */}
@@ -386,163 +374,49 @@ export function SessionRunner({
         <div className="mx-auto w-full max-w-md space-y-5">
           {needsBodyWeight && index === 0 ? <BodyWeightPrompt /> : null}
 
-          <div>
-            <h1 className="font-[family-name:var(--font-display)] text-3xl leading-tight">
-              {exercise.name}
-            </h1>
-            <p className="label mt-1">
-              {exercise.muscle} · {workingSets.length} ×{" "}
-              {formatRepTarget({
-                repLow: exercise.repLow,
-                repHigh: exercise.repHigh,
-                isTimed: exercise.isTimed,
-              })}
-              {exercise.perSide ? " no total" : ""}
-              {exercise.notes ? ` · ${exercise.notes}` : ""}
-            </p>
-          </div>
-
-          <button
-            onClick={() => setShowDemo((value) => !value)}
-            className="text-sm text-brass underline underline-offset-4"
-          >
-            {showDemo ? "Esconder a técnica" : "Como se faz"}
-          </button>
-
-          {showDemo ? (
-            <Card className="overflow-hidden">
-              <div className="grid grid-cols-2 gap-px bg-line">
-                {exercise.images.slice(0, 2).map((src, imageIndex) => (
-                  <Image
-                    key={src}
-                    src={src}
-                    alt={`${exercise.name}, posição ${imageIndex + 1}`}
-                    width={400}
-                    height={300}
-                    className="h-auto w-full bg-raised object-cover"
-                    unoptimized
-                  />
-                ))}
-              </div>
-              <ul className="space-y-2 p-4">
-                {exercise.cues.map((cue) => (
-                  <li key={cue} className="flex gap-2 text-sm text-muted">
-                    <span className="text-brass">—</span>
-                    <span>{cue}</span>
-                  </li>
-                ))}
-              </ul>
-            </Card>
-          ) : null}
-
-          {/* ------------------------------------------------- load */}
-          {isBodyweight ? (
+          {!block ? (
             <Card className="p-5">
-              <p className="label">
-                {exercise.isTimed ? "Isometria" : "Peso do corpo"}
-              </p>
+              <p className="label">Treino livre</p>
               <p className="mt-2 text-sm leading-relaxed text-muted">
-                {exercise.reason}
+                Ainda sem exercícios. Escolhe o primeiro e vai acrescentando à
+                medida que treinas — cada um chega com a carga a que chegaste da
+                última vez.
               </p>
+              <Button
+                className="mt-4 w-full"
+                size="lg"
+                onClick={() => setAdjusting(true)}
+              >
+                Escolher exercício
+              </Button>
             </Card>
+          ) : block.exercises.length === 1 ? (
+            <ExercisePanel
+              exercise={block.exercises[0]}
+              showDemo={showDemo === block.exercises[0].slug}
+              onToggleDemo={() =>
+                setShowDemo((current) =>
+                  current === block.exercises[0].slug
+                    ? null
+                    : block.exercises[0].slug,
+                )
+              }
+              onAdjust={(delta) => adjustTarget(block.exercises[0].slug, delta)}
+              onToggleSet={(set) => toggleSet(block.exercises[0], set)}
+              onReps={changeReps}
+            />
           ) : (
-            <Card className="p-5">
-              <p className="label">Carga de trabalho</p>
-              <div className="mt-3 flex items-center justify-between gap-4">
-                <Button
-                  variant="quiet"
-                  size="lg"
-                  aria-label="Reduzir a carga"
-                  onClick={() => adjustTarget(-exercise.increment)}
-                  className="w-14"
-                >
-                  −
-                </Button>
-                <p className="tabular font-[family-name:var(--font-display)] text-5xl">
-                  {target === null ? "—" : target}
-                  <span className="ml-1 text-lg text-muted">kg</span>
-                </p>
-                <Button
-                  variant="quiet"
-                  size="lg"
-                  aria-label="Aumentar a carga"
-                  onClick={() => adjustTarget(exercise.increment)}
-                  className="w-14"
-                >
-                  +
-                </Button>
-              </div>
-
-              <p className="mt-3 text-sm leading-relaxed text-muted">
-                {exercise.reason}
-              </p>
-
-              {plates?.loadable && plates.perSide.length > 0 ? (
-                <p className="mt-2 text-xs text-faint">
-                  Por lado: {plates.perSide.join(" + ")} kg numa barra de{" "}
-                  {plates.barKg} kg
-                </p>
-              ) : null}
-
-              <div className="mt-4 flex flex-wrap gap-x-5 gap-y-1 text-xs text-faint">
-                {exercise.last ? (
-                  <span>
-                    Da última vez: {exercise.last.weightKg ?? "—"} kg ×{" "}
-                    {exercise.last.reps ?? "—"} em {exercise.last.on}
-                  </span>
-                ) : (
-                  <span>Ainda sem histórico</span>
-                )}
-                {exercise.partner ? (
-                  <span>
-                    {exercise.partner.name ?? "Parceiro"}:{" "}
-                    {exercise.partner.weightKg ?? "—"} kg
-                  </span>
-                ) : null}
-              </div>
-            </Card>
+            <SupersetPanel
+              block={block}
+              showDemo={showDemo}
+              onToggleDemo={(slug) =>
+                setShowDemo((current) => (current === slug ? null : slug))
+              }
+              onAdjust={adjustTarget}
+              onToggleSet={toggleSet}
+              onReps={changeReps}
+            />
           )}
-
-          {/* ------------------------------------------------- sets */}
-          {warmups.length > 0 ? (
-            <section>
-              <p className="label mb-2">Aquecimento</p>
-              <Card className="divide-y divide-line">
-                {warmups.map((set) => (
-                  <SetRow
-                    key={set.id}
-                    set={set}
-                    repTarget={null}
-                    bodyweight={isBodyweight}
-                    timed={exercise.isTimed}
-                    perSide={exercise.perSide}
-                    onToggle={() => toggleSet(set)}
-                    onReps={(reps) => changeReps(set, reps)}
-                  />
-                ))}
-              </Card>
-            </section>
-          ) : null}
-
-          <section>
-            <p className="label mb-2">
-              {exercise.isTimed ? "Séries (segundos)" : "Séries de trabalho"}
-            </p>
-            <Card className="divide-y divide-line">
-              {workingSets.map((set) => (
-                <SetRow
-                  key={set.id}
-                  set={set}
-                  repTarget={exercise.repLow}
-                  bodyweight={isBodyweight}
-                  timed={exercise.isTimed}
-                  perSide={exercise.perSide}
-                  onToggle={() => toggleSet(set)}
-                  onReps={(reps) => changeReps(set, reps)}
-                />
-              ))}
-            </Card>
-          </section>
         </div>
       </div>
 
@@ -574,17 +448,18 @@ export function SessionRunner({
             Recuar
           </Button>
           <span className="tabular flex-1 text-center text-xs text-faint">
-            {completedCount} de {exercises.length} feitos
+            {completedCount} de {blocks.length} feitos
           </span>
-          {isLast ? (
+          {isLast || blocks.length === 0 ? (
             <form action={finishSession} ref={finishForm}>
               <input type="hidden" name="session_id" value={sessionId} />
               <Button
                 type="button"
                 className="w-28"
+                disabled={blocks.length === 0}
                 onClick={async () => {
-                  // Nothing is lost by finishing with sets still queued, but
-                  // the progression would be computed without them.
+                  // Finishing with sets still queued would compute the
+                  // progression without them.
                   const left = await queue.flush();
                   if (left > 0) {
                     setMutation(
@@ -633,26 +508,68 @@ export function SessionRunner({
             </label>
           ) : null}
 
-          <section>
-            <p className="label mb-2">Exercícios de hoje</p>
-            <ul className="divide-y divide-line rounded-[var(--radius-md)] border border-line">
-              {exercises.map((item) => (
-                <li
-                  key={item.slug}
-                  className="flex items-center justify-between gap-3 px-4 py-3"
-                >
-                  <span className="text-sm">{item.name}</span>
-                  <button
-                    onClick={() => removeExercise(item.slug)}
-                    disabled={pending || exercises.length <= 1}
-                    className="text-xs uppercase tracking-[0.14em] text-oxblood disabled:opacity-40"
-                  >
-                    Remover
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </section>
+          {flat.length > 0 ? (
+            <section>
+              <p className="label mb-2">Exercícios de hoje</p>
+              <ul className="divide-y divide-line rounded-[var(--radius-md)] border border-line">
+                {flat.map((item, itemIndex) => (
+                  <li key={item.slug} className="px-4 py-3">
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="text-sm">
+                        {item.name}
+                        {item.supersetGroup !== null ? (
+                          <span className="ml-2 text-xs text-brass-dim">
+                            supersérie
+                          </span>
+                        ) : null}
+                      </span>
+                      <button
+                        onClick={() =>
+                          run(() =>
+                            removeExerciseFromSession({
+                              sessionId,
+                              exercise: item.slug,
+                            }),
+                          )
+                        }
+                        disabled={pending || flat.length <= 1}
+                        className="text-xs uppercase tracking-[0.14em] text-oxblood disabled:opacity-40"
+                      >
+                        Remover
+                      </button>
+                    </div>
+                    {itemIndex > 0 ? (
+                      <button
+                        onClick={() =>
+                          run(() =>
+                            item.supersetGroup === null
+                              ? pairWithPrevious({
+                                  sessionId,
+                                  exercise: item.slug,
+                                })
+                              : unpairExercise({
+                                  sessionId,
+                                  exercise: item.slug,
+                                }),
+                          )
+                        }
+                        disabled={pending}
+                        className="mt-1 text-xs uppercase tracking-[0.14em] text-faint disabled:opacity-40"
+                      >
+                        {item.supersetGroup === null
+                          ? "Juntar ao anterior"
+                          : "Separar"}
+                      </button>
+                    ) : null}
+                  </li>
+                ))}
+              </ul>
+              <p className="mt-2 text-xs leading-relaxed text-faint">
+                Juntar dois exercícios faz uma supersérie: fazem-se de seguida,
+                com um único descanso no fim de cada ronda.
+              </p>
+            </section>
+          ) : null}
 
           <section className="pb-2">
             <p className="label mb-2">Adicionar exercício</p>
@@ -666,7 +583,16 @@ export function SessionRunner({
               {filtered.map((option) => (
                 <li key={option.slug}>
                   <button
-                    onClick={() => addExercise(option.slug)}
+                    onClick={() =>
+                      run(
+                        () =>
+                          addExerciseToSession({
+                            sessionId,
+                            exercise: option.slug,
+                          }),
+                        true,
+                      )
+                    }
                     disabled={pending}
                     className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left disabled:opacity-40"
                   >
@@ -685,6 +611,304 @@ export function SessionRunner({
         </div>
       </Sheet>
     </div>
+  );
+}
+
+/* ------------------------------------------------------- single exercise */
+
+function ExercisePanel({
+  exercise,
+  showDemo,
+  onToggleDemo,
+  onAdjust,
+  onToggleSet,
+  onReps,
+}: {
+  exercise: RunnerExercise;
+  showDemo: boolean;
+  onToggleDemo: () => void;
+  onAdjust: (delta: number) => void;
+  onToggleSet: (set: RunnerSet) => void;
+  onReps: (set: RunnerSet, reps: number) => void;
+}) {
+  const workingSets = working(exercise);
+  const warmups = exercise.sets.filter((set) => set.isWarmup);
+
+  return (
+    <>
+      <div>
+        <h1 className="font-[family-name:var(--font-display)] text-3xl leading-tight">
+          {exercise.name}
+        </h1>
+        <p className="label mt-1">
+          {exercise.muscle} · {workingSets.length} ×{" "}
+          {formatRepTarget({
+            repLow: exercise.repLow,
+            repHigh: exercise.repHigh,
+            isTimed: exercise.isTimed,
+          })}
+          {exercise.perSide ? " no total" : ""}
+          {exercise.notes ? ` · ${exercise.notes}` : ""}
+        </p>
+      </div>
+
+      <button
+        onClick={onToggleDemo}
+        className="text-sm text-brass underline underline-offset-4"
+      >
+        {showDemo ? "Esconder a técnica" : "Como se faz"}
+      </button>
+
+      {showDemo ? <Demo exercise={exercise} /> : null}
+
+      <LoadCard exercise={exercise} onAdjust={onAdjust} />
+
+      {warmups.length > 0 ? (
+        <section>
+          <p className="label mb-2">Aquecimento</p>
+          <Card className="divide-y divide-line">
+            {warmups.map((set) => (
+              <SetRow
+                key={set.id}
+                set={set}
+                repTarget={null}
+                bodyweight={exercise.family === "bodyweight"}
+                timed={exercise.isTimed}
+                perSide={exercise.perSide}
+                onToggle={() => onToggleSet(set)}
+                onReps={(reps) => onReps(set, reps)}
+              />
+            ))}
+          </Card>
+        </section>
+      ) : null}
+
+      <section>
+        <p className="label mb-2">
+          {exercise.isTimed ? "Séries (segundos)" : "Séries de trabalho"}
+        </p>
+        <Card className="divide-y divide-line">
+          {workingSets.map((set) => (
+            <SetRow
+              key={set.id}
+              set={set}
+              repTarget={exercise.repLow}
+              bodyweight={exercise.family === "bodyweight"}
+              timed={exercise.isTimed}
+              perSide={exercise.perSide}
+              onToggle={() => onToggleSet(set)}
+              onReps={(reps) => onReps(set, reps)}
+            />
+          ))}
+        </Card>
+      </section>
+    </>
+  );
+}
+
+/* ------------------------------------------------------------- superset */
+
+function SupersetPanel({
+  block,
+  showDemo,
+  onToggleDemo,
+  onAdjust,
+  onToggleSet,
+  onReps,
+}: {
+  block: RunnerBlock;
+  showDemo: string | null;
+  onToggleDemo: (slug: string) => void;
+  onAdjust: (slug: string, delta: number) => void;
+  onToggleSet: (exercise: RunnerExercise, set: RunnerSet) => void;
+  onReps: (set: RunnerSet, reps: number) => void;
+}) {
+  const rounds = Math.max(
+    ...block.exercises.map((exercise) => working(exercise).length),
+  );
+
+  return (
+    <>
+      <div>
+        <p className="label">Supersérie</p>
+        <h1 className="mt-1 font-[family-name:var(--font-display)] text-3xl leading-tight">
+          {block.exercises.map((exercise) => exercise.name).join(" + ")}
+        </h1>
+        <p className="label mt-1">
+          {rounds} rondas, sem descanso entre exercícios
+        </p>
+      </div>
+
+      {block.exercises.map((exercise) => (
+        <div key={exercise.slug} className="space-y-3">
+          <div className="flex items-baseline justify-between gap-3">
+            <p className="text-sm text-parchment">{exercise.name}</p>
+            <button
+              onClick={() => onToggleDemo(exercise.slug)}
+              className="text-xs text-brass underline underline-offset-4"
+            >
+              {showDemo === exercise.slug ? "Esconder" : "Como se faz"}
+            </button>
+          </div>
+          {showDemo === exercise.slug ? <Demo exercise={exercise} /> : null}
+          <LoadCard
+            exercise={exercise}
+            compact
+            onAdjust={(delta) => onAdjust(exercise.slug, delta)}
+          />
+        </div>
+      ))}
+
+      <section className="space-y-3">
+        <p className="label">Rondas</p>
+        {Array.from({ length: rounds }, (_, round) => (
+          <Card key={round}>
+            <p className="label px-4 pt-3">Ronda {round + 1}</p>
+            <div className="mt-1 divide-y divide-line">
+              {block.exercises.map((exercise) => {
+                const set = working(exercise)[round];
+                if (!set) return null;
+                return (
+                  <SetRow
+                    key={set.id}
+                    set={set}
+                    label={exercise.name}
+                    repTarget={exercise.repLow}
+                    bodyweight={exercise.family === "bodyweight"}
+                    timed={exercise.isTimed}
+                    perSide={exercise.perSide}
+                    onToggle={() => onToggleSet(exercise, set)}
+                    onReps={(reps) => onReps(set, reps)}
+                  />
+                );
+              })}
+            </div>
+          </Card>
+        ))}
+      </section>
+    </>
+  );
+}
+
+/* ---------------------------------------------------------------- pieces */
+
+function Demo({ exercise }: { exercise: RunnerExercise }) {
+  return (
+    <Card className="overflow-hidden">
+      <div className="grid grid-cols-2 gap-px bg-line">
+        {exercise.images.slice(0, 2).map((src, imageIndex) => (
+          <Image
+            key={src}
+            src={src}
+            alt={`${exercise.name}, posição ${imageIndex + 1}`}
+            width={400}
+            height={300}
+            className="h-auto w-full bg-raised object-cover"
+            unoptimized
+          />
+        ))}
+      </div>
+      <ul className="space-y-2 p-4">
+        {exercise.cues.map((cue) => (
+          <li key={cue} className="flex gap-2 text-sm text-muted">
+            <span className="text-brass">—</span>
+            <span>{cue}</span>
+          </li>
+        ))}
+      </ul>
+    </Card>
+  );
+}
+
+function LoadCard({
+  exercise,
+  compact = false,
+  onAdjust,
+}: {
+  exercise: RunnerExercise;
+  compact?: boolean;
+  onAdjust: (delta: number) => void;
+}) {
+  const workingSets = working(exercise);
+  const target =
+    workingSets.find((set) => !set.completed)?.targetKg ??
+    workingSets[0]?.targetKg ??
+    null;
+
+  if (exercise.family === "bodyweight") {
+    return (
+      <Card className="p-5">
+        <p className="label">
+          {exercise.isTimed ? "Isometria" : "Peso do corpo"}
+        </p>
+        <p className="mt-2 text-sm leading-relaxed text-muted">
+          {exercise.reason}
+        </p>
+      </Card>
+    );
+  }
+
+  const plates = target !== null && target > 0 ? platesForWeight(target) : null;
+
+  return (
+    <Card className="p-5">
+      <p className="label">Carga de trabalho</p>
+      <div className="mt-3 flex items-center justify-between gap-4">
+        <Button
+          variant="quiet"
+          size={compact ? "md" : "lg"}
+          aria-label="Reduzir a carga"
+          onClick={() => onAdjust(-exercise.increment)}
+          className="w-14"
+        >
+          −
+        </Button>
+        <p
+          className={cx(
+            "tabular font-[family-name:var(--font-display)]",
+            compact ? "text-4xl" : "text-5xl",
+          )}
+        >
+          {target === null ? "—" : target}
+          <span className="ml-1 text-lg text-muted">kg</span>
+        </p>
+        <Button
+          variant="quiet"
+          size={compact ? "md" : "lg"}
+          aria-label="Aumentar a carga"
+          onClick={() => onAdjust(exercise.increment)}
+          className="w-14"
+        >
+          +
+        </Button>
+      </div>
+
+      <p className="mt-3 text-sm leading-relaxed text-muted">{exercise.reason}</p>
+
+      {plates?.loadable && plates.perSide.length > 0 ? (
+        <p className="mt-2 text-xs text-faint">
+          Por lado: {plates.perSide.join(" + ")} kg numa barra de {plates.barKg}{" "}
+          kg
+        </p>
+      ) : null}
+
+      <div className="mt-4 flex flex-wrap gap-x-5 gap-y-1 text-xs text-faint">
+        {exercise.last ? (
+          <span>
+            Da última vez: {exercise.last.weightKg ?? "—"} kg ×{" "}
+            {exercise.last.reps ?? "—"} em {exercise.last.on}
+          </span>
+        ) : (
+          <span>Ainda sem histórico</span>
+        )}
+        {exercise.partner ? (
+          <span>
+            {exercise.partner.name ?? "Parceiro"}:{" "}
+            {exercise.partner.weightKg ?? "—"} kg
+          </span>
+        ) : null}
+      </div>
+    </Card>
   );
 }
 
@@ -714,9 +938,7 @@ function BodyWeightPrompt() {
   return (
     <Card className="p-5">
       <p className="label">Antes de começar</p>
-      <p className="mt-2 text-sm text-muted">
-        Ainda não registaste o peso hoje.
-      </p>
+      <p className="mt-2 text-sm text-muted">Ainda não registaste o peso hoje.</p>
       <form action={formAction} className="mt-4 space-y-3">
         <div className="flex items-end gap-3">
           <div className="flex-1">
@@ -748,6 +970,7 @@ function BodyWeightPrompt() {
 
 function SetRow({
   set,
+  label,
   repTarget,
   bodyweight,
   timed,
@@ -756,6 +979,7 @@ function SetRow({
   onReps,
 }: {
   set: RunnerSet;
+  label?: string;
   repTarget: number | null;
   bodyweight: boolean;
   timed: boolean;
@@ -787,6 +1011,12 @@ function SetRow({
     <div className="px-4 py-3">
       <div className="flex items-center gap-3">
         <span className="tabular w-6 text-sm text-faint">{set.setNo}</span>
+
+        {label ? (
+          <span className="w-24 shrink-0 truncate text-xs text-muted">
+            {label}
+          </span>
+        ) : null}
 
         {!bodyweight ? (
           <span className="tabular w-20 text-sm">
@@ -846,9 +1076,7 @@ function SetRow({
         </button>
       </div>
 
-      {split ? (
-        <p className="mt-1 pl-9 text-xs text-faint">{split}</p>
-      ) : null}
+      {split ? <p className="mt-1 pl-9 text-xs text-faint">{split}</p> : null}
     </div>
   );
 }

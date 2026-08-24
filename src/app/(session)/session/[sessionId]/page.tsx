@@ -1,6 +1,7 @@
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { describeTarget } from "@/lib/progression";
+import { buildBlocks } from "@/lib/blocks";
 import type { LiftFamily, ProgressionAction } from "@/lib/database.types";
 import { SessionRunner, type RunnerExercise } from "./runner";
 
@@ -37,7 +38,7 @@ export default async function SessionPage({
       .maybeSingle(),
     supabase
       .from("session_items")
-      .select("position, exercise, sets, rep_low, rep_high, rest_sec, notes, added_mid_session")
+      .select("position, exercise, sets, rep_low, rep_high, rest_sec, notes, added_mid_session, superset_group")
       .eq("session_id", sessionId)
       .order("position"),
     supabase
@@ -49,9 +50,12 @@ export default async function SessionPage({
       .order("set_no"),
   ]);
 
-  if (!items || items.length === 0) redirect("/plan");
+  // A session built from a training day must have exercises; a freestyle one
+  // starts empty on purpose and is filled as it goes.
+  const freestyle = session.plan_day_id === null;
+  if ((!items || items.length === 0) && !freestyle) redirect("/plan");
 
-  const slugs = items.map((item) => item.exercise);
+  const slugs = (items ?? []).map((item) => item.exercise);
 
   const [
     { data: exercises },
@@ -62,32 +66,42 @@ export default async function SessionPage({
     { data: settings },
     { data: todayWeight },
   ] = await Promise.all([
-    supabase
-      .from("exercises")
-      .select("slug, name, primary_muscle, images, cues, family, increment_kg, is_timed, per_side")
-      .in("slug", slugs),
-    supabase
-      .from("progression")
-      .select("exercise, working_kg, last_action")
-      .eq("user_id", user.id)
-      .in("exercise", slugs),
-    supabase
-      .from("set_logs")
-      .select("exercise, weight_kg, reps, logged_at, session_id")
-      .eq("user_id", user.id)
-      .in("exercise", slugs)
+    slugs.length > 0
+      ? supabase
+          .from("exercises")
+          .select(
+            "slug, name, primary_muscle, images, cues, family, increment_kg, is_timed, per_side",
+          )
+          .in("slug", slugs)
+      : Promise.resolve({ data: [] as never[] }),
+    slugs.length > 0
+      ? supabase
+          .from("progression")
+          .select("exercise, working_kg, last_action")
+          .eq("user_id", user.id)
+          .in("exercise", slugs)
+      : Promise.resolve({ data: [] as never[] }),
+    slugs.length > 0
+      ? supabase
+          .from("set_logs")
+          .select("exercise, weight_kg, reps, logged_at, session_id")
+          .eq("user_id", user.id)
+          .in("exercise", slugs)
       .eq("completed", true)
       .eq("is_warmup", false)
-      .neq("session_id", sessionId)
-      .order("logged_at", { ascending: false })
-      .limit(150),
-    supabase
-      .from("set_logs")
-      .select("exercise, weight_kg, reps, user_id")
-      .neq("user_id", user.id)
-      .in("exercise", slugs)
-      .eq("completed", true)
-      .eq("is_warmup", false),
+          .neq("session_id", sessionId)
+          .order("logged_at", { ascending: false })
+          .limit(150)
+      : Promise.resolve({ data: [] as never[] }),
+    slugs.length > 0
+      ? supabase
+          .from("set_logs")
+          .select("exercise, weight_kg, reps, user_id")
+          .neq("user_id", user.id)
+          .in("exercise", slugs)
+          .eq("completed", true)
+          .eq("is_warmup", false)
+      : Promise.resolve({ data: [] as never[] }),
     supabase.from("profiles").select("id, name").neq("id", user.id),
     supabase.from("household_settings").select("equipment").maybeSingle(),
     supabase
@@ -164,7 +178,7 @@ export default async function SessionPage({
     });
   }
 
-  const runnerExercises: RunnerExercise[] = items.map((item) => {
+  const runnerExercises: RunnerExercise[] = (items ?? []).map((item) => {
     const exercise = exerciseBySlug.get(item.exercise);
     const family = (exercise?.family ?? "accessory") as LiftFamily;
     const progress = progressionBySlug.get(item.exercise);
@@ -187,6 +201,8 @@ export default async function SessionPage({
       restSec: item.rest_sec,
       notes: item.notes,
       addedMidSession: item.added_mid_session,
+      position: item.position,
+      supersetGroup: item.superset_group,
       isTimed: timed,
       perSide: Boolean(exercise?.per_side),
       reason: describeTarget({
@@ -213,12 +229,18 @@ export default async function SessionPage({
     };
   });
 
+  const blocks = buildBlocks(runnerExercises, (item) => item.slug).map((block) => ({
+    key: block.key,
+    group: block.group,
+    exercises: block.items,
+  }));
+
   return (
     <SessionRunner
       sessionId={sessionId}
-      dayName={day?.name ?? "Treino"}
-      focus={day?.focus ?? null}
-      exercises={runnerExercises}
+      dayName={freestyle ? "Treino livre" : (day?.name ?? "Treino")}
+      focus={freestyle ? "Exercícios à escolha" : (day?.focus ?? null)}
+      blocks={blocks}
       available={available}
       needsBodyWeight={!todayWeight}
     />

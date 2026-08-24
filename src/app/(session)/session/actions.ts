@@ -9,6 +9,7 @@ import {
   nextWorkingWeight,
   warmupSets,
 } from "@/lib/progression";
+import { groupForPairing, pairMembers } from "@/lib/blocks";
 import type { LiftFamily } from "@/lib/database.types";
 
 /**
@@ -43,7 +44,7 @@ export async function startSession(formData: FormData) {
 
   const { data: items } = await supabase
     .from("plan_items")
-    .select("position, exercise, sets, rep_low, rep_high, rest_sec, notes")
+    .select("position, exercise, sets, rep_low, rep_high, rest_sec, notes, superset_group")
     .eq("plan_day_id", planDayId)
     .order("position");
 
@@ -86,6 +87,7 @@ export async function startSession(formData: FormData) {
       rep_high: item.rep_high,
       rest_sec: item.rest_sec,
       notes: item.notes,
+      superset_group: item.superset_group,
     })),
   );
 
@@ -152,6 +154,40 @@ function setRowsFor(input: {
   }
 
   return rows;
+}
+
+/**
+ * Starts a session with no programme behind it: exercises are chosen as you
+ * go. Each one still arrives with the weight you worked up to.
+ */
+export async function startFreestyleSession() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect("/login");
+
+  const today = new Date().toISOString().slice(0, 10);
+
+  const { data: existing } = await supabase
+    .from("sessions")
+    .select("id")
+    .eq("user_id", user.id)
+    .eq("performed_on", today)
+    .eq("status", "in_progress")
+    .maybeSingle();
+
+  if (existing) redirect(`/session/${existing.id}`);
+
+  const { data: session, error } = await supabase
+    .from("sessions")
+    .insert({ user_id: user.id, plan_day_id: null, performed_on: today })
+    .select("id")
+    .single();
+
+  if (error || !session) redirect("/");
+
+  redirect(`/session/${session.id}`);
 }
 
 export type LogSetResult = { ok: boolean };
@@ -261,6 +297,75 @@ export async function addExerciseToSession(input: {
   );
 
   if (setsError) return { ok: false, error: "Não foi possível criar as séries." };
+
+  return { ok: true, error: null };
+}
+
+/**
+ * Pairs an exercise with the one above it into a superset: they are then
+ * worked through back to back, with one rest at the end of each round.
+ */
+export async function pairWithPrevious(input: {
+  sessionId: string;
+  exercise: string;
+}): Promise<MutateSessionResult> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { ok: false, error: "A sessão expirou." };
+
+  const { data: items } = await supabase
+    .from("session_items")
+    .select("exercise, position, superset_group")
+    .eq("session_id", input.sessionId)
+    .eq("user_id", user.id)
+    .order("position");
+
+  const groupable = (items ?? []).map((item) => ({
+    exercise: item.exercise,
+    position: item.position,
+    supersetGroup: item.superset_group,
+  }));
+
+  const group = groupForPairing(groupable, input.exercise);
+  if (group === null) {
+    return { ok: false, error: "Não há exercício acima para juntar." };
+  }
+
+  const members = pairMembers(groupable, input.exercise);
+
+  const { error } = await supabase
+    .from("session_items")
+    .update({ superset_group: group })
+    .eq("session_id", input.sessionId)
+    .eq("user_id", user.id)
+    .in("exercise", members);
+
+  if (error) return { ok: false, error: "Não foi possível juntar." };
+
+  return { ok: true, error: null };
+}
+
+/** Takes an exercise back out of its superset. */
+export async function unpairExercise(input: {
+  sessionId: string;
+  exercise: string;
+}): Promise<MutateSessionResult> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { ok: false, error: "A sessão expirou." };
+
+  const { error } = await supabase
+    .from("session_items")
+    .update({ superset_group: null })
+    .eq("session_id", input.sessionId)
+    .eq("user_id", user.id)
+    .eq("exercise", input.exercise);
+
+  if (error) return { ok: false, error: "Não foi possível separar." };
 
   return { ok: true, error: null };
 }

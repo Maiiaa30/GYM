@@ -67,6 +67,16 @@ progression rules count, and the interface shows the split ("10 por lado").
 When an unloaded exercise finishes every set at the top of its range, the next
 session says to add a set rather than another repetition.
 
+## Supersets and freestyle
+
+Two exercises can be paired mid-session — "juntar ao anterior" — and are then
+worked through as rounds, back to back, with a single rest at the end of each
+round. Unpairing is one tap, and a group left with a single member dissolves
+itself. Planned supersets carry over into the session when it starts.
+
+A session can also begin with nothing in it: exercises are chosen as you go and
+each arrives with the weight you worked up to.
+
 ## Offline
 
 Ticking a set never waits on the network. The row is written to IndexedDB
