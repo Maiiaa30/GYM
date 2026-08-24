@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Instrument_Serif } from "next/font/google";
+import { ServiceWorkerRegistration } from "@/components/service-worker";
 import "./globals.css";
 
 const serif = Instrument_Serif({
@@ -51,6 +52,7 @@ export default function RootLayout({
       </head>
       <body className="app-shell" suppressHydrationWarning>
         {children}
+        <ServiceWorkerRegistration />
       </body>
     </html>
   );

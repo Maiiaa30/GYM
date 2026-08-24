@@ -67,6 +67,23 @@ progression rules count, and the interface shows the split ("10 por lado").
 When an unloaded exercise finishes every set at the top of its range, the next
 session says to add a set rather than another repetition.
 
+## Offline
+
+Ticking a set never waits on the network. The row is written to IndexedDB
+first and sent afterwards; entries survive the phone locking, the tab closing
+and the app being killed, and are replayed when the connection returns, on the
+next foreground, or on the next visit. Only the last state of a set is
+replayed, so ticking, correcting and un-ticking collapse to one write.
+
+The training screen shows what is waiting, and finishing a session flushes the
+queue first: the progression must not be computed from a partial session.
+
+A service worker (`public/sw.js`, no build plugin) makes the application
+installable and lets it open with no connection: static assets and exercise
+artwork are served cache-first, pages network-first with the last copy as a
+fallback. It never touches writes — the queue owns the retry. Note that cached
+pages sit in the browser's cache on that device.
+
 ## Progress
 
 Four readings of the same history, one screen each:

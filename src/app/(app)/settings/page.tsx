@@ -2,6 +2,7 @@ import { Button, Card } from "@/components/ui";
 import { createClient } from "@/lib/supabase/server";
 import { signOut } from "../../(auth)/actions";
 import { InviteForm, SettingsForm } from "./forms";
+import { InstallPrompt } from "./install";
 
 export const dynamic = "force-dynamic";
 
@@ -71,6 +72,13 @@ export default async function SettingsPage() {
               <InviteForm />
             </div>
           ) : null}
+        </Card>
+      </section>
+
+      <section>
+        <p className="label mb-2">Aplicação</p>
+        <Card>
+          <InstallPrompt />
         </Card>
       </section>
 

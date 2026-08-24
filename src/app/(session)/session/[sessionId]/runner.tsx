@@ -7,6 +7,7 @@ import {
   useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState,
   useTransition,
 } from "react";
@@ -19,6 +20,8 @@ import {
   platesForWeight,
 } from "@/lib/progression";
 import { useWakeLock } from "@/lib/use-wake-lock";
+import { useOfflineQueue } from "@/lib/use-offline-queue";
+import type { PendingSet } from "@/lib/offline-queue";
 import type { LiftFamily } from "@/lib/database.types";
 import { logBodyWeight, type BodyLogState } from "@/app/(app)/progress/actions";
 import {
@@ -123,6 +126,19 @@ export function SessionRunner({
 
   const wakeLock = useWakeLock(true);
 
+  const send = useCallback(
+    (entry: PendingSet) =>
+      logSet({
+        setLogId: entry.setLogId,
+        weightKg: entry.weightKg,
+        reps: entry.reps,
+        completed: entry.completed,
+      }),
+    [],
+  );
+  const queue = useOfflineQueue(send);
+  const finishForm = useRef<HTMLFormElement>(null);
+
   // The server owns the exercise list: adding or dropping one refreshes the
   // route and the new prescription arrives as a prop.
   useEffect(() => {
@@ -177,15 +193,18 @@ export function SessionRunner({
     );
   }, []);
 
-  const persist = useCallback((set: RunnerSet, patch: Partial<RunnerSet>) => {
-    const merged = { ...set, ...patch };
-    void logSet({
-      setLogId: set.id,
-      weightKg: merged.weightKg,
-      reps: merged.reps,
-      completed: merged.completed,
-    });
-  }, []);
+  const persist = useCallback(
+    (set: RunnerSet, patch: Partial<RunnerSet>) => {
+      const merged = { ...set, ...patch };
+      void queue.record({
+        setLogId: set.id,
+        weightKg: merged.weightKg,
+        reps: merged.reps,
+        completed: merged.completed,
+      });
+    },
+    [queue],
+  );
 
   const adjustTarget = useCallback(
     (delta: number) => {
@@ -307,6 +326,20 @@ export function SessionRunner({
             <p className="text-xs text-faint">{focus}</p>
           </div>
           <div className="flex items-center gap-4">
+            {!queue.online || queue.pending > 0 ? (
+              <span
+                className={cx(
+                  "rounded-full border px-2 py-0.5 text-[0.625rem] uppercase tracking-[0.14em]",
+                  queue.online
+                    ? "border-brass-dim text-brass-dim"
+                    : "border-line-strong text-faint",
+                )}
+              >
+                {queue.online
+                  ? `${queue.pending} por enviar`
+                  : "Sem rede"}
+              </span>
+            ) : null}
             <button
               onClick={() => setAdjusting(true)}
               className="text-xs uppercase tracking-[0.14em] text-brass"
@@ -544,9 +577,25 @@ export function SessionRunner({
             {completedCount} de {exercises.length} feitos
           </span>
           {isLast ? (
-            <form action={finishSession}>
+            <form action={finishSession} ref={finishForm}>
               <input type="hidden" name="session_id" value={sessionId} />
-              <Button type="submit" className="w-28">
+              <Button
+                type="button"
+                className="w-28"
+                onClick={async () => {
+                  // Nothing is lost by finishing with sets still queued, but
+                  // the progression would be computed without them.
+                  const left = await queue.flush();
+                  if (left > 0) {
+                    setMutation(
+                      "Há séries ainda por enviar. Liga-te à rede antes de terminar.",
+                    );
+                    setAdjusting(true);
+                    return;
+                  }
+                  finishForm.current?.requestSubmit();
+                }}
+              >
                 Terminar
               </Button>
             </form>
