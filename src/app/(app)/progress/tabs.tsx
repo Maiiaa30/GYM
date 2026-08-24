@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { cx } from "@/components/ui";
 
-const TABS = ["Peso", "Actividade", "Músculos", "Força"] as const;
+const TABS = ["Peso", "Atividade", "Músculos", "Força"] as const;
 
 /**
  * Four readings of the same history, one screen each. The sections arrive
@@ -22,10 +22,13 @@ export function ProgressTabs({
   strength: React.ReactNode;
 }) {
   const [tab, setTab] = useState<(typeof TABS)[number]>("Peso");
-  const panels = { Peso: weight, Actividade: activity, Músculos: muscles, Força: strength };
+  const panels = { Peso: weight, Atividade: activity, Músculos: muscles, Força: strength };
 
   return (
     <div className="space-y-5">
+      {/* Sentence case and no extra letter-spacing: uppercase with tracking
+          made "Atividade" fill its whole slot, so the four labels ran into one
+          another. The row is also a full 44 px tall, which it was not. */}
       <div
         role="tablist"
         aria-label="Vistas do progresso"
@@ -38,8 +41,11 @@ export function ProgressTabs({
             aria-selected={tab === name}
             onClick={() => setTab(name)}
             className={cx(
-              "flex-1 rounded-[var(--radius-sm)] py-2 text-xs uppercase tracking-[0.1em] transition-colors",
-              tab === name ? "bg-raised text-brass" : "text-faint",
+              "flex h-11 flex-1 items-center justify-center rounded-[var(--radius-sm)]",
+              "px-1 text-[0.8125rem] transition-colors",
+              tab === name
+                ? "bg-raised font-medium text-brass"
+                : "text-muted",
             )}
           >
             {name}

@@ -93,6 +93,88 @@ function round(value: number): number {
   return Math.round(value * 100) / 100;
 }
 
+/* ----------------------------------------------------------------- axes */
+
+/**
+ * Two or three round numbers to label an axis with.
+ *
+ * A chart without numbers on it is a shape: you can see the weight fell
+ * without being able to say from what to what. The step is snapped to a 1, 2
+ * or 5 times a power of ten so the labels read as weights rather than as
+ * whatever the data happened to span.
+ */
+export function niceTicks(min: number, max: number, count = 3): number[] {
+  if (!Number.isFinite(min) || !Number.isFinite(max)) return [];
+  if (max <= min) return [Math.round(min * 10) / 10];
+
+  const span = max - min;
+  const magnitude = Math.pow(10, Math.floor(Math.log10(span)));
+
+  // Candidate steps, smallest first. Picking the step by the number of labels
+  // it produces rather than by the raw span avoids a 6 kg range snapping to a
+  // 5 kg step and leaving a single number on the axis.
+  const candidates: number[] = [];
+  for (const scale of [magnitude / 10, magnitude, magnitude * 10]) {
+    for (const factor of [1, 2, 2.5, 5]) candidates.push(factor * scale);
+  }
+  candidates.sort((a, b) => a - b);
+
+  const ticksFor = (step: number) => {
+    const out: number[] = [];
+    for (
+      let tick = Math.ceil(min / step - 1e-9) * step;
+      tick <= max + step * 1e-9 && out.length < 12;
+      tick += step
+    ) {
+      out.push(Math.round(tick * 100) / 100);
+    }
+    return out;
+  };
+
+  let best: number[] = [];
+  for (const step of candidates) {
+    const ticks = ticksFor(step);
+    if (ticks.length < 2) continue;
+    // Prefer the coarsest step that still shows at least `count` labels.
+    if (ticks.length >= count) best = ticks;
+    else if (best.length === 0) best = ticks;
+  }
+
+  return best.length > 0 ? best : [Math.round(((min + max) / 2) * 10) / 10];
+}
+
+/* ----------------------------------------------------------------- bars */
+
+export type Bar = { x: number; y: number; width: number; height: number };
+
+/**
+ * Columns for discrete readings. A session's volume is not a continuous
+ * quantity that flows into the next one, so it belongs in bars rather than on
+ * a line that implies the days between were measured.
+ */
+export function buildBars(values: number[], box: ChartBox = DEFAULT_BOX): Bar[] {
+  if (values.length === 0) return [];
+
+  const innerWidth = box.width - box.padLeft - box.padRight;
+  const innerHeight = box.height - box.padTop - box.padBottom;
+  const peak = Math.max(...values, 0);
+  const slot = innerWidth / values.length;
+  // A quarter of each slot becomes the gap, so wide charts do not turn into
+  // one solid block and narrow ones keep the bars apart.
+  const width = Math.max(2, slot * 0.7);
+  const floor = box.height - box.padBottom;
+
+  return values.map((value, index) => {
+    const height = peak <= 0 ? 0 : (value / peak) * innerHeight;
+    return {
+      x: box.padLeft + index * slot + (slot - width) / 2,
+      y: floor - height,
+      width,
+      height,
+    };
+  });
+}
+
 /* --------------------------------------------------------------- heatmap */
 
 export type HeatDay = { date: string; value: number };
@@ -132,6 +214,33 @@ export function buildHeatmap(
   }
 
   return columns;
+}
+
+const MONTHS = [
+  "jan", "fev", "mar", "abr", "mai", "jun",
+  "jul", "ago", "set", "out", "nov", "dez",
+];
+
+/**
+ * Where each month starts along the grid, so a year of squares has something
+ * to read it against. Without this the heatmap is a texture with no dates.
+ */
+export function monthLabels(
+  columns: HeatCell[][],
+): Array<{ index: number; label: string }> {
+  const out: Array<{ index: number; label: string }> = [];
+  let previous = -1;
+
+  columns.forEach((week, index) => {
+    const month = Number(week[0].date.slice(5, 7)) - 1;
+    if (month === previous) return;
+    previous = month;
+    // A label in the last column has nothing to sit over.
+    if (index > columns.length - 2) return;
+    out.push({ index, label: MONTHS[month] });
+  });
+
+  return out;
 }
 
 function heatLevel(value: number, peak: number): number {

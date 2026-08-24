@@ -1,6 +1,13 @@
-import { Card } from "@/components/ui";
+import { Card, Panel, cx } from "@/components/ui";
 import { BodyMap } from "@/components/body-map";
-import { Heatmap, HeatmapLegend, LineChart, VolumeBars } from "@/components/charts";
+import {
+  BarChart,
+  Heatmap,
+  HeatmapLegend,
+  LineChart,
+  VolumeBars,
+} from "@/components/charts";
+import { formatVolume } from "@/lib/home";
 import { buildHeatmap, toISODate } from "@/lib/charts";
 import {
   countSetsByMuscle,
@@ -19,6 +26,17 @@ function daysAgo(days: number): string {
   const date = new Date();
   date.setDate(date.getDate() - days);
   return toISODate(date);
+}
+
+const MONTHS = [
+  "jan", "fev", "mar", "abr", "mai", "jun",
+  "jul", "ago", "set", "out", "nov", "dez",
+];
+
+/** "24 ago" — short enough to sit under a chart. */
+function shortDate(iso: string): string {
+  const [, month, day] = iso.split("-");
+  return `${Number(day)} ${MONTHS[Number(month) - 1]}`;
 }
 
 export default async function ProgressPage() {
@@ -92,64 +110,80 @@ export default async function ProgressPage() {
 
   const weightSection = (
     <div className="space-y-5">
-      <Card>
-        <div className="flex items-baseline justify-between px-5 pt-5">
-          <div>
-            <p className="label">Último registo</p>
-            <p className="tabular mt-1 font-[family-name:var(--font-display)] text-5xl">
-              {latest ? latest.kg.toFixed(1) : "—"}
-              <span className="ml-1 text-lg text-muted">kg</span>
-            </p>
-          </div>
-          {change !== null ? (
-            <p
-              className={
+      <Panel
+        title="Peso"
+        meta={
+          change !== null ? (
+            <span
+              className={cx(
                 towardsGoal === null
-                  ? "tabular text-sm text-muted"
+                  ? "text-muted"
                   : towardsGoal
-                    ? "tabular text-sm text-brass"
-                    : "tabular text-sm text-oxblood"
-              }
+                    ? "text-brass"
+                    : "text-oxblood",
+              )}
             >
               {change >= 0 ? "+" : ""}
               {change.toFixed(1)} kg
-            </p>
-          ) : null}
-        </div>
-        <div className="mt-4">
+            </span>
+          ) : null
+        }
+        note={
+          goal !== null
+            ? `Objetivo ${goal} kg. A linha tracejada é onde queres chegar.`
+            : "Define um objetivo em baixo para teres uma linha por onde te guiares."
+        }
+      >
+        <p className="tabular font-[family-name:var(--font-display)] text-5xl leading-none">
+          {latest ? latest.kg.toFixed(1) : "—"}
+          <span className="ml-1 text-lg text-muted">kg</span>
+        </p>
+
+        <div className="-mx-2 mt-4">
           <LineChart
             values={weights.map((entry) => entry.kg)}
             goal={goal}
             label="Peso corporal ao longo do tempo"
+            startLabel={weights.length > 1 ? shortDate(weights[0].on) : undefined}
+            endLabel={latest ? shortDate(latest.on) : undefined}
           />
         </div>
-        <div className="rule space-y-4 px-5 py-4">
+      </Panel>
+
+      <Panel title="Registar">
+        <div className="space-y-4">
           <WeightForm current={latest?.kg ?? null} />
           <GoalForm current={goal} />
         </div>
-      </Card>
+      </Panel>
 
-      <Card>
-        <p className="label px-5 pt-4">Registos recentes</p>
-        {weights.length > 0 ? (
-          <ul className="mt-2 divide-y divide-line">
-            {[...weights]
-              .reverse()
-              .slice(0, 10)
-              .map((entry) => (
-                <li
-                  key={entry.on}
-                  className="flex items-center justify-between px-5 py-3"
-                >
-                  <span className="text-sm text-muted">{entry.on}</span>
-                  <span className="tabular text-sm">{entry.kg.toFixed(1)} kg</span>
-                </li>
-              ))}
-          </ul>
-        ) : (
-          <p className="px-5 py-4 text-sm text-muted">Ainda não há registos.</p>
-        )}
-      </Card>
+      {weights.length > 0 ? (
+        <Card className="px-5 py-1">
+          <details className="disclosure">
+            <summary className="label">
+              Registos anteriores
+            </summary>
+            <ul className="divide-y divide-line border-t border-line pb-2">
+              {[...weights]
+                .reverse()
+                .slice(0, 12)
+                .map((entry) => (
+                  <li
+                    key={entry.on}
+                    className="flex items-center justify-between py-2.5"
+                  >
+                    <span className="text-sm text-muted">
+                      {shortDate(entry.on)}
+                    </span>
+                    <span className="tabular text-sm">
+                      {entry.kg.toFixed(1)} kg
+                    </span>
+                  </li>
+                ))}
+            </ul>
+          </details>
+        </Card>
+      ) : null}
     </div>
   );
 
@@ -173,63 +207,54 @@ export default async function ProgressPage() {
   const last30 = daysAgo(30);
   const daysTrained30 = [...perDay.keys()].filter((day) => day >= last30).length;
 
-  const volumeByDay = [...perDay.keys()]
-    .sort()
-    .slice(-12)
-    .map((day) =>
+  const volumeDays = [...perDay.keys()].sort().slice(-12);
+  const volumeByDay = volumeDays.map((day) =>
+    Math.round(
       workingSets
         .filter((set) => set.logged_at.slice(0, 10) === day)
         .reduce(
           (total, set) => total + Number(set.weight_kg ?? 0) * (set.reps ?? 0),
           0,
         ),
-    );
+    ),
+  );
 
   const activitySection = (
     <div className="space-y-5">
-      <Card>
-        <div className="flex items-baseline justify-between px-5 pt-5">
-          <div>
-            <p className="label">Últimos 30 dias</p>
-            <p className="tabular mt-1 font-[family-name:var(--font-display)] text-5xl">
-              {daysTrained30}
-              <span className="ml-1 text-lg text-muted">
-                {daysTrained30 === 1 ? "treino" : "treinos"}
-              </span>
-            </p>
-          </div>
-        </div>
-        <div className="mt-4">
+      <Panel
+        title="Atividade"
+        meta={`${daysTrained30} em 30 dias`}
+        note="Um quadrado por dia do último ano, mais escuro quantas mais séries fizeste."
+      >
+        <div className="-mx-5 px-5">
           <Heatmap columns={columns} />
+        </div>
+        <div className="mt-3">
           <HeatmapLegend />
         </div>
-        <p className="px-5 pb-4 pt-3 text-xs leading-relaxed text-faint">
-          Um quadrado por dia do último ano, mais escuro quantas mais séries
-          fizeste.
-        </p>
-      </Card>
+      </Panel>
 
-      <Card>
-        <p className="label px-5 pt-4">Volume por treino</p>
+      <Panel
+        title="Volume por treino"
+        meta={volumeByDay.length > 0 ? `últimos ${volumeByDay.length}` : null}
+        note="Peso × repetições, somado em cada treino. Séries de aquecimento não contam."
+      >
         {volumeByDay.length > 1 ? (
-          <>
-            <div className="mt-2">
-              <LineChart
-                values={volumeByDay}
-                label="Volume por treino, em quilos levantados"
-              />
-            </div>
-            <p className="px-5 pb-4 text-xs text-faint">
-              Últimos {volumeByDay.length} treinos, em quilos levantados
-              (séries × repetições × peso).
-            </p>
-          </>
+          <div className="-mx-2">
+            <BarChart
+              values={volumeByDay}
+              format={(value) => `${formatVolume(value)} kg`}
+              label="Volume por treino, em quilos levantados"
+              startLabel={shortDate(volumeDays[0])}
+              endLabel={shortDate(volumeDays[volumeDays.length - 1])}
+            />
+          </div>
         ) : (
-          <p className="px-5 py-4 text-sm text-muted">
-            Faz mais um treino para haver linha que desenhar.
+          <p className="text-sm text-muted">
+            Faz mais um treino para haver alguma coisa para comparar.
           </p>
         )}
-      </Card>
+      </Panel>
     </div>
   );
 
@@ -253,28 +278,32 @@ export default async function ProgressPage() {
     countSetsByMuscle(withinDays(asLogged, daysAgo(7)), muscleBySlug),
   );
   const missed = untrained(week);
-  const shares = new Map(week.map((entry) => [entry.muscle, entry.share]));
+
+
+  const worked = week.filter((entry) => entry.sets > 0).length;
 
   const musclesSection = (
     <div className="space-y-5">
-      <Card>
-        <p className="label px-5 pt-4">Sete dias</p>
-        <BodyMap shares={shares} />
-        {missed.length > 0 ? (
-          <p className="px-5 pb-4 text-xs leading-relaxed text-faint">
-            Sem trabalho esta semana: {missed.join(", ")}.
-          </p>
-        ) : (
-          <p className="px-5 pb-4 text-xs text-faint">
-            Todos os grupos apanharam trabalho esta semana.
-          </p>
-        )}
-      </Card>
+      <Panel
+        title="Últimos 7 dias"
+        meta={`${worked} de ${week.length} grupos`}
+        note={
+          missed.length > 0
+            ? `Sem trabalho esta semana: ${missed.join(", ")}.`
+            : "Todos os grupos apanharam trabalho esta semana."
+        }
+      >
+        <div className="-mx-5">
+          <BodyMap rows={week} />
+        </div>
+      </Panel>
 
-      <Card>
-        <p className="label px-5 pt-4">Séries por grupo</p>
+      <Panel
+        title="Séries por grupo"
+        note="Séries de trabalho dos últimos sete dias, sem contar aquecimentos."
+      >
         <VolumeBars rows={week} />
-      </Card>
+      </Panel>
     </div>
   );
 
@@ -300,33 +329,43 @@ export default async function ProgressPage() {
     }));
 
   const strengthSection = (
-    <Card>
-      <p className="label px-5 pt-4">Cargas de trabalho</p>
-      {lifts.length > 0 ? (
-        <ul className="mt-2 divide-y divide-line">
-          {lifts.map((lift) => (
-            <li key={lift.slug} className="px-5 py-3">
-              <div className="flex items-baseline justify-between gap-3">
-                <span className="text-sm">{lift.name}</span>
-                <span className="tabular text-sm text-brass">
-                  {lift.working} kg
-                </span>
-              </div>
-              {lift.best ? (
-                <p className="tabular mt-1 text-xs text-faint">
-                  Melhor série: {lift.best.kg} kg × {lift.best.reps} · 1RM
-                  estimado {lift.best.oneRm} kg
-                </p>
-              ) : null}
-            </li>
-          ))}
-        </ul>
-      ) : (
-        <p className="px-5 py-4 text-sm text-muted">
-          Ainda não há cargas registadas. Aparecem depois do primeiro treino.
-        </p>
-      )}
-    </Card>
+    <div className="space-y-5">
+      <Panel
+        title="Cargas de trabalho"
+        meta={lifts.length > 0 ? `${lifts.length} exercícios` : null}
+        note={
+          lifts.length > 0
+            ? "O peso com que estás a trabalhar agora. O 1RM é uma estimativa a partir da tua melhor série, não uma coisa para ires tentar."
+            : undefined
+        }
+      >
+        {lifts.length > 0 ? (
+          <ul className="-mt-1 divide-y divide-line">
+            {lifts.map((lift) => (
+              <li key={lift.slug} className="py-3">
+                <div className="flex items-baseline justify-between gap-3">
+                  <span className="text-sm">{lift.name}</span>
+                  <span className="tabular shrink-0 font-[family-name:var(--font-display)] text-xl text-brass">
+                    {lift.working}
+                    <span className="ml-0.5 text-xs text-muted">kg</span>
+                  </span>
+                </div>
+                {lift.best ? (
+                  <p className="tabular mt-1 text-xs text-faint">
+                    Melhor série {lift.best.kg} kg × {lift.best.reps} · 1RM ~
+                    {lift.best.oneRm} kg
+                  </p>
+                ) : null}
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="text-sm text-muted">
+            Ainda não há cargas registadas. Aparecem depois do primeiro treino.
+          </p>
+        )}
+      </Panel>
+    </div>
   );
 
   return (
