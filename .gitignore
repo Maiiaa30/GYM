@@ -35,5 +35,6 @@ Thumbs.db
 .vscode/
 .claude/
 
-# local planning notes (not for publication)
+# local planning and hand-over notes (not for publication)
 PROJECT_PLAN.md
+AGENT_CONTEXT.md
