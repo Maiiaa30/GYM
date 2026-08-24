@@ -242,11 +242,6 @@ export function perSideLabel(total: number | null): string | null {
   return `${Math.floor(total / 2)}+${Math.ceil(total / 2)} por lado`;
 }
 
-/** Unilateral targets move in twos so both sides can always match. */
-export function stepForExercise(perSide: boolean): number {
-  return perSide ? 2 : 1;
-}
-
 function formatKg(value: number): string {
   return Number.isInteger(value) ? String(value) : String(value).replace(".", ",");
 }
