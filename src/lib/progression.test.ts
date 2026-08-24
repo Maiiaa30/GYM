@@ -24,11 +24,35 @@ test("a completed session adds one increment", () => {
     increment: 5,
     workingKg: 60,
     failCount: 0,
-    sets: [done(5, 5), done(5, 5), done(5, 5)],
+    sets: [done(12, 12), done(12, 12), done(12, 12)],
   });
   assert.equal(result.workingKg, 65);
   assert.equal(result.failCount, 0);
   assert.equal(result.action, "increase");
+});
+
+test("the weight waits until the top of the range, not the bottom", () => {
+  // Prescribed 10–15. Ten repetitions is the floor of the range, not the
+  // signal to add weight: that only comes at fifteen.
+  const atTheFloor = nextWorkingWeight({
+    family: "upper_compound",
+    increment: 2.5,
+    workingKg: 40,
+    failCount: 0,
+    sets: [done(10, 15), done(10, 15), done(10, 15)],
+  });
+  assert.equal(atTheFloor.action, "hold");
+  assert.equal(atTheFloor.workingKg, 40);
+
+  const atTheTop = nextWorkingWeight({
+    family: "upper_compound",
+    increment: 2.5,
+    workingKg: 40,
+    failCount: 0,
+    sets: [done(15, 15), done(15, 15), done(15, 15)],
+  });
+  assert.equal(atTheTop.action, "increase");
+  assert.equal(atTheTop.workingKg, 42.5);
 });
 
 test("a missed repetition holds the weight and records a failure", () => {
@@ -181,7 +205,7 @@ test("holds and bodyweight work say when to add a set", () => {
       hasHistory: true,
       hitCeiling: true,
     }),
-    /acrescenta uma série/,
+    /faz mais uma/,
   );
   assert.match(
     describeTarget({

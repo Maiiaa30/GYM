@@ -42,7 +42,15 @@ export function roundToLoadable(weightKg: number, step = 0.5): number {
   return Math.max(0, Math.round(weightKg / step) * step);
 }
 
-/** True when every working set reached its repetition target. */
+/**
+ * True when every working set reached the top of its repetition range.
+ *
+ * The target is the *top* of the range, not the bottom: you stay at one weight
+ * and add repetitions until you can do the whole range, and only then does the
+ * weight move. Targeting the bottom — which this did — meant a 10–15 range
+ * added weight the moment you managed ten, so the range was decoration and the
+ * load climbed every session until it stalled.
+ */
 export function allSetsCompleted(sets: SetResult[]): boolean {
   return (
     sets.length > 0 &&
@@ -176,18 +184,18 @@ export function describeTarget(input: {
 }): string {
   if (!input.hasHistory) {
     return input.isTimed
-      ? "Primeira vez. Aguenta o tempo indicado com a posição direita; pára quando ela ceder."
-      : "Primeira vez. Escolhe um peso que te deixe fazer todas as repetições com técnica limpa.";
+      ? "Primeira vez. Aguenta o tempo indicado com a posição certa e pára assim que ela começar a ceder."
+      : "Primeira vez. Escolhe um peso que te deixe fazer todas as repetições sem perder a técnica.";
   }
 
   if (input.hitCeiling) {
     return input.isTimed
-      ? "Aguentaste o topo do tempo em todas as séries. Hoje acrescenta uma série."
-      : "Fizeste o topo da gama em todas as séries. Hoje acrescenta uma série.";
+      ? "Aguentaste o tempo todo em todas as séries. Hoje faz mais uma."
+      : "Chegaste ao máximo de repetições em todas as séries. Hoje faz mais uma.";
   }
 
   if (input.isTimed) {
-    return "Os números são segundos. Tenta aguentar mais do que da última vez.";
+    return "Os números são segundos. Tenta aguentar mais do que na última vez.";
   }
 
   if (input.family === "bodyweight") {
@@ -198,11 +206,11 @@ export function describeTarget(input: {
 
   switch (input.action) {
     case "increase":
-      return `Subiu ${step} kg porque fizeste todas as repetições da última vez.`;
+      return `Subiu ${step} kg: da última vez chegaste ao topo da gama em todas as séries.`;
     case "hold":
-      return "Mesmo peso da última vez, em que faltaram repetições. Fecha-as todas hoje.";
+      return "Mesmo peso. Vai somando repetições até fazeres o topo da gama em todas as séries — só aí é que o peso sobe.";
     case "deload":
-      return "Desceu 10% depois de duas falhas seguidas. Volta a subir a partir daqui.";
+      return "Desceu 10% depois de duas vezes seguidas sem fechar as repetições. A partir daqui volta a subir.";
     default:
       return "Mesmo peso da última vez.";
   }
