@@ -10,7 +10,8 @@ import {
 } from "@/components/charts";
 import { formatVolume } from "@/lib/home";
 import { buildHeatmap } from "@/lib/charts";
-import { daysFromToday } from "@/lib/clock";
+import { daysFromToday, today as todayInGym } from "@/lib/clock";
+import { describeTrend, directionOf, readTrend } from "@/lib/gaining";
 import {
   countSetsByMuscle,
   muscleBalance,
@@ -64,7 +65,7 @@ export default async function ProgressPage() {
       .maybeSingle(),
     supabase
       .from("body_logs")
-      .select("measured_on, weight_kg")
+      .select("measured_on, weight_kg, waist_cm")
       .eq("user_id", user.id)
       .order("measured_on", { ascending: true })
       .limit(400),
@@ -96,6 +97,12 @@ export default async function ProgressPage() {
       kg: Number(log.weight_kg),
     }));
 
+  const waists = (logs ?? [])
+    .filter((log) => log.waist_cm !== null)
+    .map((log) => ({ on: log.measured_on, cm: Number(log.waist_cm) }));
+  const lastWaist = waists[waists.length - 1] ?? null;
+  const firstWaist = waists[0] ?? null;
+
   const goal = profile?.weight_goal_kg === null || profile?.weight_goal_kg === undefined
     ? null
     : Number(profile.weight_goal_kg);
@@ -109,6 +116,30 @@ export default async function ProgressPage() {
     change !== null && goal !== null && latest
       ? Math.abs(latest.kg - goal) < Math.abs(previous!.kg - goal)
       : null;
+
+  const workingSets = (sets ?? []).filter(
+    (set) => set.completed && !set.is_warmup,
+  );
+
+  // Sessions inside the same window the trend is read over, so a flat scale
+  // can be told apart from a month nobody trained.
+  const trendFrom = daysAgo(35);
+  const sessionsInWindow = new Set(
+    workingSets
+      .map((set) => set.logged_at.slice(0, 10))
+      .filter((day) => day >= trendFrom),
+  ).size;
+
+  const direction = directionOf(latest?.kg ?? null, goal);
+  const trend = describeTrend(
+    readTrend({
+      readings: weights,
+      sessions: sessionsInWindow,
+      direction,
+      today: todayInGym(),
+    }),
+    direction,
+  );
 
   const weightSection = (
     <div className="space-y-5">
@@ -141,6 +172,21 @@ export default async function ProgressPage() {
           <span className="ml-1 text-lg text-muted">kg</span>
         </p>
 
+        {trend ? (
+          <p
+            className={cx(
+              "mt-3 border-l-2 pl-3 text-sm leading-relaxed",
+              trend.tone === "warn"
+                ? "border-oxblood text-parchment"
+                : trend.tone === "good"
+                  ? "border-brass text-muted"
+                  : "border-line-strong text-muted",
+            )}
+          >
+            {trend.text}
+          </p>
+        ) : null}
+
         <div className="-mx-2 mt-4">
           <LineChart
             values={weights.map((entry) => entry.kg)}
@@ -152,9 +198,29 @@ export default async function ProgressPage() {
         </div>
       </Panel>
 
+      {lastWaist ? (
+        <Panel
+          title="Cintura"
+          meta={
+            firstWaist && firstWaist.on !== lastWaist.on
+              ? `${(lastWaist.cm - firstWaist.cm) >= 0 ? "+" : "−"}${Math.abs(lastWaist.cm - firstWaist.cm).toFixed(1).replace(".", ",")} cm`
+              : null
+          }
+          note="Peso a subir e cintura parada é o sinal de que estás a ganhar músculo e não só peso."
+        >
+          <p className="tabular font-[family-name:var(--font-display)] text-4xl leading-none">
+            {lastWaist.cm.toFixed(1).replace(".", ",").replace(/,0$/, "")}
+            <span className="ml-1 text-base text-muted">cm</span>
+          </p>
+        </Panel>
+      ) : null}
+
       <Panel title="Registar">
         <div className="space-y-4">
-          <WeightForm current={latest?.kg ?? null} />
+          <WeightForm
+            current={latest?.kg ?? null}
+            waist={lastWaist?.cm ?? null}
+          />
           <GoalForm current={goal} />
         </div>
       </Panel>
@@ -190,10 +256,6 @@ export default async function ProgressPage() {
   );
 
   /* ----------------------------------------------------------- activity */
-
-  const workingSets = (sets ?? []).filter(
-    (set) => set.completed && !set.is_warmup,
-  );
 
   const perDay = new Map<string, number>();
   for (const set of workingSets) {

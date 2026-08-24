@@ -16,7 +16,13 @@ function Submit() {
   );
 }
 
-export function WeightForm({ current }: { current: number | null }) {
+export function WeightForm({
+  current,
+  waist,
+}: {
+  current: number | null;
+  waist: number | null;
+}) {
   const [state, formAction] = useActionState(logBodyWeight, initialState);
 
   return (
@@ -31,6 +37,17 @@ export function WeightForm({ current }: { current: number | null }) {
         defaultValue={current ?? undefined}
         required
         action={<Submit />}
+      />
+
+      <Field
+        label="Cintura"
+        name="waist_cm"
+        type="number"
+        step="0.5"
+        inputMode="decimal"
+        suffix="cm"
+        defaultValue={waist ?? undefined}
+        hint="Ao nível do umbigo, sem apertar. Uma vez por mês chega — diz-te se o peso que ganhaste é músculo."
       />
       {state.error ? <Notice tone="error">{state.error}</Notice> : null}
       {state.saved ? <Notice>Registado.</Notice> : null}

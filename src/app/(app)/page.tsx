@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Card } from "@/components/ui";
 import { createClient } from "@/lib/supabase/server";
 import { daysFromToday, today as todayInGym } from "@/lib/clock";
+import { describeTrend, directionOf, readTrend } from "@/lib/gaining";
 import {
   formatVolume,
   minutesBetween,
@@ -108,7 +109,7 @@ export default async function TodayPage() {
       .eq("user_id", user.id)
       .not("weight_kg", "is", null)
       .order("measured_on", { ascending: false })
-      .limit(30),
+      .limit(40),
   ]);
 
   const heatmapFrom = daysFromToday(-90);
@@ -343,6 +344,25 @@ export default async function TodayPage() {
         )
       : 1;
 
+  const goalKg =
+    profile?.weight_goal_kg === null || profile?.weight_goal_kg === undefined
+      ? null
+      : Number(profile.weight_goal_kg);
+  const direction = directionOf(latest?.kg ?? null, goalKg);
+  const trend = describeTrend(
+    readTrend({
+      readings: weights.map((entry) => ({ on: entry.on, kg: entry.kg })),
+      sessions: new Set(
+        (recentSets ?? [])
+          .map((set) => set.logged_at.slice(0, 10))
+          .filter((day) => day >= daysFromToday(-35)),
+      ).size,
+      direction,
+      today,
+    }),
+    direction,
+  );
+
   return (
     <div className="space-y-5">
       <header>
@@ -445,6 +465,7 @@ export default async function TodayPage() {
           latest={latest.kg}
           changeKg={earliest ? latest.kg - earliest.kg : null}
           weeks={spanWeeks}
+          verdict={trend}
         />
       ) : (
         <EmptyCard label="Peso" href="/progress" action="Registar o peso">

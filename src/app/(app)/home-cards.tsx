@@ -356,11 +356,14 @@ export function WeightCard({
   latest,
   changeKg,
   weeks,
+  verdict,
 }: {
   values: number[];
   latest: number;
   changeKg: number | null;
   weeks: number;
+  /** What the trend actually means, when there is enough of it to say. */
+  verdict?: { tone: "neutral" | "warn" | "good"; text: string } | null;
 }) {
   const series = buildSeries(values, SPARK);
   const direction =
@@ -371,7 +374,8 @@ export function WeightCard({
         : `−${format(Math.abs(changeKg))} kg`;
 
   return (
-    <Card className="flex items-center justify-between gap-4 p-5">
+    <Card className="p-5">
+      <div className="flex items-center justify-between gap-4">
       <div>
         <p className="label">Peso</p>
         <p className="tabular mt-1 font-[family-name:var(--font-display)] text-3xl">
@@ -397,6 +401,22 @@ export function WeightCard({
             className="fill-none stroke-brass [stroke-linecap:round] [stroke-linejoin:round] [stroke-width:1.5]"
           />
         </svg>
+      ) : null}
+      </div>
+
+      {verdict ? (
+        <p
+          className={cx(
+            "mt-4 border-l-2 pl-3 text-sm leading-relaxed",
+            verdict.tone === "warn"
+              ? "border-oxblood text-parchment"
+              : verdict.tone === "good"
+                ? "border-brass text-muted"
+                : "border-line-strong text-muted",
+          )}
+        >
+          {verdict.text}
+        </p>
       ) : null}
     </Card>
   );

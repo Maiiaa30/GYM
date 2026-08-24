@@ -13,8 +13,16 @@ export async function logBodyWeight(
   const weight = Number(formData.get("weight_kg"));
   const notes = String(formData.get("notes") ?? "").trim() || null;
 
+  // The waist is optional and measured far less often than the weight, so an
+  // empty field leaves whatever was there alone rather than blanking it.
+  const rawWaist = String(formData.get("waist_cm") ?? "").trim();
+  const waist = rawWaist === "" ? null : Number(rawWaist.replace(",", "."));
+
   if (!Number.isFinite(weight) || weight < 25 || weight > 300) {
     return { error: "Indica um peso entre 25 e 300 kg.", saved: false };
+  }
+  if (waist !== null && (!Number.isFinite(waist) || waist < 40 || waist > 200)) {
+    return { error: "Indica uma cintura entre 40 e 200 cm.", saved: false };
   }
 
   const supabase = await createClient();
@@ -29,6 +37,7 @@ export async function logBodyWeight(
       user_id: user.id,
       measured_on: todayInGym(),
       weight_kg: weight,
+      ...(waist === null ? {} : { waist_cm: waist }),
       notes,
     },
     { onConflict: "user_id,measured_on" },
