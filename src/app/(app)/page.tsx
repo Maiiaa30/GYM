@@ -1,3 +1,4 @@
+import { redirect } from "next/navigation";
 import Link from "next/link";
 import { Card } from "@/components/ui";
 import { createClient } from "@/lib/supabase/server";
@@ -44,6 +45,8 @@ export default async function TodayPage() {
     data: { user },
   } = await supabase.auth.getUser();
 
+  if (!user) redirect("/login");
+
   const today = new Date().toISOString().slice(0, 10);
 
   const [{ data: profile }, { data: plan }, { data: settings }] =
@@ -51,7 +54,7 @@ export default async function TodayPage() {
       supabase
         .from("profiles")
         .select("name, weight_goal_kg")
-        .eq("id", user!.id)
+        .eq("id", user.id)
         .maybeSingle(),
       supabase
         .from("plans")
@@ -87,23 +90,23 @@ export default async function TodayPage() {
     supabase
       .from("sessions")
       .select("id, plan_day_id, performed_on, started_at, ended_at")
-      .eq("user_id", user!.id)
+      .eq("user_id", user.id)
       .eq("status", "completed")
       .gte("performed_on", since)
       .order("performed_on", { ascending: false }),
     supabase
       .from("sessions")
       .select("id")
-      .eq("user_id", user!.id)
+      .eq("user_id", user.id)
       .eq("status", "in_progress")
       .order("started_at", { ascending: false })
       .limit(1)
       .maybeSingle(),
-    supabase.from("profiles").select("id, name").neq("id", user!.id),
+    supabase.from("profiles").select("id, name").neq("id", user.id),
     supabase
       .from("body_logs")
       .select("measured_on, weight_kg")
-      .eq("user_id", user!.id)
+      .eq("user_id", user.id)
       .not("weight_kg", "is", null)
       .order("measured_on", { ascending: false })
       .limit(30),
@@ -116,7 +119,7 @@ export default async function TodayPage() {
     supabase
       .from("set_logs")
       .select("exercise, weight_kg, reps, logged_at")
-      .eq("user_id", user!.id)
+      .eq("user_id", user.id)
       .eq("completed", true)
       .eq("is_warmup", false)
       .gte("logged_at", heatmapFrom)
@@ -124,7 +127,7 @@ export default async function TodayPage() {
     supabase
       .from("personal_records")
       .select("id, achieved_on")
-      .eq("user_id", user!.id)
+      .eq("user_id", user.id)
       .gte("achieved_on", weekStart(today)),
     supabase.from("exercises").select("slug, primary_muscle"),
   ]);
@@ -132,7 +135,7 @@ export default async function TodayPage() {
   const { count: completedCount } = await supabase
     .from("sessions")
     .select("id", { count: "exact", head: true })
-    .eq("user_id", user!.id)
+    .eq("user_id", user.id)
     .eq("status", "completed");
 
   const { data: items } = days?.length
@@ -270,13 +273,13 @@ export default async function TodayPage() {
           .from("set_logs")
           .select("weight_kg, reps")
           .eq("session_id", previous.id)
-          .eq("user_id", user!.id)
+          .eq("user_id", user.id)
           .eq("completed", true)
           .eq("is_warmup", false),
         supabase
           .from("personal_records")
           .select("id")
-          .eq("user_id", user!.id)
+          .eq("user_id", user.id)
           .eq("achieved_on", previous.performed_on),
       ])
     : [{ data: null }, { data: null }];

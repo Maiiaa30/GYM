@@ -1,3 +1,4 @@
+import { redirect } from "next/navigation";
 import { Card } from "@/components/ui";
 import { createClient } from "@/lib/supabase/server";
 import { estimateMinutes, formatMinutes } from "@/lib/duration";
@@ -24,6 +25,8 @@ export default async function PlanPage() {
   const {
     data: { user },
   } = await supabase.auth.getUser();
+
+  if (!user) redirect("/login");
 
   const today = new Date().toISOString().slice(0, 10);
 
@@ -64,7 +67,7 @@ export default async function PlanPage() {
       ? supabase
           .from("sessions")
           .select("id, plan_day_id, performed_on")
-          .eq("user_id", user!.id)
+          .eq("user_id", user.id)
           .eq("status", "completed")
           .in("plan_day_id", dayIds)
           .order("performed_on", { ascending: false })
@@ -99,7 +102,7 @@ export default async function PlanPage() {
     ? await supabase
         .from("set_logs")
         .select("session_id, weight_kg, reps")
-        .eq("user_id", user!.id)
+        .eq("user_id", user.id)
         .eq("completed", true)
         .eq("is_warmup", false)
         .in(

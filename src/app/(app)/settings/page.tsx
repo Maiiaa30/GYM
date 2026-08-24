@@ -1,3 +1,4 @@
+import { redirect } from "next/navigation";
 import { Button, Card } from "@/components/ui";
 import { createClient } from "@/lib/supabase/server";
 import { signOut } from "../../(auth)/actions";
@@ -12,6 +13,8 @@ export default async function SettingsPage() {
     data: { user },
   } = await supabase.auth.getUser();
 
+  if (!user) redirect("/login");
+
   const [{ data: settings }, { data: me }, { data: members }] =
     await Promise.all([
       supabase
@@ -21,7 +24,7 @@ export default async function SettingsPage() {
       supabase
         .from("profiles")
         .select("name, email, height_cm, is_owner")
-        .eq("id", user!.id)
+        .eq("id", user.id)
         .maybeSingle(),
       supabase.from("profiles").select("id, name, email").order("created_at"),
     ]);

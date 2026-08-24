@@ -1,3 +1,4 @@
+import { redirect } from "next/navigation";
 import { Card, Panel, cx } from "@/components/ui";
 import { BodyMap } from "@/components/body-map";
 import {
@@ -45,6 +46,8 @@ export default async function ProgressPage() {
     data: { user },
   } = await supabase.auth.getUser();
 
+  if (!user) redirect("/login");
+
   const yearAgo = daysAgo(370);
 
   const [
@@ -58,30 +61,30 @@ export default async function ProgressPage() {
     supabase
       .from("profiles")
       .select("weight_goal_kg")
-      .eq("id", user!.id)
+      .eq("id", user.id)
       .maybeSingle(),
     supabase
       .from("body_logs")
       .select("measured_on, weight_kg")
-      .eq("user_id", user!.id)
+      .eq("user_id", user.id)
       .order("measured_on", { ascending: true })
       .limit(400),
     supabase
       .from("set_logs")
       .select("exercise, completed, is_warmup, weight_kg, reps, logged_at")
-      .eq("user_id", user!.id)
+      .eq("user_id", user.id)
       .gte("logged_at", `${yearAgo}T00:00:00Z`)
       .limit(6000),
     supabase.from("exercises").select("slug, name, primary_muscle"),
     supabase
       .from("personal_records")
       .select("exercise, weight_kg, reps, estimated_1rm, achieved_on")
-      .eq("user_id", user!.id)
+      .eq("user_id", user.id)
       .order("estimated_1rm", { ascending: false }),
     supabase
       .from("progression")
       .select("exercise, working_kg, updated_at")
-      .eq("user_id", user!.id)
+      .eq("user_id", user.id)
       .order("updated_at", { ascending: false }),
   ]);
 
