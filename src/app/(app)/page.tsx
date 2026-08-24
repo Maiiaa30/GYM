@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { Card } from "@/components/ui";
 import { createClient } from "@/lib/supabase/server";
+import { daysFromToday, today as todayInGym } from "@/lib/clock";
 import {
   formatVolume,
   minutesBetween,
@@ -14,7 +15,7 @@ import {
 } from "@/lib/home";
 import { estimateMinutes } from "@/lib/duration";
 import { suggestedDayIndex } from "@/lib/schedule";
-import { buildHeatmap, toISODate } from "@/lib/charts";
+import { buildHeatmap } from "@/lib/charts";
 import { countSetsByMuscle, muscleBalance, untrained } from "@/lib/muscle-volume";
 import { TodayCard, type TodayDay } from "./today-card";
 import {
@@ -47,7 +48,7 @@ export default async function TodayPage() {
 
   if (!user) redirect("/login");
 
-  const today = new Date().toISOString().slice(0, 10);
+  const today = todayInGym();
 
   const [{ data: profile }, { data: plan }, { data: settings }] =
     await Promise.all([
@@ -77,9 +78,7 @@ export default async function TodayPage() {
 
   // Enough history for the week strip and a streak worth reading, without
   // pulling a year of sessions onto the opening screen.
-  const since = new Date(Date.now() - 120 * 86_400_000)
-    .toISOString()
-    .slice(0, 10);
+  const since = daysFromToday(-120);
 
   const [
     { data: history },
@@ -112,7 +111,7 @@ export default async function TodayPage() {
       .limit(30),
   ]);
 
-  const heatmapFrom = toISODate(new Date(Date.now() - 90 * 86_400_000));
+  const heatmapFrom = daysFromToday(-90);
 
   const [{ data: recentSets }, { data: weekRecords }, { data: allExercises }] =
     await Promise.all([

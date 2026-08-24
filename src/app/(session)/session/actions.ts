@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { today as todayInGym } from "@/lib/clock";
 import {
   defaultPrescription,
   estimatedOneRepMax,
@@ -31,7 +32,7 @@ export async function startSession(formData: FormData) {
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const today = new Date().toISOString().slice(0, 10);
+  const today = todayInGym();
 
   const { data: existing } = await supabase
     .from("sessions")
@@ -168,7 +169,7 @@ export async function startFreestyleSession() {
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const today = new Date().toISOString().slice(0, 10);
+  const today = todayInGym();
 
   const { data: existing } = await supabase
     .from("sessions")
@@ -513,7 +514,7 @@ export async function finishSession(formData: FormData) {
     );
   }
 
-  const today = new Date().toISOString().slice(0, 10);
+  const today = todayInGym();
   const progressionRows = [];
   const recordRows = [];
 

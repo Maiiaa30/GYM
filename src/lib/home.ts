@@ -22,6 +22,11 @@ function utc(date: string): number {
   return Date.UTC(year, month - 1, day);
 }
 
+/**
+ * The inverse of `utc` above: these are date-only timestamps built with
+ * `Date.UTC`, never "now", so reading them back in UTC is exact. What day it
+ * is today comes from `lib/clock`.
+ */
 function iso(time: number): string {
   return new Date(time).toISOString().slice(0, 10);
 }

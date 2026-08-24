@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { Card } from "@/components/ui";
 import { createClient } from "@/lib/supabase/server";
+import { today as todayInGym } from "@/lib/clock";
 import { estimateMinutes, formatMinutes } from "@/lib/duration";
 import { formatVolume, relativeDay, volumeOf } from "@/lib/home";
 import { BuildPlanForm } from "./build-form";
@@ -28,7 +29,7 @@ export default async function PlanPage() {
 
   if (!user) redirect("/login");
 
-  const today = new Date().toISOString().slice(0, 10);
+  const today = todayInGym();
 
   const [{ data: settings }, { data: plan }] = await Promise.all([
     supabase

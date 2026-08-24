@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { today as todayInGym } from "@/lib/clock";
 
 export type BodyLogState = { error: string | null; saved: boolean };
 
@@ -26,7 +27,7 @@ export async function logBodyWeight(
   const { error } = await supabase.from("body_logs").upsert(
     {
       user_id: user.id,
-      measured_on: new Date().toISOString().slice(0, 10),
+      measured_on: todayInGym(),
       weight_kg: weight,
       notes,
     },

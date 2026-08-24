@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { today as todayInGym } from "@/lib/clock";
 
 export type OnboardingState = { error: string | null };
 
@@ -50,7 +51,7 @@ export async function completeOnboarding(
   const { error: bodyError } = await supabase.from("body_logs").upsert(
     {
       user_id: user.id,
-      measured_on: new Date().toISOString().slice(0, 10),
+      measured_on: todayInGym(),
       weight_kg: weight,
     },
     { onConflict: "user_id,measured_on" },

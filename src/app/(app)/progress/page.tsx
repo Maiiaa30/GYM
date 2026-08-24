@@ -9,7 +9,8 @@ import {
   VolumeBars,
 } from "@/components/charts";
 import { formatVolume } from "@/lib/home";
-import { buildHeatmap, toISODate } from "@/lib/charts";
+import { buildHeatmap } from "@/lib/charts";
+import { daysFromToday } from "@/lib/clock";
 import {
   countSetsByMuscle,
   muscleBalance,
@@ -24,9 +25,7 @@ import { WeightForm } from "./weight-form";
 export const dynamic = "force-dynamic";
 
 function daysAgo(days: number): string {
-  const date = new Date();
-  date.setDate(date.getDate() - days);
-  return toISODate(date);
+  return daysFromToday(-days);
 }
 
 const MONTHS = [

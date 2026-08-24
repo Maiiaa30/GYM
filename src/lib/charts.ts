@@ -252,6 +252,12 @@ function heatLevel(value: number, peak: number): number {
   return 4;
 }
 
+/**
+ * Formats a date the way the grid is keyed. Uses the runtime's own zone
+ * deliberately: `buildHeatmap` walks a cursor day by day with `setDate`, so
+ * both ends of the comparison have to be read the same way. Which day *is*
+ * today comes from `lib/clock`, which knows where the gym is.
+ */
 export function toISODate(date: Date): string {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, "0");

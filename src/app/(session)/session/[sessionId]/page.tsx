@@ -1,5 +1,6 @@
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { today as todayInGym } from "@/lib/clock";
 import { describeTarget } from "@/lib/progression";
 import { buildBlocks } from "@/lib/blocks";
 import type { LiftFamily, ProgressionAction } from "@/lib/database.types";
@@ -108,7 +109,7 @@ export default async function SessionPage({
       .from("body_logs")
       .select("weight_kg")
       .eq("user_id", user.id)
-      .eq("measured_on", new Date().toISOString().slice(0, 10))
+      .eq("measured_on", todayInGym())
       .maybeSingle(),
   ]);
 
