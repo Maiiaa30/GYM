@@ -2,9 +2,15 @@
 
 /* ------------------------------------------------------------------
    Design tokens
-   Restrained, low-contrast dark palette: ink ground, parchment text,
-   a single brass accent and a muted olive support colour.
-   No gradients, no glows, no saturated colour.
+   Restrained dark palette: ink ground, parchment text, a single brass
+   accent and a muted olive support colour. No gradients, no glows, no
+   saturated colour.
+
+   The three text tiers — parchment, muted, faint — each clear 4.5:1 on
+   every ground the application uses, and are spaced far enough apart to
+   still read as a hierarchy. They were not: `faint` sat at 2.6:1, which
+   is most of the small print in the application, on a phone, in a gym.
+   Check any new colour against `--color-raised`, the lightest ground.
 ------------------------------------------------------------------- */
 @theme {
   --color-ink: #0b0c0a;
@@ -13,12 +19,12 @@
   --color-line: #272b24;
   --color-line-strong: #3a3f35;
   --color-parchment: #ece6d8;
-  --color-muted: #8d8a7d;
-  --color-faint: #5f5d55;
+  --color-muted: #b0ac9c;
+  --color-faint: #8a8779;
   --color-brass: #c2a467;
-  --color-brass-dim: #8a7545;
+  --color-brass-dim: #98814c;
   --color-olive: #4c5c47;
-  --color-oxblood: #8a4b44;
+  --color-oxblood: #c36a60;
 
   --font-display: var(--font-serif), Georgia, "Times New Roman", serif;
   --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
@@ -129,11 +135,98 @@ input[type="number"] {
   font-variant-numeric: tabular-nums;
 }
 
+/* Detail that is worth having but not worth reading every time collapses
+   behind a native <details>, which costs no JavaScript and works offline. */
+@utility disclosure {
+  & > summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    min-height: 2.75rem;
+    cursor: pointer;
+    list-style: none;
+  }
+
+  & > summary::-webkit-details-marker {
+    display: none;
+  }
+
+  & > summary::after {
+    content: "";
+    width: 0.5rem;
+    height: 0.5rem;
+    flex: none;
+    border-right: 1.5px solid var(--color-faint);
+    border-bottom: 1.5px solid var(--color-faint);
+    transform: rotate(45deg) translate(-2px, -2px);
+    transition: transform 150ms ease;
+  }
+
+  &[open] > summary::after {
+    transform: rotate(-135deg);
+  }
+}
+
+/* The two catalogue frames are the start and the end of a lift. Stacking them
+   and fading between the two shows the movement; side by side shows two
+   photographs. */
+@keyframes demo-frame {
+  0%,
+  38% {
+    opacity: 0;
+  }
+  50%,
+  88% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+@utility demo-frames {
+  position: relative;
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+
+  & > img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  & > img + img {
+    opacity: 0;
+    animation: demo-frame 3.4s ease-in-out infinite;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
   *::after {
     animation-duration: 0.01ms !important;
     transition-duration: 0.01ms !important;
+  }
+
+  /* Without the cross-fade both frames still have to be readable, so they go
+     back to sitting next to each other. */
+  .demo-frames {
+    position: static;
+    aspect-ratio: auto;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1px;
+  }
+
+  .demo-frames > img,
+  .demo-frames > img + img {
+    position: static;
+    height: auto;
+    opacity: 1;
+    animation-name: none !important;
   }
 }
