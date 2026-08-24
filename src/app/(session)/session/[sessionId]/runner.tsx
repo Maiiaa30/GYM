@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   useActionState,
@@ -13,6 +14,7 @@ import {
 } from "react";
 import { useFormStatus } from "react-dom";
 import { Button, Card, Field, Notice, cx } from "@/components/ui";
+import { NumericInput } from "@/components/numeric-input";
 import { Sheet } from "@/components/sheet";
 import {
   formatRepTarget,
@@ -22,7 +24,7 @@ import {
 import { useWakeLock } from "@/lib/use-wake-lock";
 import { useOfflineQueue } from "@/lib/use-offline-queue";
 import type { PendingSet } from "@/lib/offline-queue";
-import type { LiftFamily } from "@/lib/database.types";
+import type { LiftFamily, ProgressionAction } from "@/lib/database.types";
 import { logBodyWeight, type BodyLogState } from "@/app/(app)/progress/actions";
 import {
   abandonSession,
@@ -31,6 +33,8 @@ import {
   logSet,
   pairWithPrevious,
   removeExerciseFromSession,
+  swapExerciseInSession,
+  swapWholeSession,
   unpairExercise,
 } from "../actions";
 
@@ -50,6 +54,8 @@ export type RunnerExercise = {
   muscle: string;
   images: string[];
   cues: string[];
+  steps: string[];
+  mistakes: string[];
   family: LiftFamily;
   increment: number;
   repLow: number;
@@ -61,6 +67,7 @@ export type RunnerExercise = {
   supersetGroup: number | null;
   isTimed: boolean;
   perSide: boolean;
+  action: ProgressionAction | null;
   reason: string;
   last: { weightKg: number | null; reps: number | null; on: string } | null;
   partner: { name: string | null; weightKg: number | null; reps: number | null } | null;
@@ -73,7 +80,12 @@ export type RunnerBlock = {
   exercises: RunnerExercise[];
 };
 
-export type CatalogueOption = { slug: string; name: string; muscle: string };
+export type CatalogueOption = {
+  slug: string;
+  name: string;
+  muscle: string;
+  equipment: string;
+};
 
 /** A short tone at the end of the rest period. No audio file to download. */
 function beep() {
@@ -134,7 +146,12 @@ export function SessionRunner({
   const [showDemo, setShowDemo] = useState<string | null>(null);
   const [rest, setRest] = useState<number | null>(null);
   const [adjusting, setAdjusting] = useState(false);
+  // Repetition targets are per exercise and last the session. The prescription
+  // is a starting point, not an instruction: doing ten today and wanting
+  // fifteen on the next set is the normal way this goes.
+  const [repTargets, setRepTargets] = useState<Record<string, number>>({});
   const [search, setSearch] = useState("");
+  const [muscleFilter, setMuscleFilter] = useState<string | null>(null);
   const [mutation, setMutation] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
@@ -209,6 +226,45 @@ export function SessionRunner({
     [queue],
   );
 
+  const targetReps = useCallback(
+    (exercise: RunnerExercise) =>
+      repTargets[exercise.slug] ?? exercise.repLow,
+    [repTargets],
+  );
+
+  const adjustReps = useCallback(
+    (exercise: RunnerExercise, delta: number) => {
+      setRepTargets((current) => {
+        const base = current[exercise.slug] ?? exercise.repLow;
+        const limit = exercise.isTimed ? 600 : 200;
+        return {
+          ...current,
+          [exercise.slug]: Math.max(1, Math.min(limit, base + delta)),
+        };
+      });
+    },
+    [],
+  );
+
+  const setTarget = useCallback((slug: string, kg: number | null) => {
+    if (kg === null) return;
+    setBlocks((current) =>
+      current.map((item) => ({
+        ...item,
+        exercises: item.exercises.map((exercise) => {
+          if (exercise.slug !== slug) return exercise;
+          return {
+            ...exercise,
+            sets: exercise.sets.map((set) => {
+              if (set.isWarmup || set.completed) return set;
+              return { ...set, targetKg: Math.max(0, Math.round(kg * 2) / 2) };
+            }),
+          };
+        }),
+      })),
+    );
+  }, []);
+
   const adjustTarget = useCallback((slug: string, delta: number) => {
     setBlocks((current) =>
       current.map((item) => ({
@@ -241,7 +297,7 @@ export function SessionRunner({
         return;
       }
 
-      const reps = set.reps ?? (set.isWarmup ? null : exercise.repLow);
+      const reps = set.reps ?? (set.isWarmup ? null : targetReps(exercise));
       const weight = set.weightKg ?? set.targetKg;
 
       patchSet(set.id, { completed: true, reps, weightKg: weight });
@@ -256,12 +312,12 @@ export function SessionRunner({
 
       if (lastOfRound) setRest(exercise.restSec);
     },
-    [block, patchSet, persist],
+    [block, patchSet, persist, targetReps],
   );
 
   const changeReps = useCallback(
-    (set: RunnerSet, reps: number) => {
-      const safe = Math.max(0, Math.min(200, reps));
+    (set: RunnerSet, reps: number | null) => {
+      const safe = reps === null ? null : Math.max(0, Math.min(600, reps));
       patchSet(set.id, { reps: safe });
       if (set.completed) persist(set, { reps: safe });
     },
@@ -292,17 +348,27 @@ export function SessionRunner({
     [router],
   );
 
+  // The list is already narrowed to the equipment they have; these narrow it
+  // to the muscle they came for, which is how someone actually looks for a
+  // replacement when a machine is taken.
+  const muscles = useMemo(
+    () => [...new Set(available.map((option) => option.muscle))].sort(),
+    [available],
+  );
+
   const filtered = useMemo(() => {
     const needle = search.trim().toLowerCase();
-    const list = needle
-      ? available.filter(
-          (option) =>
-            option.name.toLowerCase().includes(needle) ||
-            option.muscle.toLowerCase().includes(needle),
-        )
-      : available;
-    return list.slice(0, 40);
-  }, [available, search]);
+    return available
+      .filter((option) => !muscleFilter || option.muscle === muscleFilter)
+      .filter(
+        (option) =>
+          !needle ||
+          option.name.toLowerCase().includes(needle) ||
+          option.muscle.toLowerCase().includes(needle) ||
+          option.equipment.toLowerCase().includes(needle),
+      )
+      .slice(0, 40);
+  }, [available, muscleFilter, search]);
 
   const completedCount = blocks.filter(blockDone).length;
 
@@ -313,40 +379,50 @@ export function SessionRunner({
         className="border-b border-line px-5 pb-3"
         style={{ paddingTop: "max(1rem, env(safe-area-inset-top))" }}
       >
-        <div className="flex items-center justify-between gap-3">
-          <div>
-            <p className="label">{dayName}</p>
-            <p className="text-xs text-faint">{focus}</p>
-          </div>
-          <div className="flex items-center gap-4">
-            {!queue.online || queue.pending > 0 ? (
-              <span
-                className={cx(
-                  "rounded-full border px-2 py-0.5 text-[0.625rem] uppercase tracking-[0.14em]",
-                  queue.online
-                    ? "border-brass-dim text-brass-dim"
-                    : "border-line-strong text-faint",
-                )}
-              >
-                {queue.online ? `${queue.pending} por enviar` : "Sem rede"}
-              </span>
-            ) : null}
-            <button
-              onClick={() => setAdjusting(true)}
-              className="text-xs uppercase tracking-[0.14em] text-brass"
+        <div className="flex items-center gap-3">
+          {/* Leaving is not the same as giving up: the session stays open and
+              the opening screen offers it back. Abandoning lives in the sheet,
+              where it cannot be hit by accident between sets. */}
+          <Link
+            href="/"
+            aria-label="Sair sem terminar o treino"
+            className="-ml-2 flex h-11 w-11 shrink-0 items-center justify-center text-muted"
+          >
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              aria-hidden="true"
+              className="fill-none stroke-current [stroke-linecap:round] [stroke-linejoin:round] [stroke-width:1.5]"
             >
-              Ajustar
-            </button>
-            <form action={abandonSession}>
-              <input type="hidden" name="session_id" value={sessionId} />
-              <button
-                type="submit"
-                className="text-xs uppercase tracking-[0.14em] text-faint"
-              >
-                Abandonar
-              </button>
-            </form>
+              <path d="M15 5l-7 7 7 7" />
+            </svg>
+          </Link>
+
+          <div className="min-w-0 flex-1">
+            <p className="label truncate">{dayName}</p>
+            <p className="truncate text-xs text-faint">{focus}</p>
           </div>
+
+          {!queue.online || queue.pending > 0 ? (
+            <span
+              className={cx(
+                "shrink-0 rounded-full border px-2 py-0.5 text-[0.625rem] uppercase tracking-[0.14em]",
+                queue.online
+                  ? "border-brass-dim text-brass-dim"
+                  : "border-line-strong text-faint",
+              )}
+            >
+              {queue.online ? `${queue.pending} por enviar` : "Sem rede"}
+            </span>
+          ) : null}
+
+          <button
+            onClick={() => setAdjusting(true)}
+            className="-mr-2 flex h-11 shrink-0 items-center px-2 text-xs uppercase tracking-[0.14em] text-brass"
+          >
+            Ajustar
+          </button>
         </div>
         {blocks.length > 0 ? (
           <div className="mt-3 flex gap-1">
@@ -392,7 +468,10 @@ export function SessionRunner({
             </Card>
           ) : block.exercises.length === 1 ? (
             <ExercisePanel
+              key={block.key}
               exercise={block.exercises[0]}
+              repTarget={targetReps(block.exercises[0])}
+              onAdjustReps={(delta) => adjustReps(block.exercises[0], delta)}
               showDemo={showDemo === block.exercises[0].slug}
               onToggleDemo={() =>
                 setShowDemo((current) =>
@@ -402,17 +481,22 @@ export function SessionRunner({
                 )
               }
               onAdjust={(delta) => adjustTarget(block.exercises[0].slug, delta)}
+              onSetLoad={(kg) => setTarget(block.exercises[0].slug, kg)}
               onToggleSet={(set) => toggleSet(block.exercises[0], set)}
               onReps={changeReps}
             />
           ) : (
             <SupersetPanel
+              key={block.key}
               block={block}
               showDemo={showDemo}
               onToggleDemo={(slug) =>
                 setShowDemo((current) => (current === slug ? null : slug))
               }
               onAdjust={adjustTarget}
+              onSetLoad={setTarget}
+              onAdjustReps={adjustReps}
+              repTargetFor={targetReps}
               onToggleSet={toggleSet}
               onReps={changeReps}
             />
@@ -422,13 +506,13 @@ export function SessionRunner({
 
       {/* -------------------------------------------------------- footer */}
       <footer
-        className="border-t border-line bg-ink px-5 pt-3"
+        className="relative border-t border-line bg-ink px-5 pt-3"
         style={{ paddingBottom: "max(0.75rem, env(safe-area-inset-bottom))" }}
       >
         {rest !== null ? (
           <button
             onClick={() => setRest(null)}
-            className="mb-3 flex w-full items-center justify-between rounded-[var(--radius-md)] border border-brass-dim px-4 py-2"
+            className="absolute bottom-full left-0 right-0 flex w-full items-center justify-between gap-3 border-t border-brass-dim bg-ink px-5 py-2.5"
           >
             <span className="label">Descanso</span>
             <span className="tabular font-[family-name:var(--font-display)] text-2xl text-brass">
@@ -463,7 +547,7 @@ export function SessionRunner({
                   const left = await queue.flush();
                   if (left > 0) {
                     setMutation(
-                      "Há séries ainda por enviar. Liga-te à rede antes de terminar.",
+                      "Ainda há séries por enviar. Liga-te à rede antes de terminares.",
                     );
                     setAdjusting(true);
                     return;
@@ -523,20 +607,36 @@ export function SessionRunner({
                           </span>
                         ) : null}
                       </span>
-                      <button
-                        onClick={() =>
-                          run(() =>
-                            removeExerciseFromSession({
-                              sessionId,
-                              exercise: item.slug,
-                            }),
-                          )
-                        }
-                        disabled={pending || flat.length <= 1}
-                        className="text-xs uppercase tracking-[0.14em] text-oxblood disabled:opacity-40"
-                      >
-                        Remover
-                      </button>
+                      <span className="flex shrink-0 items-center gap-3">
+                        <button
+                          onClick={() =>
+                            run(() =>
+                              swapExerciseInSession({
+                                sessionId,
+                                exercise: item.slug,
+                              }),
+                            )
+                          }
+                          disabled={pending}
+                          className="text-xs uppercase tracking-[0.14em] text-brass disabled:opacity-40"
+                        >
+                          Trocar
+                        </button>
+                        <button
+                          onClick={() =>
+                            run(() =>
+                              removeExerciseFromSession({
+                                sessionId,
+                                exercise: item.slug,
+                              }),
+                            )
+                          }
+                          disabled={pending || flat.length <= 1}
+                          className="text-xs uppercase tracking-[0.14em] text-oxblood disabled:opacity-40"
+                        >
+                          Remover
+                        </button>
+                      </span>
                     </div>
                     {itemIndex > 0 ? (
                       <button
@@ -566,7 +666,22 @@ export function SessionRunner({
               </ul>
               <p className="mt-2 text-xs leading-relaxed text-faint">
                 Juntar dois exercícios faz uma supersérie: fazem-se de seguida,
-                com um único descanso no fim de cada ronda.
+                com um único descanso no fim de cada ronda. Trocar dá-te outro
+                exercício para o mesmo músculo, para quando a máquina está
+                ocupada ou avariada.
+              </p>
+
+              <Button
+                variant="quiet"
+                className="mt-4 w-full"
+                disabled={pending}
+                onClick={() => run(() => swapWholeSession({ sessionId }), true)}
+              >
+                Trocar o treino todo
+              </Button>
+              <p className="mt-2 text-xs leading-relaxed text-faint">
+                Troca todos os exercícios que ainda não começaste por outros que
+                trabalham os mesmos músculos. Os que já fizeste ficam.
               </p>
             </section>
           ) : null}
@@ -576,9 +691,33 @@ export function SessionRunner({
             <input
               value={search}
               onChange={(event) => setSearch(event.target.value)}
-              placeholder="Procurar por nome ou músculo"
+              placeholder="Procurar por nome, músculo ou equipamento"
               className="mb-3 h-12 w-full rounded-[var(--radius-md)] border border-line bg-raised px-3 placeholder:text-faint focus:border-brass focus:outline-none"
             />
+
+            <div className="scroll-area -mx-5 mb-3 overflow-x-auto px-5">
+              <div className="flex w-max gap-2">
+                <FilterChip
+                  active={muscleFilter === null}
+                  onClick={() => setMuscleFilter(null)}
+                >
+                  Todos
+                </FilterChip>
+                {muscles.map((muscle) => (
+                  <FilterChip
+                    key={muscle}
+                    active={muscleFilter === muscle}
+                    onClick={() =>
+                      setMuscleFilter((current) =>
+                        current === muscle ? null : muscle,
+                      )
+                    }
+                  >
+                    {muscle}
+                  </FilterChip>
+                ))}
+              </div>
+            </div>
             <ul className="divide-y divide-line rounded-[var(--radius-md)] border border-line">
               {filtered.map((option) => (
                 <li key={option.slug}>
@@ -596,8 +735,15 @@ export function SessionRunner({
                     disabled={pending}
                     className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left disabled:opacity-40"
                   >
-                    <span className="text-sm">{option.name}</span>
-                    <span className="text-xs text-faint">{option.muscle}</span>
+                    <span className="text-sm">
+                      {option.name}
+                      <span className="mt-0.5 block text-xs text-faint">
+                        {option.equipment}
+                      </span>
+                    </span>
+                    <span className="shrink-0 text-xs text-faint">
+                      {option.muscle}
+                    </span>
                   </button>
                 </li>
               ))}
@@ -608,9 +754,49 @@ export function SessionRunner({
               ) : null}
             </ul>
           </section>
+
+          <section className="border-t border-line pb-2 pt-5">
+            <p className="label mb-2">Desistir</p>
+            <p className="mb-3 text-xs leading-relaxed text-faint">
+              Sair pela seta lá em cima deixa o treino a meio e podes voltar
+              quando quiseres. Abandonar fecha-o de vez: não conta para o
+              progresso nem sobe as cargas.
+            </p>
+            <form action={abandonSession}>
+              <input type="hidden" name="session_id" value={sessionId} />
+              <Button type="submit" variant="danger" className="w-full">
+                Abandonar o treino
+              </Button>
+            </form>
+          </section>
         </div>
       </Sheet>
     </div>
+  );
+}
+
+function FilterChip({
+  active,
+  onClick,
+  children,
+}: {
+  active: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      aria-pressed={active}
+      className={cx(
+        "whitespace-nowrap rounded-full border px-3 py-1.5 text-xs transition-colors",
+        active
+          ? "border-brass bg-brass text-ink"
+          : "border-line-strong text-muted",
+      )}
+    >
+      {children}
+    </button>
   );
 }
 
@@ -619,17 +805,23 @@ export function SessionRunner({
 function ExercisePanel({
   exercise,
   showDemo,
+  repTarget,
+  onAdjustReps,
   onToggleDemo,
   onAdjust,
+  onSetLoad,
   onToggleSet,
   onReps,
 }: {
   exercise: RunnerExercise;
   showDemo: boolean;
+  repTarget: number;
+  onAdjustReps: (delta: number) => void;
   onToggleDemo: () => void;
   onAdjust: (delta: number) => void;
+  onSetLoad: (kg: number | null) => void;
   onToggleSet: (set: RunnerSet) => void;
-  onReps: (set: RunnerSet, reps: number) => void;
+  onReps: (set: RunnerSet, reps: number | null) => void;
 }) {
   const workingSets = working(exercise);
   const warmups = exercise.sets.filter((set) => set.isWarmup);
@@ -654,14 +846,21 @@ function ExercisePanel({
 
       <button
         onClick={onToggleDemo}
-        className="text-sm text-brass underline underline-offset-4"
+        aria-expanded={showDemo}
+        className="-my-2 flex h-11 items-center text-sm text-brass underline underline-offset-4"
       >
         {showDemo ? "Esconder a técnica" : "Como se faz"}
       </button>
 
       {showDemo ? <Demo exercise={exercise} /> : null}
 
-      <LoadCard exercise={exercise} onAdjust={onAdjust} />
+      <LoadCard exercise={exercise} onAdjust={onAdjust} onSet={onSetLoad} />
+
+      <RepsCard
+        exercise={exercise}
+        target={repTarget}
+        onAdjust={onAdjustReps}
+      />
 
       {warmups.length > 0 ? (
         <section>
@@ -692,7 +891,7 @@ function ExercisePanel({
             <SetRow
               key={set.id}
               set={set}
-              repTarget={exercise.repLow}
+              repTarget={repTarget}
               bodyweight={exercise.family === "bodyweight"}
               timed={exercise.isTimed}
               perSide={exercise.perSide}
@@ -713,6 +912,9 @@ function SupersetPanel({
   showDemo,
   onToggleDemo,
   onAdjust,
+  onSetLoad,
+  onAdjustReps,
+  repTargetFor,
   onToggleSet,
   onReps,
 }: {
@@ -720,8 +922,11 @@ function SupersetPanel({
   showDemo: string | null;
   onToggleDemo: (slug: string) => void;
   onAdjust: (slug: string, delta: number) => void;
+  onSetLoad: (slug: string, kg: number | null) => void;
+  onAdjustReps: (exercise: RunnerExercise, delta: number) => void;
+  repTargetFor: (exercise: RunnerExercise) => number;
   onToggleSet: (exercise: RunnerExercise, set: RunnerSet) => void;
-  onReps: (set: RunnerSet, reps: number) => void;
+  onReps: (set: RunnerSet, reps: number | null) => void;
 }) {
   const rounds = Math.max(
     ...block.exercises.map((exercise) => working(exercise).length),
@@ -755,6 +960,12 @@ function SupersetPanel({
             exercise={exercise}
             compact
             onAdjust={(delta) => onAdjust(exercise.slug, delta)}
+            onSet={(kg) => onSetLoad(exercise.slug, kg)}
+          />
+          <RepsCard
+            exercise={exercise}
+            target={repTargetFor(exercise)}
+            onAdjust={(delta) => onAdjustReps(exercise, delta)}
           />
         </div>
       ))}
@@ -773,7 +984,7 @@ function SupersetPanel({
                     key={set.id}
                     set={set}
                     label={exercise.name}
-                    repTarget={exercise.repLow}
+                    repTarget={repTargetFor(exercise)}
                     bodyweight={exercise.family === "bodyweight"}
                     timed={exercise.isTimed}
                     perSide={exercise.perSide}
@@ -792,48 +1003,121 @@ function SupersetPanel({
 
 /* ---------------------------------------------------------------- pieces */
 
+/**
+ * What the movement actually is, for someone who has never done it. The two
+ * catalogue frames are the start and the end of the lift, so they cross-fade
+ * rather than sit side by side: the loop reads as a movement, which two stills
+ * never do. Under reduced motion they fall back to the pair.
+ */
 function Demo({ exercise }: { exercise: RunnerExercise }) {
+  const frames = exercise.images.slice(0, 2);
+
   return (
     <Card className="overflow-hidden">
-      <div className="grid grid-cols-2 gap-px bg-line">
-        {exercise.images.slice(0, 2).map((src, imageIndex) => (
-          <Image
-            key={src}
-            src={src}
-            alt={`${exercise.name}, posição ${imageIndex + 1}`}
-            width={400}
-            height={300}
-            className="h-auto w-full bg-raised object-cover"
-            unoptimized
-          />
-        ))}
-      </div>
-      <ul className="space-y-2 p-4">
-        {exercise.cues.map((cue) => (
-          <li key={cue} className="flex gap-2 text-sm text-muted">
-            <span className="text-brass">—</span>
-            <span>{cue}</span>
-          </li>
-        ))}
-      </ul>
+      {frames.length > 0 ? (
+        <figure className="m-0">
+          <div className="demo-frames bg-raised">
+            {frames.map((src, imageIndex) => (
+              <Image
+                key={src}
+                src={src}
+                alt={`${exercise.name}, posição ${imageIndex + 1}`}
+                width={400}
+                height={300}
+                unoptimized
+              />
+            ))}
+          </div>
+          <figcaption className="border-t border-line px-4 py-2 text-center text-xs text-faint">
+            {frames.length > 1
+              ? "Do início ao fim do movimento"
+              : "Posição do exercício"}
+          </figcaption>
+        </figure>
+      ) : null}
+
+      {exercise.steps.length > 0 ? (
+        <section className="border-t border-line p-4">
+          <p className="label mb-3">Passo a passo</p>
+          <ol className="space-y-2.5">
+            {exercise.steps.map((step, stepIndex) => (
+              <li key={step} className="flex gap-3 text-sm leading-relaxed">
+                <span className="tabular w-4 shrink-0 text-brass">
+                  {stepIndex + 1}
+                </span>
+                <span>{step}</span>
+              </li>
+            ))}
+          </ol>
+        </section>
+      ) : null}
+
+      {exercise.mistakes.length > 0 ? (
+        <section className="border-t border-line p-4">
+          <p className="label mb-3">Erros comuns</p>
+          <ul className="space-y-2">
+            {exercise.mistakes.map((mistake) => (
+              <li
+                key={mistake}
+                className="flex gap-3 text-sm leading-relaxed text-muted"
+              >
+                <span className="text-oxblood" aria-hidden="true">
+                  ×
+                </span>
+                <span>{mistake}</span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
+
+      {exercise.cues.length > 0 ? (
+        <section className="border-t border-line p-4">
+          <p className="label mb-3">A não esquecer</p>
+          <ul className="space-y-2">
+            {exercise.cues.map((cue) => (
+              <li
+                key={cue}
+                className="flex gap-3 text-sm leading-relaxed text-muted"
+              >
+                <span className="text-brass" aria-hidden="true">
+                  —
+                </span>
+                <span>{cue}</span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
     </Card>
   );
+}
+
+/** Progression only moves the load on some sessions; those are the ones worth
+ *  a whole panel. On every other exercise the weight is a single line that
+ *  opens when tapped, so the screen stays about the sets. */
+function weightMoved(action: ProgressionAction | null) {
+  return action === "increase" || action === "deload" || action === "start";
 }
 
 function LoadCard({
   exercise,
   compact = false,
   onAdjust,
+  onSet,
 }: {
   exercise: RunnerExercise;
   compact?: boolean;
   onAdjust: (delta: number) => void;
+  onSet: (kg: number | null) => void;
 }) {
   const workingSets = working(exercise);
   const target =
     workingSets.find((set) => !set.completed)?.targetKg ??
     workingSets[0]?.targetKg ??
     null;
+
+  const [open, setOpen] = useState(() => weightMoved(exercise.action));
 
   if (exercise.family === "bodyweight") {
     return (
@@ -849,11 +1133,78 @@ function LoadCard({
   }
 
   const plates = target !== null && target > 0 ? platesForWeight(target) : null;
+  const arrow =
+    exercise.action === "increase"
+      ? "↑"
+      : exercise.action === "deload"
+        ? "↓"
+        : null;
+
+  const weight = (
+    <span
+      className={cx(
+        "tabular font-[family-name:var(--font-display)]",
+        compact ? "text-4xl" : "text-5xl",
+      )}
+    >
+      {arrow ? (
+        <span className="mr-1 align-middle text-2xl text-brass" aria-hidden="true">
+          {arrow}
+        </span>
+      ) : null}
+      {target === null ? "—" : target}
+      <span className="ml-1 text-lg text-muted">kg</span>
+    </span>
+  );
+
+  const weightField = (
+    <span className="flex items-baseline gap-1">
+      <NumericInput
+        decimal
+        value={target}
+        onChange={onSet}
+        aria-label="Carga em quilos"
+        className={cx(
+          "border-transparent bg-transparent font-[family-name:var(--font-display)]",
+          compact ? "h-12 w-24 text-4xl" : "h-14 w-28 text-5xl",
+        )}
+      />
+      <span className="text-lg text-muted">kg</span>
+    </span>
+  );
+
+  if (!open) {
+    return (
+      <Card>
+        <button
+          onClick={() => setOpen(true)}
+          aria-expanded={false}
+          className="flex w-full items-center justify-between gap-4 px-5 py-3 text-left"
+        >
+          <span className="label">Carga</span>
+          {weight}
+          <span className="text-xs uppercase tracking-[0.14em] text-brass">
+            Ajustar
+          </span>
+        </button>
+      </Card>
+    );
+  }
 
   return (
     <Card className="p-5">
-      <p className="label">Carga de trabalho</p>
-      <div className="mt-3 flex items-center justify-between gap-4">
+      <div className="flex items-baseline justify-between gap-3">
+        <p className="label">Carga de trabalho</p>
+        <button
+          onClick={() => setOpen(false)}
+          aria-expanded
+          className="text-xs uppercase tracking-[0.14em] text-faint"
+        >
+          Fechar
+        </button>
+      </div>
+
+      <div className="mt-3 flex items-center justify-between gap-3">
         <Button
           variant="quiet"
           size={compact ? "md" : "lg"}
@@ -863,15 +1214,7 @@ function LoadCard({
         >
           −
         </Button>
-        <p
-          className={cx(
-            "tabular font-[family-name:var(--font-display)]",
-            compact ? "text-4xl" : "text-5xl",
-          )}
-        >
-          {target === null ? "—" : target}
-          <span className="ml-1 text-lg text-muted">kg</span>
-        </p>
+        {weightField}
         <Button
           variant="quiet"
           size={compact ? "md" : "lg"}
@@ -882,6 +1225,10 @@ function LoadCard({
           +
         </Button>
       </div>
+
+      <p className="mt-1 text-center text-xs text-faint">
+        Toca no número para escrever a carga exata.
+      </p>
 
       <p className="mt-3 text-sm leading-relaxed text-muted">{exercise.reason}</p>
 
@@ -912,6 +1259,60 @@ function LoadCard({
   );
 }
 
+/**
+ * The target for the sets still to come. Loads have had a ± since the start;
+ * repetitions only had whatever the programme said, so raising the number
+ * meant typing it into every row by hand.
+ */
+function RepsCard({
+  exercise,
+  target,
+  onAdjust,
+}: {
+  exercise: RunnerExercise;
+  target: number;
+  onAdjust: (delta: number) => void;
+}) {
+  const step = exercise.isTimed ? 5 : exercise.perSide ? 2 : 1;
+
+  return (
+    <Card className="flex items-center justify-between gap-3 py-2 pl-5 pr-2">
+      <div>
+        <p className="label">{exercise.isTimed ? "Tempo" : "Repetições"}</p>
+        <p className="mt-0.5 text-xs text-faint">
+          {exercise.isTimed
+            ? "Por série, em segundos"
+            : exercise.perSide
+              ? "Por série, total dos dois lados"
+              : "Por série"}
+        </p>
+      </div>
+
+      <div className="flex items-center gap-1">
+        <Button
+          variant="quiet"
+          aria-label={exercise.isTimed ? "Menos tempo" : "Menos repetições"}
+          onClick={() => onAdjust(-step)}
+          className="w-12"
+        >
+          −
+        </Button>
+        <p className="tabular w-14 text-center font-[family-name:var(--font-display)] text-3xl">
+          {target}
+        </p>
+        <Button
+          variant="quiet"
+          aria-label={exercise.isTimed ? "Mais tempo" : "Mais repetições"}
+          onClick={() => onAdjust(step)}
+          className="w-12"
+        >
+          +
+        </Button>
+      </div>
+    </Card>
+  );
+}
+
 /* ---------------------------------------------------------- body weight */
 
 const weightInitial: BodyLogState = { error: null, saved: false };
@@ -919,7 +1320,7 @@ const weightInitial: BodyLogState = { error: null, saved: false };
 function BodyWeightSubmit() {
   const { pending } = useFormStatus();
   return (
-    <Button type="submit" variant="quiet" disabled={pending}>
+    <Button type="submit" variant="quiet" size="field" disabled={pending}>
       {pending ? "A guardar…" : "Registar"}
     </Button>
   );
@@ -938,22 +1339,18 @@ function BodyWeightPrompt() {
   return (
     <Card className="p-5">
       <p className="label">Antes de começar</p>
-      <p className="mt-2 text-sm text-muted">Ainda não registaste o peso hoje.</p>
+      <p className="mt-2 text-sm text-muted">Ainda não te pesaste hoje.</p>
       <form action={formAction} className="mt-4 space-y-3">
-        <div className="flex items-end gap-3">
-          <div className="flex-1">
-            <Field
-              label="Peso"
-              name="weight_kg"
-              type="number"
-              step="0.1"
-              inputMode="decimal"
-              suffix="kg"
-              required
-            />
-          </div>
-          <BodyWeightSubmit />
-        </div>
+        <Field
+          label="Peso"
+          name="weight_kg"
+          type="number"
+          step="0.1"
+          inputMode="decimal"
+          suffix="kg"
+          required
+          action={<BodyWeightSubmit />}
+        />
         {state.error ? <Notice tone="error">{state.error}</Notice> : null}
       </form>
       <button
@@ -985,7 +1382,7 @@ function SetRow({
   timed: boolean;
   perSide: boolean;
   onToggle: () => void;
-  onReps: (reps: number) => void;
+  onReps: (reps: number | null) => void;
 }) {
   const [elapsed, setElapsed] = useState<number | null>(null);
   const weight = set.weightKg ?? set.targetKg;
@@ -1026,15 +1423,12 @@ function SetRow({
 
         <label className="flex flex-1 items-center gap-2">
           <span className="sr-only">{timed ? "Segundos" : "Repetições"}</span>
-          <input
-            type="number"
-            inputMode="numeric"
-            step={perSide ? 2 : 1}
-            value={elapsed !== null ? elapsed : (set.reps ?? "")}
+          <NumericInput
+            value={elapsed !== null ? elapsed : set.reps}
             placeholder={repTarget !== null ? String(repTarget) : "—"}
             readOnly={elapsed !== null}
-            onChange={(event) => onReps(Number(event.target.value))}
-            className="tabular h-10 w-16 rounded-[var(--radius-sm)] border border-line bg-surface px-2 text-center focus:border-brass focus:outline-none"
+            onChange={onReps}
+            className="h-11 w-16 px-2"
           />
           <span className="text-xs text-faint">{timed ? "s" : "reps"}</span>
         </label>
@@ -1043,7 +1437,7 @@ function SetRow({
           <button
             onClick={() => (elapsed === null ? setElapsed(0) : stopTimer())}
             className={cx(
-              "h-11 rounded-[var(--radius-md)] border px-3 text-xs uppercase tracking-[0.14em]",
+              "h-11 w-20 shrink-0 rounded-[var(--radius-md)] border text-xs uppercase tracking-[0.14em]",
               elapsed === null
                 ? "border-line-strong text-muted"
                 : "border-brass text-brass",
@@ -1076,7 +1470,9 @@ function SetRow({
         </button>
       </div>
 
-      {split ? <p className="mt-1 pl-9 text-xs text-faint">{split}</p> : null}
+      {perSide ? (
+        <p className="mt-1 h-4 pl-9 text-xs text-faint">{split}</p>
+      ) : null}
     </div>
   );
 }

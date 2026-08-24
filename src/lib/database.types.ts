@@ -59,6 +59,8 @@ export type Exercise = {
   increment_kg: number;
   images: string[];
   cues: string[];
+  steps: string[];
+  mistakes: string[];
   instructions: string | null;
   profiles_ok: EquipmentProfile[];
   is_timed: boolean;
@@ -154,6 +156,7 @@ export type SessionItem = {
   notes: string | null;
   added_mid_session: boolean;
   superset_group: number | null;
+  swapped_from: string[];
 }
 
 export type PersonalRecord = {

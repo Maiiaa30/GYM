@@ -70,7 +70,7 @@ export default async function SessionPage({
       ? supabase
           .from("exercises")
           .select(
-            "slug, name, primary_muscle, images, cues, family, increment_kg, is_timed, per_side",
+            "slug, name, primary_muscle, images, cues, steps, mistakes, family, increment_kg, is_timed, per_side",
           )
           .in("slug", slugs)
       : Promise.resolve({ data: [] as never[] }),
@@ -116,7 +116,7 @@ export default async function SessionPage({
   // suits the current equipment and is not already part of this workout.
   const { data: catalogue } = await supabase
     .from("exercises")
-    .select("slug, name, primary_muscle, profiles_ok")
+    .select("slug, name, primary_muscle, equipment, profiles_ok")
     .order("name");
 
   const available = (catalogue ?? [])
@@ -129,6 +129,7 @@ export default async function SessionPage({
       slug: exercise.slug,
       name: exercise.name,
       muscle: exercise.primary_muscle,
+      equipment: exercise.equipment,
     }));
 
   const partnerName = members?.[0]?.name ?? null;
@@ -194,6 +195,8 @@ export default async function SessionPage({
       muscle: exercise?.primary_muscle ?? "",
       images: exercise?.images ?? [],
       cues: exercise?.cues ?? [],
+      steps: exercise?.steps ?? [],
+      mistakes: exercise?.mistakes ?? [],
       family,
       increment: Number(exercise?.increment_kg ?? 2.5),
       repLow: item.rep_low,
@@ -205,6 +208,7 @@ export default async function SessionPage({
       supersetGroup: item.superset_group,
       isTimed: timed,
       perSide: Boolean(exercise?.per_side),
+      action: (progress?.last_action ?? null) as ProgressionAction | null,
       reason: describeTarget({
         action: (progress?.last_action ?? null) as ProgressionAction | null,
         increment: Number(exercise?.increment_kg ?? 2.5),

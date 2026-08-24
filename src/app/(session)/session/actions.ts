@@ -10,6 +10,7 @@ import {
   warmupSets,
 } from "@/lib/progression";
 import { groupForPairing, pairMembers } from "@/lib/blocks";
+import { pickAlternative, swapDay, type SwapCandidate } from "@/lib/swap";
 import type { LiftFamily } from "@/lib/database.types";
 
 /**
@@ -258,7 +259,7 @@ export async function addExerciseToSession(input: {
     .order("position");
 
   if (current?.some((item) => item.exercise === input.exercise)) {
-    return { ok: false, error: "Esse exercício já está no treino." };
+    return { ok: false, error: "Esse exercício já está no treino de hoje." };
   }
 
   const { data: progression } = await supabase
@@ -283,7 +284,7 @@ export async function addExerciseToSession(input: {
     added_mid_session: true,
   });
 
-  if (itemError) return { ok: false, error: "Não foi possível adicionar." };
+  if (itemError) return { ok: false, error: "Não deu para adicionar." };
 
   const { error: setsError } = await supabase.from("set_logs").insert(
     setRowsFor({
@@ -296,7 +297,7 @@ export async function addExerciseToSession(input: {
     }),
   );
 
-  if (setsError) return { ok: false, error: "Não foi possível criar as séries." };
+  if (setsError) return { ok: false, error: "Não deu para criar as séries." };
 
   return { ok: true, error: null };
 }
@@ -330,7 +331,7 @@ export async function pairWithPrevious(input: {
 
   const group = groupForPairing(groupable, input.exercise);
   if (group === null) {
-    return { ok: false, error: "Não há exercício acima para juntar." };
+    return { ok: false, error: "Não há nenhum exercício acima deste para juntar." };
   }
 
   const members = pairMembers(groupable, input.exercise);
@@ -342,7 +343,7 @@ export async function pairWithPrevious(input: {
     .eq("user_id", user.id)
     .in("exercise", members);
 
-  if (error) return { ok: false, error: "Não foi possível juntar." };
+  if (error) return { ok: false, error: "Não deu para juntar." };
 
   return { ok: true, error: null };
 }
@@ -365,7 +366,7 @@ export async function unpairExercise(input: {
     .eq("user_id", user.id)
     .eq("exercise", input.exercise);
 
-  if (error) return { ok: false, error: "Não foi possível separar." };
+  if (error) return { ok: false, error: "Não deu para separar." };
 
   return { ok: true, error: null };
 }
@@ -405,7 +406,7 @@ export async function removeExerciseFromSession(input: {
     .eq("user_id", user.id)
     .eq("exercise", input.exercise);
 
-  if (error) return { ok: false, error: "Não foi possível remover." };
+  if (error) return { ok: false, error: "Não deu para remover." };
 
   return { ok: true, error: null };
 }
@@ -451,7 +452,7 @@ export async function finishSession(formData: FormData) {
         .in("slug", slugs),
       supabase
         .from("session_items")
-        .select("exercise, rep_low")
+        .select("exercise, rep_low, rep_high")
         .eq("session_id", sessionId),
       supabase
         .from("progression")
@@ -468,8 +469,9 @@ export async function finishSession(formData: FormData) {
   const exerciseBySlug = new Map(
     exercises?.map((exercise) => [exercise.slug, exercise]) ?? [],
   );
+  // The top of the range: the weight only moves once the whole range is done.
   const targetRepsBySlug = new Map(
-    items?.map((item) => [item.exercise, item.rep_low]) ?? [],
+    items?.map((item) => [item.exercise, item.rep_high]) ?? [],
   );
   const progressionBySlug = new Map(
     progression?.map((row) => [row.exercise, row]) ?? [],
@@ -597,4 +599,221 @@ export async function abandonSession(formData: FormData) {
 
   revalidatePath("/");
   redirect("/");
+}
+
+
+/* ------------------------------------------------------------- swapping */
+
+/**
+ * The catalogue this pair can actually use today, and which of the session's
+ * exercises have already been worked.
+ */
+async function swapContext(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  sessionId: string,
+  userId: string,
+) {
+  const [{ data: items }, { data: logs }, { data: settings }] = await Promise.all([
+    supabase
+      .from("session_items")
+      .select("position, exercise, swapped_from")
+      .eq("session_id", sessionId)
+      .order("position"),
+    supabase
+      .from("set_logs")
+      .select("exercise, completed")
+      .eq("session_id", sessionId)
+      .eq("user_id", userId),
+    supabase.from("household_settings").select("equipment").maybeSingle(),
+  ]);
+
+  const { data: exercises } = await supabase
+    .from("exercises")
+    .select("slug, primary_muscle, family, profiles_ok");
+
+  const catalogue: SwapCandidate[] = (exercises ?? [])
+    .filter(
+      (exercise) => !settings || exercise.profiles_ok.includes(settings.equipment),
+    )
+    .map((exercise) => ({
+      slug: exercise.slug,
+      muscle: exercise.primary_muscle,
+      family: exercise.family as LiftFamily,
+    }));
+
+  const touched = new Set(
+    (logs ?? []).filter((log) => log.completed).map((log) => log.exercise),
+  );
+
+  return { items: items ?? [], catalogue, touched };
+}
+
+/** Replaces one exercise's rows, keeping its prescription and its position. */
+async function replaceExercise(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  input: { sessionId: string; userId: string; from: string; to: string },
+) {
+  const [{ data: item }, { data: exercise }, { data: progress }] =
+    await Promise.all([
+      supabase
+        .from("session_items")
+        .select("id, sets, swapped_from")
+        .eq("session_id", input.sessionId)
+        .eq("exercise", input.from)
+        .maybeSingle(),
+      supabase
+        .from("exercises")
+        .select("slug, family")
+        .eq("slug", input.to)
+        .maybeSingle(),
+      supabase
+        .from("progression")
+        .select("working_kg")
+        .eq("user_id", input.userId)
+        .eq("exercise", input.to)
+        .maybeSingle(),
+    ]);
+
+  if (!item || !exercise) return false;
+
+  await supabase
+    .from("set_logs")
+    .delete()
+    .eq("session_id", input.sessionId)
+    .eq("user_id", input.userId)
+    .eq("exercise", input.from);
+
+  // The slot remembers what it has turned down, so swapping again moves on
+  // instead of handing back the rack you just walked away from.
+  await supabase
+    .from("session_items")
+    .update({
+      exercise: input.to,
+      swapped_from: [...new Set([...(item.swapped_from ?? []), input.from])],
+    })
+    .eq("id", item.id);
+
+  // The replacement arrives at the weight already reached on it, exactly as it
+  // would have done had it been in the plan from the start.
+  await supabase.from("set_logs").insert(
+    setRowsFor({
+      sessionId: input.sessionId,
+      userId: input.userId,
+      exercise: input.to,
+      family: exercise.family as LiftFamily,
+      working: Number(progress?.working_kg ?? 0),
+      sets: item.sets,
+    }),
+  );
+
+  return true;
+}
+
+/** Swaps one exercise for another that works the same muscle. */
+export async function swapExerciseInSession(input: {
+  sessionId: string;
+  exercise: string;
+}): Promise<MutateSessionResult> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { ok: false, error: "A sessão expirou." };
+
+  const { items, catalogue, touched } = await swapContext(
+    supabase,
+    input.sessionId,
+    user.id,
+  );
+
+  if (touched.has(input.exercise)) {
+    return {
+      ok: false,
+      error: "Já fizeste séries neste exercício. Remove-o em vez de o trocar.",
+    };
+  }
+
+  const current = catalogue.find((entry) => entry.slug === input.exercise);
+  if (!current) return { ok: false, error: "Exercício desconhecido." };
+
+  const slot = items.find((item) => item.exercise === input.exercise);
+  const inSession = items.map((item) => item.exercise);
+  const rejected = slot?.swapped_from ?? [];
+
+  // Once every alternative has been turned down, start the list again rather
+  // than telling them there is nothing left.
+  const alternative =
+    pickAlternative({
+      current,
+      catalogue,
+      exclude: [...inSession, ...rejected],
+    }) ?? pickAlternative({ current, catalogue, exclude: inSession });
+
+  if (!alternative) {
+    return {
+      ok: false,
+      error: "Não há outro exercício para esse músculo com o teu equipamento.",
+    };
+  }
+
+  const ok = await replaceExercise(supabase, {
+    sessionId: input.sessionId,
+    userId: user.id,
+    from: input.exercise,
+    to: alternative.slug,
+  });
+
+  if (!ok) return { ok: false, error: "Não deu para trocar." };
+
+  revalidatePath(`/session/${input.sessionId}`);
+  return { ok: true, error: null };
+}
+
+/**
+ * Swaps every exercise not yet started, for the day you look at the workout
+ * and do not want to do it, or walk in and half the room is taken.
+ */
+export async function swapWholeSession(input: {
+  sessionId: string;
+}): Promise<MutateSessionResult> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { ok: false, error: "A sessão expirou." };
+
+  const { items, catalogue, touched } = await swapContext(
+    supabase,
+    input.sessionId,
+    user.id,
+  );
+
+  const swaps = swapDay({
+    items: items.map((item) => ({
+      position: item.position,
+      slug: item.exercise,
+      touched: touched.has(item.exercise),
+      rejected: item.swapped_from ?? [],
+    })),
+    catalogue,
+  });
+
+  if (swaps.length === 0) {
+    return {
+      ok: false,
+      error: "Não há por onde trocar: não existem alternativas com o teu equipamento.",
+    };
+  }
+
+  for (const swap of swaps) {
+    await replaceExercise(supabase, {
+      sessionId: input.sessionId,
+      userId: user.id,
+      from: swap.from,
+      to: swap.to,
+    });
+  }
+
+  revalidatePath(`/session/${input.sessionId}`);
+  return { ok: true, error: null };
 }
