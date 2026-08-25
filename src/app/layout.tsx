@@ -39,7 +39,20 @@ export const metadata: Metadata = {
   appleWebApp: {
     capable: true,
     title: "GYM",
-    statusBarStyle: "black-translucent",
+    /*
+      Not `black-translucent`. That style puts the web view at the very top of
+      the screen, under the status bar, but still sizes it to the screen less
+      the status bar's height — so the height is taken off the bottom, and the
+      application ends 62px short of the bottom of the screen with the phone's
+      own background showing through. Measured on an iPhone 16 Pro: screen 874,
+      viewport 812, and the navigation correctly reaching 812 with 62px of
+      nothing beneath it.
+
+      `black` puts the web view below the status bar and gives it the rest,
+      which is the whole of the rest. The status bar is drawn black, which is
+      within a shade of the application's own ground.
+    */
+    statusBarStyle: "black",
   },
   icons: {
     icon: [{ url: "/icons/icon-192.png", type: "image/png", sizes: "192x192" }],
