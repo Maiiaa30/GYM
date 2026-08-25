@@ -41,14 +41,14 @@ export function InstallPrompt() {
 
   if (installed) {
     return (
-      <p className="px-5 py-4 text-sm text-muted">
+      <p className="gutter text-sm text-muted">
         Já está instalada neste dispositivo.
       </p>
     );
   }
 
   return (
-    <div className="space-y-3 px-5 py-4">
+    <div className="space-y-3 gutter">
       {event ? (
         <Button
           variant="quiet"

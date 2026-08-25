@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { Card } from "@/components/ui";
+import { Panel, Section } from "@/components/ui";
 import { createClient } from "@/lib/supabase/server";
 import { InviteForm, SettingsForm } from "./forms";
 import { InstallPrompt } from "./install";
@@ -33,83 +33,59 @@ export default async function SettingsPage() {
   const canInvite = Boolean(me?.is_owner) && (members?.length ?? 0) < 2;
 
   return (
-    <div className="space-y-6">
-      <header>
+    <div>
+      <Section>
         <p className="label">Conta</p>
-        <h1 className="mt-1 font-[family-name:var(--font-display)] text-4xl">
-          Definições
-        </h1>
-      </header>
+        <h1 className="display mt-2 text-[2rem] text-parchment">Definições</h1>
+        <p className="mt-3 text-[0.9375rem] text-parchment">{me?.name}</p>
+        <p className="text-sm text-muted">{me?.email}</p>
+      </Section>
 
-      <Card>
-        <div className="px-5 py-4">
-          <p className="label">Sessão iniciada como</p>
-          <p className="mt-1">{me?.name}</p>
-          <p className="text-sm text-muted">{me?.email}</p>
-        </div>
-      </Card>
+      <Panel title="Treino" flush>
+        <SettingsForm
+          daysPerWeek={settings?.days_per_week ?? 3}
+          sessionMinutes={settings?.session_minutes ?? 60}
+          equipment={settings?.equipment ?? "full_gym"}
+        />
+      </Panel>
 
-      <section>
-        <p className="label mb-2">Treino</p>
-        <Card>
-          <SettingsForm
-            daysPerWeek={settings?.days_per_week ?? 3}
-            sessionMinutes={settings?.session_minutes ?? 60}
-            equipment={settings?.equipment ?? "full_gym"}
-          />
-        </Card>
-      </section>
+      <Panel title="Membros" flush>
+        <ul>
+          {members?.map((member) => (
+            <li key={member.id} className="gutter-x row block py-2.5">
+              <p className="text-sm text-parchment">{member.name}</p>
+              <p className="text-xs text-faint">{member.email}</p>
+            </li>
+          ))}
+        </ul>
+        {canInvite ? <InviteForm /> : null}
+      </Panel>
 
-      <section>
-        <p className="label mb-2">Membros</p>
-        <Card>
-          <ul className="divide-y divide-line">
-            {members?.map((member) => (
-              <li key={member.id} className="px-5 py-3">
-                <p className="text-sm">{member.name}</p>
-                <p className="text-xs text-faint">{member.email}</p>
-              </li>
-            ))}
-          </ul>
-          {canInvite ? (
-            <div className="rule">
-              <InviteForm />
-            </div>
-          ) : null}
-        </Card>
-      </section>
+      <Panel title="Aplicação" flush>
+        <InstallPrompt />
+      </Panel>
 
-      <section>
-        <p className="label mb-2">Aplicação</p>
-        <Card>
-          <InstallPrompt />
-        </Card>
-      </section>
-
-      <Card className="p-5">
+      <Section>
         <NotificationSetting
           publicKey={process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? null}
         />
-      </Card>
+      </Section>
 
-      <Card className="p-5">
-        <p className="label">Os teus dados</p>
-        <p className="mt-2 text-sm leading-relaxed text-muted">
+      <Panel title="Os teus dados">
+        <p className="text-sm leading-relaxed text-muted">
           Descarrega tudo o que já registaste — treinos, séries, pesos e
           planos — num ficheiro só teu.
         </p>
-        <a
-          href="/settings/export"
-          download
-          className="mt-3 inline-block text-sm text-amber underline underline-offset-4"
-        >
+        <a href="/settings/export" download className="action mt-3.5 inline-block">
           Descarregar
         </a>
-      </Card>
+      </Panel>
 
-      <SignOutButton />
+      <Section last>
+        <SignOutButton />
+      </Section>
 
-      <p className="pb-2 text-center text-xs leading-relaxed text-faint">
+      <p className="gutter pb-6 text-center text-xs leading-relaxed text-faint">
         Esta aplicação é um registo de treino, não é aconselhamento médico.
         Começa leve, aprende a técnica e pára se alguma coisa doer.
       </p>

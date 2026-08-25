@@ -144,7 +144,7 @@ export default async function ProgressPage() {
   );
 
   const weightSection = (
-    <div className="space-y-5">
+    <div>
       <Panel
         title="Peso"
         meta={
@@ -327,7 +327,7 @@ export default async function ProgressPage() {
   );
 
   const activitySection = (
-    <div className="space-y-5">
+    <div>
       <Panel
         title="Atividade"
         meta={`${daysTrained30} em 30 dias`}
@@ -390,7 +390,7 @@ export default async function ProgressPage() {
   const worked = week.filter((entry) => entry.sets > 0).length;
 
   const musclesSection = (
-    <div className="space-y-5">
+    <div>
       <Panel
         title="Últimos 7 dias"
         meta={`${worked} de ${week.length} grupos`}
@@ -463,7 +463,7 @@ export default async function ProgressPage() {
   );
 
   const strengthSection = (
-    <div className="space-y-5">
+    <div>
       {stalled.length > 0 ? (
         <Panel
           title="Parados"
@@ -534,8 +534,8 @@ export default async function ProgressPage() {
   );
 
   return (
-    <div className="space-y-6">
-      <header className="gutter">
+    <div>
+      <header className="gutter pb-4">
         <p className="label">Histórico</p>
         <h1 className="display mt-2 text-[2rem] text-parchment">
           Progresso

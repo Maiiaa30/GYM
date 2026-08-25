@@ -41,7 +41,7 @@ export function SettingsForm({
   const [state, formAction] = useActionState(updateSettings, settingsInitial);
 
   return (
-    <form action={formAction} className="space-y-5 p-5">
+    <form action={formAction} className="space-y-5 gutter">
       <div>
         <span className="label mb-2 block">Dias de treino por semana</span>
         <div className="flex gap-2">
@@ -104,7 +104,7 @@ export function InviteForm() {
 
   if (state.code) {
     return (
-      <div className="space-y-3 p-5">
+      <div className="space-y-3 gutter">
         <p className="label">Código de convite</p>
         <p className="tabular font-[family-name:var(--font-display)] text-3xl tracking-[0.2em] text-amber">
           {state.code}
@@ -120,7 +120,7 @@ export function InviteForm() {
   }
 
   return (
-    <form action={formAction} className="space-y-4 p-5">
+    <form action={formAction} className="space-y-4 gutter">
       <Field label="Nome dele" name="name" autoComplete="off" required />
       <Field
         label="Email dele"

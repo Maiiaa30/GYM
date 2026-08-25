@@ -45,8 +45,12 @@ export function NumericInput({
       }}
       onBlur={() => setDraft(null)}
       className={cx(
-        "tabular rounded-[var(--radius-sm)] border border-line bg-surface",
+        "tabular border border-line-strong bg-surface",
         "text-center focus:border-amber focus:outline-none",
+        // A read-only field still accepts focus and still looks like a field,
+        // which is how the load control came to look editable when there was
+        // nothing left for it to write to.
+        "read-only:border-line read-only:text-faint",
         className,
       )}
       {...props}

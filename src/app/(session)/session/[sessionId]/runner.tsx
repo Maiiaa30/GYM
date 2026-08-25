@@ -328,8 +328,12 @@ export function SessionRunner({
   const toggleSet = useCallback(
     (exercise: RunnerExercise, set: RunnerSet) => {
       if (set.completed) {
-        patchSet(set.id, { completed: false });
-        persist(set, { completed: false });
+        // The logged weight has to go back to null, not just `completed`.
+        // `SetRow` reads `weightKg ?? targetKg`, so leaving the old weight in
+        // place meant the row kept showing it and every later change to the
+        // load looked like it had done nothing at all.
+        patchSet(set.id, { completed: false, weightKg: null });
+        persist(set, { completed: false, weightKg: null });
         return;
       }
 
@@ -934,6 +938,12 @@ function ExercisePanel({
   const warmups = exercise.sets.filter((set) => set.isWarmup);
   // The set the screen is asking about: the first one not yet ticked.
   const nextSetId = workingSets.find((set) => !set.completed)?.id ?? null;
+  const nextWarmupId = warmups.find((set) => !set.completed)?.id ?? null;
+  /* Everything past the set being asked about is locked, so the list is worked
+     top to bottom. A finished set is never locked — undoing one is how a
+     mistake gets fixed. */
+  const lockedFrom = (set: RunnerSet, nextId: string | null) =>
+    !set.completed && set.id !== nextId;
 
   return (
     <>
@@ -983,6 +993,8 @@ function ExercisePanel({
                 bodyweight={exercise.family === "bodyweight"}
                 timed={exercise.isTimed}
                 perSide={exercise.perSide}
+                active={set.id === nextWarmupId}
+                locked={lockedFrom(set, nextWarmupId)}
                 onToggle={() => onToggleSet(set)}
                 onReps={(reps) => onReps(set, reps)}
               />
@@ -1005,6 +1017,12 @@ function ExercisePanel({
               timed={exercise.isTimed}
               perSide={exercise.perSide}
               active={set.id === nextSetId}
+              locked={
+                lockedFrom(set, nextSetId) ||
+                // The warm-up comes first: a working set cannot be logged
+                // while a warm-up above it is still open.
+                nextWarmupId !== null
+              }
               onToggle={() => onToggleSet(set)}
               onReps={(reps) => onReps(set, reps)}
             />
@@ -1105,6 +1123,7 @@ function SupersetPanel({
                     perSide={exercise.perSide}
                     onToggle={() => onToggleSet(exercise, set)}
                     active={set.id === nextIdFor(exercise)}
+                    locked={!set.completed && set.id !== nextIdFor(exercise)}
                     onReps={(reps) => onReps(set, reps)}
                   />
                 );
@@ -1228,10 +1247,14 @@ function LoadCard({
   onSet: (kg: number | null) => void;
 }) {
   const workingSets = working(exercise);
-  const target =
-    workingSets.find((set) => !set.completed)?.targetKg ??
-    workingSets[0]?.targetKg ??
-    null;
+  const pending = workingSets.find((set) => !set.completed) ?? null;
+  const target = pending?.targetKg ?? workingSets[0]?.targetKg ?? null;
+
+  /* Every set is done, so there is nothing left for this control to write to:
+     `setTarget` and `adjustTarget` deliberately never rewrite a logged set.
+     It used to stay live and silently do nothing, which read as the load being
+     stuck. Now it says what to do instead. */
+  const spent = workingSets.length > 0 && pending === null;
 
   const [open, setOpen] = useState(() => weightMoved(exercise.action));
 
@@ -1279,6 +1302,7 @@ function LoadCard({
         decimal
         value={target}
         onChange={onSet}
+        readOnly={spent}
         aria-label="Carga em quilos"
         className={cx(
           "min-w-0 border-transparent bg-transparent font-[family-name:var(--font-display)]",
@@ -1325,8 +1349,9 @@ function LoadCard({
           variant="quiet"
           size={compact ? "md" : "lg"}
           aria-label="Reduzir a carga"
+          disabled={spent}
           onClick={() => onAdjust(-exercise.increment)}
-          className="w-12 shrink-0"
+          className={cx("shrink-0", compact ? "w-12" : "w-14")}
         >
           −
         </Button>
@@ -1335,15 +1360,18 @@ function LoadCard({
           variant="quiet"
           size={compact ? "md" : "lg"}
           aria-label="Aumentar a carga"
+          disabled={spent}
           onClick={() => onAdjust(exercise.increment)}
-          className="w-12 shrink-0"
+          className={cx("shrink-0", compact ? "w-12" : "w-14")}
         >
           +
         </Button>
       </div>
 
       <p className="mt-1 text-center text-xs text-faint">
-        Toca no número para escrever a carga exata.
+        {spent
+          ? "Séries todas feitas. Desmarca uma para mudares a carga."
+          : "Toca no número para escrever a carga exata."}
       </p>
 
       <p className="mt-3 text-sm leading-relaxed text-muted">{exercise.reason}</p>
@@ -1392,10 +1420,13 @@ function RepsCard({
   const step = exercise.isTimed ? 5 : exercise.perSide ? 2 : 1;
 
   return (
-    <Card className="flex items-center justify-between gap-3 py-2 pl-5 pr-2">
+    // `gap-5`, and the stepper group is `shrink-0`: the caption under the
+    // label used to run right up to the minus button, so the two controls read
+    // as one crowded strip instead of a label and a stepper.
+    <Card className="flex items-center justify-between gap-5 gutter-x py-2.5">
       <div className="min-w-0 flex-1">
         <p className="label">{exercise.isTimed ? "Tempo" : "Repetições"}</p>
-        <p className="mt-0.5 text-xs leading-snug text-faint">
+        <p className="mt-1 text-xs leading-snug text-faint">
           {exercise.isTimed
             ? "Segundos por série"
             : exercise.perSide
@@ -1404,23 +1435,23 @@ function RepsCard({
         </p>
       </div>
 
-      <div className="flex shrink-0 items-center gap-1">
+      <div className="flex shrink-0 items-center gap-1.5">
         <Button
           variant="quiet"
           aria-label={exercise.isTimed ? "Menos tempo" : "Menos repetições"}
           onClick={() => onAdjust(-step)}
-          className="w-12"
+          className="w-12 shrink-0"
         >
           −
         </Button>
-        <p className="tabular w-14 text-center font-[family-name:var(--font-display)] text-3xl">
+        <p className="display w-12 text-center text-3xl text-parchment">
           {target}
         </p>
         <Button
           variant="quiet"
           aria-label={exercise.isTimed ? "Mais tempo" : "Mais repetições"}
           onClick={() => onAdjust(step)}
-          className="w-12"
+          className="w-12 shrink-0"
         >
           +
         </Button>
@@ -1498,6 +1529,7 @@ function SetRow({
   timed,
   perSide,
   active = false,
+  locked = false,
   onToggle,
   onReps,
 }: {
@@ -1508,6 +1540,8 @@ function SetRow({
   timed: boolean;
   perSide: boolean;
   active?: boolean;
+  /** A set further down the list than the one being asked about. */
+  locked?: boolean;
   onToggle: () => void;
   onReps: (reps: number | null) => void;
 }) {
@@ -1566,14 +1600,15 @@ function SetRow({
         </span>
 
         {!bodyweight ? (
-          // Right-aligned and hard against the repetitions box, the unit read
-          // as part of the next number. The margin gives it room and the unit
-          // is dimmed, so the eye separates the load from the repetitions.
+          // `mr-4`, not `mr-2`: the unit sat hard against the repetitions box
+          // and read as part of the next number. The gap that separates the
+          // load from the repetitions has to be wider than the gap inside
+          // either of them, and the unit is dimmed for the same reason.
           <span
             className={cx(
-              "display mr-2 shrink-0 text-right leading-none",
+              "display mr-4 shrink-0 text-right leading-none",
               active
-                ? "w-[4.5rem] text-[2.125rem] text-parchment"
+                ? "w-[4.25rem] text-[2rem] text-parchment"
                 : "w-16 text-[1.375rem] text-muted",
             )}
           >
@@ -1595,7 +1630,7 @@ function SetRow({
           <NumericInput
             value={elapsed !== null ? elapsed : set.reps}
             placeholder={repTarget !== null ? String(repTarget) : "—"}
-            readOnly={elapsed !== null}
+            readOnly={elapsed !== null || locked}
             onChange={onReps}
             className={cx(
               "px-1",
@@ -1618,13 +1653,25 @@ function SetRow({
           </button>
         ) : null}
 
+        {/* Sets are ticked in the order they are done. Without this the tick
+            on the last row was as easy to hit as the first, and a set logged
+            out of order takes its rest and its progression with it. A finished
+            set stays live so a mistake can still be undone. */}
         <button
           onClick={onToggle}
+          disabled={locked}
           aria-pressed={set.completed}
-          aria-label={set.completed ? "Marcar como não feita" : "Marcar como feita"}
+          aria-label={
+            locked
+              ? "Acaba a série anterior primeiro"
+              : set.completed
+                ? "Marcar como não feita"
+                : "Marcar como feita"
+          }
           className={cx(
             "flex shrink-0 items-center justify-center border transition-colors",
             active ? "h-14 w-14" : "h-11 w-11",
+            locked && "opacity-30",
             set.completed
               ? "border-amber bg-amber text-ink"
               : active
