@@ -14,7 +14,14 @@
  * is locked in a pocket between sets or sitting on a table all evening.
  */
 
-const VERSION = "gym-v1";
+/*
+ * Bumping this drops every cache the previous version left behind, which is
+ * what the `activate` handler below uses it for. It has to move whenever the
+ * document's own markup changes — the pages cache holds whole HTML documents,
+ * and a stale one carries stale `<head>` metadata with it. That is exactly how
+ * a phone can go on behaving as though a change to the head never shipped.
+ */
+const VERSION = "gym-v2";
 const ASSETS = `${VERSION}-assets`;
 const PAGES = `${VERSION}-pages`;
 
