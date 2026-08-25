@@ -81,6 +81,15 @@ export default async function SettingsPage() {
         </a>
       </Panel>
 
+      {/* Temporary, and reachable from inside the installed application: the
+          Home Screen application opens at the start URL and has no address bar,
+          so a diagnostic it cannot be navigated to tells us nothing. */}
+      <Panel title="Diagnóstico">
+        <a href="/diag" className="action inline-block">
+          Ver o que o telemóvel dá à página
+        </a>
+      </Panel>
+
       <Section last>
         <SignOutButton />
       </Section>
