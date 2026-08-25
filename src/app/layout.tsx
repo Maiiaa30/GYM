@@ -1,13 +1,34 @@
 import type { Metadata, Viewport } from "next";
-import { Instrument_Serif } from "next/font/google";
+import { Barlow, Barlow_Condensed, IBM_Plex_Mono } from "next/font/google";
 import { ServiceWorkerRegistration } from "@/components/service-worker";
 import "./globals.css";
 
-const serif = Instrument_Serif({
-  weight: "400",
+/*
+  Three faces, each with a job. The condensed one carries every heading and
+  every number — a weight and a day name speak with the same voice, which is
+  what holds the screen together without any boxes. The body face is the same
+  family, unnarrowed, so running text stays comfortable. The mono is for the
+  few places where a figure has to line up in a column of its own.
+*/
+const condensed = Barlow_Condensed({
+  weight: ["600", "700"],
   subsets: ["latin"],
   display: "swap",
-  variable: "--font-serif",
+  variable: "--font-condensed",
+});
+
+const body = Barlow({
+  weight: ["400", "500", "600"],
+  subsets: ["latin"],
+  display: "swap",
+  variable: "--font-body",
+});
+
+const mono = IBM_Plex_Mono({
+  weight: ["400", "500"],
+  subsets: ["latin"],
+  display: "swap",
+  variable: "--font-mono-face",
 });
 
 export const metadata: Metadata = {
@@ -28,7 +49,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#0b0c0a",
+  themeColor: "#0e0f0e",
   viewportFit: "cover",
   width: "device-width",
   initialScale: 1,
@@ -40,7 +61,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="pt-PT" className={serif.variable} suppressHydrationWarning>
+    <html lang="pt-PT" className={`${condensed.variable} ${body.variable} ${mono.variable}`} suppressHydrationWarning>
       <head>
         {/*
           The application ships its own dark palette. This asks Dark Reader to

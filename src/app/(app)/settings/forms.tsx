@@ -54,7 +54,7 @@ export function SettingsForm({
                 defaultChecked={n === daysPerWeek}
                 className="peer sr-only"
               />
-              <span className="tabular flex h-12 cursor-pointer items-center justify-center rounded-[var(--radius-md)] border border-line text-parchment peer-checked:border-brass peer-checked:text-brass">
+              <span className="tabular flex h-12 cursor-pointer items-center justify-center rounded-[var(--radius-md)] border border-line text-parchment peer-checked:border-amber peer-checked:text-amber">
                 {n}
               </span>
             </label>
@@ -74,7 +74,7 @@ export function SettingsForm({
                 defaultChecked={option.value === equipment}
                 className="peer sr-only"
               />
-              <span className="flex h-12 cursor-pointer items-center justify-center rounded-[var(--radius-md)] border border-line px-2 text-center text-sm text-parchment peer-checked:border-brass peer-checked:text-brass">
+              <span className="flex h-12 cursor-pointer items-center justify-center rounded-[var(--radius-md)] border border-line px-2 text-center text-sm text-parchment peer-checked:border-amber peer-checked:text-amber">
                 {option.label}
               </span>
             </label>
@@ -106,7 +106,7 @@ export function InviteForm() {
     return (
       <div className="space-y-3 p-5">
         <p className="label">Código de convite</p>
-        <p className="tabular font-[family-name:var(--font-display)] text-3xl tracking-[0.2em] text-brass">
+        <p className="tabular font-[family-name:var(--font-display)] text-3xl tracking-[0.2em] text-amber">
           {state.code}
         </p>
         <p className="text-sm text-muted">

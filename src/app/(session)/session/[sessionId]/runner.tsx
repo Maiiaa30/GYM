@@ -176,6 +176,10 @@ export function SessionRunner({
   const [index, setIndex] = useState(0);
   const [showDemo, setShowDemo] = useState<string | null>(null);
   const [rest, setRest] = useState<number | null>(null);
+  /* What the rest started at, so the footer's bar can show how much of it is
+     gone. Kept beside `rest` rather than derived: the prescribed rest differs
+     per exercise, so the last value set is the only honest denominator. */
+  const [restTotal, setRestTotal] = useState(0);
   const [adjusting, setAdjusting] = useState(false);
   // Repetition targets are per exercise and last the session. The prescription
   // is a starting point, not an instruction: doing ten today and wanting
@@ -342,7 +346,10 @@ export function SessionRunner({
         members.length <= 1 ||
         members[members.length - 1]?.slug === exercise.slug;
 
-      if (lastOfRound) setRest(exercise.restSec);
+      if (lastOfRound) {
+        setRest(exercise.restSec);
+        setRestTotal(exercise.restSec);
+      }
     },
     [block, patchSet, persist, targetReps],
   );
@@ -432,8 +439,8 @@ export function SessionRunner({
           </Link>
 
           <div className="min-w-0 flex-1">
-            <p className="label truncate">{dayName}</p>
-            <p className="truncate text-xs text-faint">{focus}</p>
+            <p className="label truncate text-amber">{dayName}</p>
+            <p className="truncate text-[0.78125rem] text-muted">{focus}</p>
           </div>
 
           <Elapsed since={startedAt} />
@@ -441,9 +448,9 @@ export function SessionRunner({
           {!queue.online || queue.pending > 0 ? (
             <span
               className={cx(
-                "shrink-0 rounded-full border px-2 py-0.5 text-[0.625rem] uppercase tracking-[0.14em]",
+                "shrink-0 border px-2 py-0.5 font-[family-name:var(--font-display)] text-[0.6875rem] uppercase tracking-[0.1em]",
                 queue.online
-                  ? "border-brass-dim text-brass-dim"
+                  ? "border-amber text-amber"
                   : "border-line-strong text-faint",
               )}
             >
@@ -453,7 +460,7 @@ export function SessionRunner({
 
           <button
             onClick={() => setAdjusting(true)}
-            className="-mr-2 flex h-11 shrink-0 items-center px-2 text-[0.6875rem] uppercase tracking-[0.08em] text-brass"
+            className="action -mr-2 flex h-11 shrink-0 items-center px-2"
           >
             Ajustar
           </button>
@@ -466,12 +473,12 @@ export function SessionRunner({
                 onClick={() => goTo(itemIndex)}
                 aria-label={item.exercises.map((e) => e.name).join(" + ")}
                 className={cx(
-                  "h-1 flex-1 rounded-full transition-colors",
+                  "h-[3px] flex-1 transition-colors",
                   itemIndex === index
-                    ? "bg-brass"
+                    ? "bg-amber"
                     : blockDone(item)
-                      ? "bg-brass-dim"
-                      : "bg-line",
+                      ? "bg-amber-dim"
+                      : "bg-line-strong",
                 )}
               />
             ))}
@@ -480,12 +487,12 @@ export function SessionRunner({
       </header>
 
       {/* --------------------------------------------------------- body */}
-      <div className="scroll-area min-w-0 px-5 py-5">
+      <div className="scroll-area min-w-0 px-[var(--gutter)] py-[var(--gutter)]">
         <div className="mx-auto w-full max-w-md space-y-5">
           {needsBodyWeight && index === 0 ? <BodyWeightPrompt /> : null}
 
           {!block ? (
-            <Card className="p-5">
+            <div className="border border-line bg-surface p-[var(--gutter)]">
               <p className="label">Treino livre</p>
               <p className="mt-2 text-sm leading-relaxed text-muted">
                 Ainda sem exercícios. Escolhe o primeiro e vai acrescentando à
@@ -499,7 +506,7 @@ export function SessionRunner({
               >
                 Escolher exercício
               </Button>
-            </Card>
+            </div>
           ) : block.exercises.length === 1 ? (
             <ExercisePanel
               key={block.key}
@@ -540,10 +547,26 @@ export function SessionRunner({
 
       {/* -------------------------------------------------------- footer */}
       <footer
-        className="min-w-0 overflow-hidden border-t border-line bg-ink px-5 pt-3"
+        className={cx(
+          "min-w-0 overflow-hidden border-t px-[var(--gutter)] pt-3 transition-colors",
+          rest !== null ? "border-tempo bg-raised" : "border-line bg-ink",
+        )}
         style={{ paddingBottom: "max(0.75rem, env(safe-area-inset-bottom))" }}
       >
-        <div className="flex w-full items-center gap-3 overflow-hidden">
+        {/* The track is always drawn, empty when nothing is resting, so the
+            footer is the same height whether or not a clock is running. */}
+        <div className="mb-3 h-[3px] w-full bg-line-strong" aria-hidden="true">
+          <div
+            className="h-full bg-tempo transition-[width] duration-1000 ease-linear"
+            style={{
+              width:
+                rest !== null && restTotal > 0
+                  ? `${Math.round(((restTotal - rest) / restTotal) * 100)}%`
+                  : "0%",
+            }}
+          />
+        </div>
+        <div className="flex h-14 w-full items-center gap-3 overflow-hidden">
           <Button
             variant="ghost"
             onClick={() => goTo(Math.max(0, index - 1))}
@@ -556,22 +579,25 @@ export function SessionRunner({
               footer. Sitting in the flow it used to push the whole screen up
               when a set was ticked; floating over it, it covered the last
               rows. In the slot it is always the same height and hides nothing,
-              and it is between the two buttons, which is where the eye is. */}
+              and it is between the two buttons, which is where the eye is.
+
+              It is the one thing on this screen in tempo rather than amber:
+              resting is the only state the screen enters on its own, and it
+              has to be told apart from a set you have not started yet at a
+              glance, from arm's length, without reading the number. */}
           {rest !== null ? (
             <button
               onClick={() => setRest(null)}
               aria-label="Saltar o descanso"
               className="flex min-w-0 flex-1 flex-col items-center justify-center leading-none"
             >
-              <span className="tabular font-[family-name:var(--font-display)] text-2xl text-brass">
+              <span className="label-sm text-tempo">Descanso</span>
+              <span className="display mt-1 text-[2.375rem] leading-none text-parchment">
                 {formatClock(rest)}
-              </span>
-              <span className="mt-1 w-full truncate text-center text-[0.625rem] uppercase tracking-[0.1em] text-faint">
-                saltar
               </span>
             </button>
           ) : (
-            <span className="tabular min-w-0 flex-1 truncate text-center text-xs text-faint">
+            <span className="tabular min-w-0 flex-1 truncate text-center text-[0.78125rem] text-faint">
               {completedCount} de {blocks.length} feitos
             </span>
           )}
@@ -628,7 +654,7 @@ export function SessionRunner({
                 type="checkbox"
                 checked={wakeLock.enabled}
                 onChange={(event) => wakeLock.toggle(event.target.checked)}
-                className="h-6 w-6 accent-[var(--color-brass)]"
+                className="h-6 w-6 accent-[var(--color-amber)]"
               />
             </label>
           ) : null}
@@ -636,14 +662,14 @@ export function SessionRunner({
           {flat.length > 0 ? (
             <section>
               <p className="label mb-2">Exercícios de hoje</p>
-              <ul className="divide-y divide-line rounded-[var(--radius-md)] border border-line">
+              <ul className="divide-y divide-line border border-line">
                 {flat.map((item, itemIndex) => (
                   <li key={item.slug} className="px-4 py-3">
                     <div className="flex items-center justify-between gap-3">
                       <span className="text-sm">
                         {item.name}
                         {item.supersetGroup !== null ? (
-                          <span className="ml-2 text-xs text-brass-dim">
+                          <span className="ml-2 text-xs text-amber-dim">
                             supersérie
                           </span>
                         ) : null}
@@ -659,7 +685,7 @@ export function SessionRunner({
                             )
                           }
                           disabled={pending}
-                          className="text-xs uppercase tracking-[0.14em] text-brass disabled:opacity-40"
+                          className="text-xs uppercase tracking-[0.14em] text-amber disabled:opacity-40"
                         >
                           Trocar
                         </button>
@@ -733,7 +759,7 @@ export function SessionRunner({
               value={search}
               onChange={(event) => setSearch(event.target.value)}
               placeholder="Procurar por nome, músculo ou equipamento"
-              className="mb-3 h-12 w-full rounded-[var(--radius-md)] border border-line bg-raised px-3 placeholder:text-faint focus:border-brass focus:outline-none"
+              className="mb-3 h-12 w-full border border-line-strong bg-raised px-3 placeholder:text-faint focus:border-amber focus:outline-none"
             />
 
             <div className="scroll-area -mx-5 mb-3 overflow-x-auto px-5">
@@ -759,7 +785,7 @@ export function SessionRunner({
                 ))}
               </div>
             </div>
-            <ul className="divide-y divide-line rounded-[var(--radius-md)] border border-line">
+            <ul className="divide-y divide-line border border-line">
               {filtered.map((option) => (
                 <li key={option.slug}>
                   <button
@@ -830,9 +856,9 @@ function FilterChip({
       onClick={onClick}
       aria-pressed={active}
       className={cx(
-        "whitespace-nowrap rounded-full border px-3 py-1.5 text-xs transition-colors",
+        "whitespace-nowrap border px-3 py-1.5 text-xs transition-colors",
         active
-          ? "border-brass bg-brass text-ink"
+          ? "border-amber bg-amber text-ink"
           : "border-line-strong text-muted",
       )}
     >
@@ -906,6 +932,8 @@ function ExercisePanel({
 }) {
   const workingSets = working(exercise);
   const warmups = exercise.sets.filter((set) => set.isWarmup);
+  // The set the screen is asking about: the first one not yet ticked.
+  const nextSetId = workingSets.find((set) => !set.completed)?.id ?? null;
 
   return (
     <>
@@ -928,7 +956,7 @@ function ExercisePanel({
       <button
         onClick={onToggleDemo}
         aria-expanded={showDemo}
-        className="-my-2 flex h-11 items-center text-sm text-brass underline underline-offset-4"
+        className="-my-2 flex h-11 items-center text-sm text-amber underline underline-offset-4"
       >
         {showDemo ? "Esconder a técnica" : "Como se faz"}
       </button>
@@ -946,7 +974,7 @@ function ExercisePanel({
       {warmups.length > 0 ? (
         <section>
           <p className="label mb-2">Aquecimento</p>
-          <Card className="divide-y divide-line">
+          <div className="border-y border-line">
             {warmups.map((set) => (
               <SetRow
                 key={set.id}
@@ -959,7 +987,7 @@ function ExercisePanel({
                 onReps={(reps) => onReps(set, reps)}
               />
             ))}
-          </Card>
+          </div>
         </section>
       ) : null}
 
@@ -967,7 +995,7 @@ function ExercisePanel({
         <p className="label mb-2">
           {exercise.isTimed ? "Séries (segundos)" : "Séries de trabalho"}
         </p>
-        <Card className="divide-y divide-line">
+        <div className="border-y border-line">
           {workingSets.map((set) => (
             <SetRow
               key={set.id}
@@ -976,11 +1004,12 @@ function ExercisePanel({
               bodyweight={exercise.family === "bodyweight"}
               timed={exercise.isTimed}
               perSide={exercise.perSide}
+              active={set.id === nextSetId}
               onToggle={() => onToggleSet(set)}
               onReps={(reps) => onReps(set, reps)}
             />
           ))}
-        </Card>
+        </div>
       </section>
     </>
   );
@@ -1013,6 +1042,11 @@ function SupersetPanel({
     ...block.exercises.map((exercise) => working(exercise).length),
   );
 
+  /* The row being asked about, per exercise: inside a superset each lift keeps
+     its own place in the round, so the mark cannot be a single index. */
+  const nextIdFor = (exercise: RunnerExercise) =>
+    working(exercise).find((set) => !set.completed)?.id ?? null;
+
   return (
     <>
       <div>
@@ -1031,7 +1065,7 @@ function SupersetPanel({
             <p className="text-sm text-parchment">{exercise.name}</p>
             <button
               onClick={() => onToggleDemo(exercise.slug)}
-              className="text-xs text-brass underline underline-offset-4"
+              className="text-xs text-amber underline underline-offset-4"
             >
               {showDemo === exercise.slug ? "Esconder" : "Como se faz"}
             </button>
@@ -1054,9 +1088,9 @@ function SupersetPanel({
       <section className="space-y-3">
         <p className="label">Rondas</p>
         {Array.from({ length: rounds }, (_, round) => (
-          <Card key={round}>
-            <p className="label px-4 pt-3">Ronda {round + 1}</p>
-            <div className="mt-1 divide-y divide-line">
+          <div key={round} className="border-l-[3px] border-tempo bg-raised">
+            <p className="label-sm px-4 pt-3 text-tempo">Ronda {round + 1}</p>
+            <div className="mt-1">
               {block.exercises.map((exercise) => {
                 const set = working(exercise)[round];
                 if (!set) return null;
@@ -1070,12 +1104,13 @@ function SupersetPanel({
                     timed={exercise.isTimed}
                     perSide={exercise.perSide}
                     onToggle={() => onToggleSet(exercise, set)}
+                    active={set.id === nextIdFor(exercise)}
                     onReps={(reps) => onReps(set, reps)}
                   />
                 );
               })}
             </div>
-          </Card>
+          </div>
         ))}
       </section>
     </>
@@ -1123,7 +1158,7 @@ function Demo({ exercise }: { exercise: RunnerExercise }) {
           <ol className="space-y-2.5">
             {exercise.steps.map((step, stepIndex) => (
               <li key={step} className="flex gap-3 text-sm leading-relaxed">
-                <span className="tabular w-4 shrink-0 text-brass">
+                <span className="tabular w-4 shrink-0 text-amber">
                   {stepIndex + 1}
                 </span>
                 <span>{step}</span>
@@ -1161,7 +1196,7 @@ function Demo({ exercise }: { exercise: RunnerExercise }) {
                 key={cue}
                 className="flex gap-3 text-sm leading-relaxed text-muted"
               >
-                <span className="text-brass" aria-hidden="true">
+                <span className="text-amber" aria-hidden="true">
                   —
                 </span>
                 <span>{cue}</span>
@@ -1229,7 +1264,7 @@ function LoadCard({
       )}
     >
       {arrow ? (
-        <span className="mr-1 align-middle text-2xl text-brass" aria-hidden="true">
+        <span className="mr-1 align-middle text-2xl text-amber" aria-hidden="true">
           {arrow}
         </span>
       ) : null}
@@ -1264,7 +1299,7 @@ function LoadCard({
         >
           <span className="label">Carga</span>
           {weight}
-          <span className="text-xs uppercase tracking-[0.14em] text-brass">
+          <span className="text-xs uppercase tracking-[0.14em] text-amber">
             Ajustar
           </span>
         </button>
@@ -1446,6 +1481,15 @@ function BodyWeightPrompt() {
 
 /* ----------------------------------------------------------------- sets */
 
+/**
+ * `active` is the first set of this exercise that has not been done. It is the
+ * one row the screen is actually asking about, so it is the one row set large:
+ * the load and the repetitions go to 44px and the tick becomes a solid block.
+ *
+ * The two sizes are exact counterparts — as a set is ticked its row gives back
+ * the 20px the next row takes, so the rows below it do not move. Only the
+ * boundary between the two travels, which is the movement being described.
+ */
 function SetRow({
   set,
   label,
@@ -1453,6 +1497,7 @@ function SetRow({
   bodyweight,
   timed,
   perSide,
+  active = false,
   onToggle,
   onReps,
 }: {
@@ -1462,6 +1507,7 @@ function SetRow({
   bodyweight: boolean;
   timed: boolean;
   perSide: boolean;
+  active?: boolean;
   onToggle: () => void;
   onReps: (reps: number | null) => void;
 }) {
@@ -1486,7 +1532,13 @@ function SetRow({
   };
 
   return (
-    <div className="overflow-hidden px-4 py-3">
+    <div
+      className={cx(
+        "overflow-hidden border-t border-line-inner px-4 py-3 transition-colors",
+        active && "border-l-[3px] border-l-amber bg-raised pl-[calc(1rem-3px)]",
+        set.completed && !active && "opacity-60",
+      )}
+    >
       {/* Every fixed width here is `shrink-0` and the one flexible column
           carries `min-w-0`, because a flex item defaults to refusing to shrink
           below its own content. Without that a superset row came to 392 px
@@ -1497,7 +1549,12 @@ function SetRow({
             every row under it repeats it; the space is worth far more to the
             exercise name, which is the only thing telling the rows apart. */}
         {label ? null : (
-          <span className="tabular w-5 shrink-0 text-sm text-faint">
+          <span
+            className={cx(
+              "display w-5 shrink-0 text-[1.0625rem]",
+              active ? "text-amber" : "text-faint",
+            )}
+          >
             {set.setNo}
           </span>
         )}
@@ -1512,13 +1569,22 @@ function SetRow({
           // Right-aligned and hard against the repetitions box, the unit read
           // as part of the next number. The margin gives it room and the unit
           // is dimmed, so the eye separates the load from the repetitions.
-          <span className="tabular mr-2 w-16 shrink-0 text-right text-sm">
+          <span
+            className={cx(
+              "display mr-2 shrink-0 text-right leading-none",
+              active
+                ? "w-[4.5rem] text-[2.125rem] text-parchment"
+                : "w-16 text-[1.375rem] text-muted",
+            )}
+          >
             {weight === null ? (
               "—"
             ) : (
               <>
                 {weight}
-                <span className="ml-1 text-xs text-faint">kg</span>
+                <span className="ml-1 text-[0.6875rem] font-semibold text-faint">
+                  kg
+                </span>
               </>
             )}
           </span>
@@ -1531,7 +1597,10 @@ function SetRow({
             placeholder={repTarget !== null ? String(repTarget) : "—"}
             readOnly={elapsed !== null}
             onChange={onReps}
-            className="h-11 w-14 px-1"
+            className={cx(
+              "px-1",
+              active ? "h-14 w-16 text-[1.75rem]" : "h-11 w-14",
+            )}
           />
         </label>
 
@@ -1539,10 +1608,10 @@ function SetRow({
           <button
             onClick={() => (elapsed === null ? setElapsed(0) : stopTimer())}
             className={cx(
-              "h-11 w-16 shrink-0 rounded-[var(--radius-md)] border text-[0.625rem] uppercase tracking-[0.1em]",
+              "h-11 w-16 shrink-0 border font-[family-name:var(--font-display)] text-xs uppercase tracking-[0.1em]",
               elapsed === null
                 ? "border-line-strong text-muted"
-                : "border-brass text-brass",
+                : "border-tempo text-tempo",
             )}
           >
             {elapsed === null ? "Contar" : "Parar"}
@@ -1554,10 +1623,13 @@ function SetRow({
           aria-pressed={set.completed}
           aria-label={set.completed ? "Marcar como não feita" : "Marcar como feita"}
           className={cx(
-            "flex h-11 w-11 shrink-0 items-center justify-center rounded-[var(--radius-md)] border transition-colors",
+            "flex shrink-0 items-center justify-center border transition-colors",
+            active ? "h-14 w-14" : "h-11 w-11",
             set.completed
-              ? "border-brass bg-brass text-ink"
-              : "border-line-strong text-faint",
+              ? "border-amber bg-amber text-ink"
+              : active
+                ? "border-amber text-amber"
+                : "border-line-strong text-faint",
           )}
         >
           <svg

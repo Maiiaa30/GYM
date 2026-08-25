@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { Card } from "@/components/ui";
+import { Section } from "@/components/ui";
 import { createClient } from "@/lib/supabase/server";
 import { daysFromToday, today as todayInGym } from "@/lib/clock";
 import { describeTrend, directionOf, readTrend } from "@/lib/gaining";
@@ -363,41 +363,62 @@ export default async function TodayPage() {
     direction,
   );
 
+  const firstName = profile?.name?.split(" ")[0] ?? null;
+
   return (
-    <div className="space-y-5">
-      <header>
-        <p className="label">{todayLabel()}</p>
-        <h1 className="mt-1 font-[family-name:var(--font-display)] text-4xl leading-tight">
-          {profile?.name ? `Olá, ${profile.name.split(" ")[0]}` : "Olá"}
-        </h1>
-      </header>
+    <div>
+      {/*
+        The greeting is the name and the date, not a salutation: "Olá" is a
+        word that costs a line and says nothing on the twentieth morning. The
+        initial stands in for an avatar — there are two accounts and neither
+        has a photograph to upload.
+      */}
+      <Section className="flex items-center gap-3.5">
+        <span
+          aria-hidden="true"
+          className="flex h-10 w-10 shrink-0 items-center justify-center border border-line-bright font-[family-name:var(--font-display)] text-[1.1875rem] font-bold text-amber"
+        >
+          {firstName ? firstName.slice(0, 1).toUpperCase() : "—"}
+        </span>
+        <div className="min-w-0">
+          <p className="label-sm">{todayLabel()}</p>
+          <h1 className="display mt-1 truncate text-[1.625rem] text-parchment">
+            {firstName ?? "Bem-vindo"}
+          </h1>
+        </div>
+      </Section>
 
       {cardDays.length === 0 ? (
-        <Card className="p-5">
-          <p className="label">Ainda não tens plano</p>
-          <p className="mt-2 text-sm leading-relaxed text-muted">
-            Escolhe quantas vezes treinas por semana e o que tens à mão, e cria o teu primeiro plano.
+        <Section>
+          <p className="display text-[2.125rem] leading-[1.02] text-parchment">
+            Ainda não
+            <br />
+            há plano
+          </p>
+          <p className="mt-3.5 text-sm leading-relaxed text-muted">
+            Escolhe quantas vezes treinas por semana e o que tens à mão, e cria
+            o teu primeiro plano. Dois minutos — podes mudar tudo depois.
           </p>
           <Link
             href="/plan"
-            className="mt-4 inline-block text-sm text-brass underline underline-offset-4"
+            className="mt-4 flex h-14 items-center justify-center border border-amber bg-amber font-[family-name:var(--font-display)] text-[1.4375rem] font-bold uppercase tracking-[0.08em] text-ink"
           >
-            Criar um plano
+            Criar plano
           </Link>
-        </Card>
+        </Section>
       ) : openSession ? (
-        <Card className="p-5">
+        <Section>
           <p className="label">Treino a decorrer</p>
-          <p className="mt-2 text-sm text-muted">
+          <p className="mt-3.5 text-sm text-muted">
             Começaste um treino hoje e não o acabaste.
           </p>
           <Link
             href={`/session/${openSession.id}`}
-            className="mt-4 block rounded-[var(--radius-md)] border border-brass bg-brass py-4 text-center font-medium text-ink"
+            className="mt-4 flex h-14 items-center justify-center border border-amber bg-amber font-[family-name:var(--font-display)] text-[1.4375rem] font-bold uppercase tracking-[0.08em] text-ink"
           >
             Retomar o treino
           </Link>
-        </Card>
+        </Section>
       ) : (
         <TodayCard days={cardDays} suggestedIndex={suggestedIndex} />
       )}
@@ -475,7 +496,7 @@ export default async function TodayPage() {
       )}
 
       {cardDays.length > 0 ? (
-        <p className="text-center text-xs text-faint">
+        <p className="gutter text-center text-[0.78125rem] text-faint">
           {completedCount ?? 0} treinos concluídos
         </p>
       ) : null}

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useFormStatus } from "react-dom";
-import { Button, Card } from "@/components/ui";
+import { Button, Section } from "@/components/ui";
 import { Sheet } from "@/components/sheet";
 import { formatMinutes } from "@/lib/duration";
 import {
@@ -37,7 +37,7 @@ function QuietSubmit({ label }: { label: string }) {
     <button
       type="submit"
       disabled={pending}
-      className="flex h-11 items-center px-3 text-xs uppercase tracking-[0.14em] text-muted disabled:opacity-40"
+      className="action flex h-11 items-center px-3 text-muted disabled:opacity-40"
     >
       {pending ? "A preparar…" : label}
     </button>
@@ -64,28 +64,41 @@ export function TodayCard({
 
   return (
     <>
-      <Card>
-        <div className="flex items-baseline justify-between gap-3 px-5 pt-5">
-          <div>
-            <p className="label">Hoje</p>
-            <p className="mt-1 font-[family-name:var(--font-display)] text-3xl">
+      <Section>
+        {/*
+          The day's name and the minutes it will take, on one line, because
+          those are the two things being decided between: whether to go, and
+          whether there is time. The minutes are set as large as the name so
+          the answer to the second question is not small print.
+        */}
+        <div className="flex items-start justify-between gap-3.5">
+          <div className="min-w-0 flex-1">
+            <p className="label text-amber">Treino de hoje</p>
+            <p className="display mt-2 text-[2.125rem] leading-[1.02] text-parchment">
               {day.name}
             </p>
-            <p className="mt-1 text-sm text-muted">{day.focus}</p>
+            {day.focus ? (
+              <p className="mt-1.5 text-sm text-muted">{day.focus}</p>
+            ) : null}
           </div>
-          <p className="tabular shrink-0 text-xs text-faint">
-            {formatMinutes(day.minutes)}
+          <p className="shrink-0 text-right">
+            <span className="display block text-[2.125rem] text-parchment">
+              {day.minutes}
+            </span>
+            <span className="label-sm">min</span>
           </p>
         </div>
 
-        <ul className="mt-4 divide-y divide-line">
+        <ul className="mt-4">
           {day.items.map((item, position) => (
-            <li
-              key={`${day.id}-${position}`}
-              className="flex items-center justify-between px-5 py-3"
-            >
-              <span className="text-sm">{item.name}</span>
-              <span className="tabular text-sm text-muted">
+            <li key={`${day.id}-${position}`} className="row">
+              <span className="w-3 shrink-0 font-[family-name:var(--font-mono)] text-[0.625rem] text-faint">
+                {position + 1}
+              </span>
+              <span className="min-w-0 flex-1 text-[0.9375rem] text-parchment">
+                {item.name}
+              </span>
+              <span className="display shrink-0 text-[1.125rem] font-semibold text-muted">
                 {item.sets} ×{" "}
                 {item.repLow === item.repHigh
                   ? item.repLow
@@ -95,7 +108,7 @@ export function TodayCard({
           ))}
         </ul>
 
-        <div className="space-y-3 p-5">
+        <div className="mt-5 space-y-3">
           <form action={startSession}>
             <input type="hidden" name="plan_day_id" value={day.id} />
             <StartButton label="Começar o treino" />
@@ -105,7 +118,7 @@ export function TodayCard({
             {days.length > 1 ? (
               <button
                 onClick={() => setPicking(true)}
-                className="flex h-11 items-center px-3 text-xs uppercase tracking-[0.14em] text-muted"
+                className="action flex h-11 items-center px-3 text-muted"
               >
                 Treinar outro dia
               </button>
@@ -115,25 +128,27 @@ export function TodayCard({
             </form>
           </div>
         </div>
-      </Card>
+      </Section>
 
       <Sheet
         open={picking}
         title="Escolher o treino"
         onClose={() => setPicking(false)}
       >
-        <ul className="divide-y divide-line">
+        <ul>
           {days.map((option, optionIndex) => (
-            <li key={option.id}>
+            <li key={option.id} className="border-t border-line-inner">
               <button
                 onClick={() => {
                   setIndex(optionIndex);
                   setPicking(false);
                 }}
-                className="flex w-full items-baseline justify-between gap-3 px-5 py-4 text-left"
+                className="flex min-h-14 w-full items-center justify-between gap-3 px-[var(--gutter)] py-3 text-left"
               >
-                <span>
-                  <span className="block text-base">{option.name}</span>
+                <span className="min-w-0">
+                  <span className="display block text-[1.1875rem] text-parchment">
+                    {option.name}
+                  </span>
                   <span className="block text-xs text-faint">
                     {option.focus}
                     {option.focus ? " · " : ""}
@@ -141,7 +156,7 @@ export function TodayCard({
                   </span>
                 </span>
                 {optionIndex === index ? (
-                  <span className="label text-brass">Escolhido</span>
+                  <span className="label text-amber">Escolhido</span>
                 ) : optionIndex === suggestedIndex ? (
                   <span className="label">Sugerido</span>
                 ) : null}

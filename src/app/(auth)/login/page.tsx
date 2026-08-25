@@ -42,7 +42,7 @@ export default function LoginPage() {
       <Submit />
       <p className="pt-2 text-center text-xs text-faint">
         Foste convidado?{" "}
-        <Link href="/join" className="text-brass underline underline-offset-4">
+        <Link href="/join" className="text-amber underline underline-offset-4">
           Cria a tua conta
         </Link>
       </p>

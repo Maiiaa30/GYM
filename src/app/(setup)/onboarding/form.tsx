@@ -63,7 +63,7 @@ export function OnboardingForm({ defaultName }: { defaultName: string }) {
                 value={option.value}
                 className="peer sr-only"
               />
-              <span className="flex h-12 cursor-pointer items-center justify-center rounded-[var(--radius-md)] border border-line text-sm peer-checked:border-brass peer-checked:text-brass">
+              <span className="flex h-12 cursor-pointer items-center justify-center rounded-[var(--radius-md)] border border-line text-sm peer-checked:border-amber peer-checked:text-amber">
                 {option.label}
               </span>
             </label>
@@ -80,7 +80,7 @@ export function OnboardingForm({ defaultName }: { defaultName: string }) {
           name="injury_notes"
           rows={3}
           placeholder="Opcional. O que doer, ou movimentos a evitar."
-          className="w-full rounded-[var(--radius-md)] border border-line bg-surface px-3 py-2.5 text-parchment placeholder:text-faint focus:border-brass focus:outline-none"
+          className="w-full rounded-[var(--radius-md)] border border-line bg-surface px-3 py-2.5 text-parchment placeholder:text-faint focus:border-amber focus:outline-none"
         />
       </label>
 

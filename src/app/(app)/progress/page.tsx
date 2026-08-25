@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { Card, Panel, cx } from "@/components/ui";
+import { Panel, Section, cx } from "@/components/ui";
 import { BodyMap } from "@/components/body-map";
 import {
   BarChart,
@@ -109,6 +109,7 @@ export default async function ProgressPage() {
     : Number(profile.weight_goal_kg);
 
   const latest = weights.length > 0 ? weights[weights.length - 1] : null;
+  const first = weights.length > 0 ? weights[0] : null;
   const previous = weights.length > 1 ? weights[weights.length - 2] : null;
   const change = latest && previous ? latest.kg - previous.kg : null;
 
@@ -153,7 +154,7 @@ export default async function ProgressPage() {
                 towardsGoal === null
                   ? "text-muted"
                   : towardsGoal
-                    ? "text-brass"
+                    ? "text-amber"
                     : "text-oxblood",
               )}
             >
@@ -168,19 +169,62 @@ export default async function ProgressPage() {
             : "Define um objetivo em baixo para teres uma linha por onde te guiares."
         }
       >
-        <p className="tabular font-[family-name:var(--font-display)] text-5xl leading-none">
-          {latest ? latest.kg.toFixed(1) : "—"}
-          <span className="ml-1 text-lg text-muted">kg</span>
-        </p>
+        {/*
+          Three numbers and a bar: where this started, where it is, where it is
+          going. The current weight is the only one set large — the other two
+          are the scale it is read against, not figures anyone needs to check.
+          Without the start and the goal beside it a weight is just a number,
+          and the one thing it has to say is whether it is moving the right way.
+        */}
+        {latest && first && goal !== null && first.kg !== goal ? (
+          <>
+            <div className="flex items-end justify-between gap-2">
+              <div>
+                <p className="label-sm">Inicial</p>
+                <p className="display mt-1 text-[1.625rem] font-semibold text-muted">
+                  {first.kg.toFixed(1)}
+                </p>
+              </div>
+              <div className="text-center">
+                <p className="label-sm">Atual</p>
+                <p className="display mt-1 text-[3.25rem] leading-[0.92] text-parchment">
+                  {latest.kg.toFixed(1)}
+                </p>
+              </div>
+              <div className="text-right">
+                <p className="label-sm">Meta</p>
+                <p className="display mt-1 text-[1.625rem] font-semibold text-muted">
+                  {goal.toFixed(1)}
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-4 h-[3px] w-full bg-line-strong">
+              <div
+                className="h-full bg-amber"
+                style={{ width: `${goalProgress(first.kg, latest.kg, goal)}%` }}
+              />
+            </div>
+            <p className="mt-3 text-[0.78125rem] text-muted">
+              {goalProgress(first.kg, latest.kg, goal)}% do caminho · faltam{" "}
+              {Math.abs(latest.kg - goal).toFixed(1)} kg
+            </p>
+          </>
+        ) : (
+          <p className="display text-[3.25rem] leading-none text-parchment">
+            {latest ? latest.kg.toFixed(1) : "—"}
+            <span className="ml-1 text-lg font-semibold text-faint">kg</span>
+          </p>
+        )}
 
         {trend ? (
           <p
             className={cx(
-              "mt-3 border-l-2 pl-3 text-sm leading-relaxed",
+              "mt-4 border-l-[3px] pl-3 text-sm leading-relaxed",
               trend.tone === "warn"
                 ? "border-oxblood text-parchment"
                 : trend.tone === "good"
-                  ? "border-brass text-muted"
+                  ? "border-amber text-muted"
                   : "border-line-strong text-muted",
             )}
           >
@@ -209,9 +253,9 @@ export default async function ProgressPage() {
           }
           note="Peso a subir e cintura parada é o sinal de que estás a ganhar músculo e não só peso."
         >
-          <p className="tabular font-[family-name:var(--font-display)] text-4xl leading-none">
+          <p className="display text-[2.5rem] leading-none text-parchment">
             {lastWaist.cm.toFixed(1).replace(".", ",").replace(/,0$/, "")}
-            <span className="ml-1 text-base text-muted">cm</span>
+            <span className="ml-1 text-base font-semibold text-faint">cm</span>
           </p>
         </Panel>
       ) : null}
@@ -227,12 +271,10 @@ export default async function ProgressPage() {
       </Panel>
 
       {weights.length > 0 ? (
-        <Card className="px-5 py-1">
+        <Section>
           <details className="disclosure">
-            <summary className="label">
-              Registos anteriores
-            </summary>
-            <ul className="divide-y divide-line border-t border-line pb-2">
+            <summary className="action">Registos anteriores</summary>
+            <ul className="pb-2">
               {[...weights]
                 .reverse()
                 .slice(0, 12)
@@ -251,7 +293,7 @@ export default async function ProgressPage() {
                 ))}
             </ul>
           </details>
-        </Card>
+        </Section>
       ) : null}
     </div>
   );
@@ -463,7 +505,7 @@ export default async function ProgressPage() {
               <li key={lift.slug} className="py-3">
                 <div className="flex items-baseline justify-between gap-3">
                   <span className="text-sm">{lift.name}</span>
-                  <span className="tabular shrink-0 font-[family-name:var(--font-display)] text-xl text-brass">
+                  <span className="display shrink-0 text-xl text-amber">
                     {lift.working}
                     <span className="ml-0.5 text-xs text-muted">kg</span>
                   </span>
@@ -493,9 +535,9 @@ export default async function ProgressPage() {
 
   return (
     <div className="space-y-6">
-      <header>
+      <header className="gutter">
         <p className="label">Histórico</p>
-        <h1 className="mt-1 font-[family-name:var(--font-display)] text-4xl">
+        <h1 className="display mt-2 text-[2rem] text-parchment">
           Progresso
         </h1>
       </header>
@@ -508,4 +550,15 @@ export default async function ProgressPage() {
       />
     </div>
   );
+}
+
+/**
+ * How far along the way to the goal the current weight is, as a whole
+ * percentage, clamped. Measured from the first reading rather than from zero:
+ * the distance that matters is the one they have actually set out to cover.
+ */
+function goalProgress(first: number, current: number, goal: number): number {
+  const span = goal - first;
+  if (span === 0) return 100;
+  return Math.max(0, Math.min(100, Math.round(((current - first) / span) * 100)));
 }

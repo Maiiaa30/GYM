@@ -37,9 +37,15 @@ export default async function AppLayout({
   return (
     <div className="grid h-full grid-rows-[1fr_auto]">
       <main className="scroll-area">
+        {/*
+          No horizontal padding here: every section owns its own gutter, so a
+          divided list or a heatmap can reach the edge of the screen while the
+          text beside it stays inset. The plate is the page, not a column of
+          boxes floating on one.
+        */}
         <div
-          className="mx-auto w-full max-w-md px-5 pb-6"
-          style={{ paddingTop: "max(1.25rem, env(safe-area-inset-top))" }}
+          className="mx-auto w-full max-w-md"
+          style={{ paddingTop: "max(0.5rem, env(safe-area-inset-top))" }}
         >
           {children}
         </div>
@@ -48,18 +54,13 @@ export default async function AppLayout({
       {openSession ? (
         <Link
           href={`/session/${openSession.id}`}
-          className="flex items-center justify-between gap-3 border-t border-brass-dim bg-raised px-5 py-3"
+          className="flex items-center justify-between gap-3 border-t border-amber bg-raised px-[var(--gutter)] py-3"
         >
           <span className="flex items-center gap-2.5">
-            <span
-              aria-hidden="true"
-              className="h-2 w-2 shrink-0 rounded-full bg-brass"
-            />
+            <span aria-hidden="true" className="h-[7px] w-[7px] shrink-0 bg-amber" />
             <span className="text-sm text-parchment">Treino a meio</span>
           </span>
-          <span className="text-xs uppercase tracking-[0.14em] text-brass">
-            Retomar
-          </span>
+          <span className="action">Retomar</span>
         </Link>
       ) : null}
 

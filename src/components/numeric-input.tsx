@@ -46,7 +46,7 @@ export function NumericInput({
       onBlur={() => setDraft(null)}
       className={cx(
         "tabular rounded-[var(--radius-sm)] border border-line bg-surface",
-        "text-center focus:border-brass focus:outline-none",
+        "text-center focus:border-amber focus:outline-none",
         className,
       )}
       {...props}

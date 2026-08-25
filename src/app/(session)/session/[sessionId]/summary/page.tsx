@@ -130,7 +130,7 @@ export default async function SummaryPage({
             <ul className="mt-3 space-y-2">
               {records.map((record) => (
                 <li key={record.exercise} className="text-sm">
-                  <span className="text-brass">
+                  <span className="text-amber">
                     {nameBySlug.get(record.exercise) ?? record.exercise}
                   </span>{" "}
                   — {Number(record.weight_kg)} kg × {record.reps}
@@ -171,7 +171,7 @@ export default async function SummaryPage({
 
         <Link
           href="/"
-          className="block rounded-[var(--radius-md)] border border-brass bg-brass py-4 text-center font-medium text-ink"
+          className="block rounded-[var(--radius-md)] border border-amber bg-amber py-4 text-center font-medium text-ink"
         >
           Feito
         </Link>

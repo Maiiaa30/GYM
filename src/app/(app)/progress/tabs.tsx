@@ -25,14 +25,20 @@ export function ProgressTabs({
   const panels = { Peso: weight, Atividade: activity, Músculos: muscles, Força: strength };
 
   return (
-    <div className="space-y-5">
-      {/* Sentence case and no extra letter-spacing: uppercase with tracking
-          made "Atividade" fill its whole slot, so the four labels ran into one
-          another. The row is also a full 44 px tall, which it was not. */}
+    <div>
+      {/*
+        The selected tab is marked by a rule on the section's own hairline,
+        the same mark the bottom navigation uses — one idea of "you are here"
+        for the whole application rather than one per bar.
+
+        Condensed uppercase is what makes the four labels fit: "Atividade" and
+        "Progresso" ran into their neighbours in the body face, which is why
+        this row used to be sentence case with no tracking.
+      */}
       <div
         role="tablist"
         aria-label="Vistas do progresso"
-        className="flex gap-1 rounded-[var(--radius-md)] border border-line p-1"
+        className="grid grid-cols-4 gutter-x border-b border-line"
       >
         {TABS.map((name) => (
           <button
@@ -41,11 +47,11 @@ export function ProgressTabs({
             aria-selected={tab === name}
             onClick={() => setTab(name)}
             className={cx(
-              "flex h-11 flex-1 items-center justify-center rounded-[var(--radius-sm)]",
-              "px-1 text-[0.8125rem] transition-colors",
+              "flex h-12 min-w-0 items-center justify-center transition-colors",
+              "font-[family-name:var(--font-display)] text-base uppercase tracking-[0.08em]",
               tab === name
-                ? "bg-raised font-medium text-brass"
-                : "text-muted",
+                ? "-mb-px border-b-2 border-amber font-bold text-amber"
+                : "font-semibold text-faint",
             )}
           >
             {name}

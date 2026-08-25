@@ -51,7 +51,7 @@ export function Sheet({
       >
         <span
           aria-hidden="true"
-          className="mx-auto mt-2 h-1 w-10 rounded-full bg-line-strong"
+          className="mx-auto mt-2 h-1 w-10 bg-line-strong"
         />
         <div className="flex items-center justify-between px-5 pb-2 pt-1">
           <p className="label">{title}</p>

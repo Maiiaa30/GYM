@@ -2,37 +2,54 @@
 
 /* ------------------------------------------------------------------
    Design tokens
-   Restrained dark palette: ink ground, parchment text, a single brass
-   accent and a muted olive support colour. No gradients, no glows, no
-   saturated colour.
 
-   The three text tiers — parchment, muted, faint — each clear 4.5:1 on
-   every ground the application uses, and are spaced far enough apart to
-   still read as a hierarchy. They were not: `faint` sat at 2.6:1, which
-   is most of the small print in the application, on a phone, in a gym.
-   Check any new colour against `--color-raised`, the lightest ground.
+   A plate, not a stack of cards. Sections run the full width and are
+   separated by a single hairline with 22px of air on each side of it, so the
+   division is carried by vertical rhythm rather than by drawing more boxes.
+   Nothing is rounded and nothing has a shadow.
+
+   Two accents, and they are not interchangeable:
+     amber  — you: your progress, the primary action, the active tab.
+     tempo  — time and grouping: the rest clock and supersets, nothing else.
+   Using tempo decoratively is what would make this screen unreadable at a
+   glance, which is the one thing the training screen cannot afford.
+
+   The three text tiers each clear 4.5:1 on both grounds:
+     parchment 17.2 / 16.4 · muted 9.2 / 8.7 · faint 6.7 / 6.4
+     amber 9.2 / 8.8 · tempo 9.9 / 9.4   (ink on amber 9.2, on tempo 9.9)
+   `line-strong` is 2.1:1 and is a border colour only — never text.
+   Check any new colour against `--color-raised`, the lighter ground.
 ------------------------------------------------------------------- */
 @theme {
-  --color-ink: #0b0c0a;
-  --color-surface: #131512;
-  --color-raised: #1a1d18;
-  --color-line: #272b24;
-  --color-line-strong: #3a3f35;
-  --color-parchment: #ece6d8;
-  --color-muted: #b0ac9c;
-  --color-faint: #8a8779;
-  --color-brass: #c2a467;
-  --color-brass-dim: #98814c;
-  --color-olive: #4c5c47;
-  --color-oxblood: #c36a60;
+  --color-ink: #0e0f0e;
+  --color-surface: #141513;
+  --color-raised: #141513;
+  --color-line: #24261f;
+  --color-line-inner: #1c1e1a;
+  --color-line-strong: #2a2c29;
+  --color-line-bright: #46493f;
+  --color-parchment: #f4f2ec;
+  --color-muted: #b6b3a9;
+  --color-faint: #9c998f;
+  --color-amber: #f0a263;
+  --color-amber-dim: #c9834a;
+  --color-tempo: #63c9d0;
+  --color-oxblood: #d97b70;
 
-  --font-display: var(--font-serif), Georgia, "Times New Roman", serif;
-  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
-    Helvetica, Arial, sans-serif;
+  --font-display: var(--font-condensed), "Arial Narrow", Helvetica, sans-serif;
+  --font-sans: var(--font-body), ui-sans-serif, system-ui, -apple-system,
+    "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --font-mono: var(--font-mono-face), ui-monospace, SFMono-Regular, Menlo,
+    monospace;
 
-  --radius-sm: 2px;
-  --radius-md: 4px;
-  --radius-lg: 6px;
+  /* Squared throughout. Kept as tokens so the intent is stated once. */
+  --radius-sm: 0px;
+  --radius-md: 0px;
+  --radius-lg: 0px;
+
+  /* The rhythm. One gutter value, used as padding on both sides of every
+     hairline, which is what produces the 44px interval between sections. */
+  --gutter: 22px;
 }
 
 /* ------------------------------------------------------------------
@@ -59,6 +76,7 @@ body {
   font-family: var(--font-sans);
   font-size: 16px;
   line-height: 1.45;
+  font-variant-numeric: tabular-nums;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
   overscroll-behavior-y: none;
@@ -71,12 +89,22 @@ body.app-shell {
   overflow: hidden;
 }
 
-button,
-input,
-select,
-textarea {
-  font: inherit;
-  color: inherit;
+/*
+  In `@layer base`, not at the top level. Unlayered CSS beats every layered
+  rule in the cascade, so as a bare rule this quietly discarded any font
+  utility placed on a button — `font: inherit` is a shorthand and resets the
+  family, the size and the weight together. The buttons had been inheriting
+  the body face all along; it only became visible once they were meant to be
+  condensed and bold.
+*/
+@layer base {
+  button,
+  input,
+  select,
+  textarea {
+    font: inherit;
+    color: inherit;
+  }
 }
 
 input,
@@ -96,28 +124,86 @@ input[type="number"] {
 }
 
 :focus-visible {
-  outline: 1px solid var(--color-brass);
+  outline: 2px solid var(--color-amber);
   outline-offset: 2px;
 }
 
 ::selection {
-  background: var(--color-brass-dim);
+  background: var(--color-amber);
   color: var(--color-ink);
 }
 
 /* ------------------------------------------------------------------
    Utilities
 ------------------------------------------------------------------- */
+/* A section's name, on its own line, with air under it. Condensed uppercase:
+   at 13px it still reads as a label rather than as content. */
 @utility label {
-  font-size: 0.6875rem;
+  font-family: var(--font-display);
+  font-size: 0.8125rem;
+  line-height: 1;
   letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: var(--color-muted);
-  font-weight: 500;
+  color: var(--color-faint);
+  font-weight: 600;
+}
+
+/* The smaller label a statistic carries above its number. */
+@utility label-sm {
+  font-family: var(--font-display);
+  font-size: 0.75rem;
+  line-height: 1;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-faint);
+  font-weight: 600;
+}
+
+/* Display type: condensed, uppercase, set tight. Numbers included — the whole
+   point of the face is that a weight and a heading share one voice. */
+@utility display {
+  font-family: var(--font-display);
+  font-weight: 700;
+  text-transform: uppercase;
+  line-height: 1;
+  letter-spacing: 0.01em;
+  font-variant-numeric: tabular-nums;
+}
+
+/* An action with no box: uppercase, condensed, amber. Used where a button
+   would be too loud — "Registar", "Histórico", "Editar". */
+@utility action {
+  font-family: var(--font-display);
+  font-size: 0.9375rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  font-weight: 600;
+  color: var(--color-amber);
 }
 
 @utility rule {
   border-top: 1px solid var(--color-line);
+}
+
+/* The gutter, as padding. Every section uses it, so the hairline between two
+   of them always has the same air on both sides. */
+@utility gutter {
+  padding: var(--gutter);
+}
+
+@utility gutter-x {
+  padding-left: var(--gutter);
+  padding-right: var(--gutter);
+}
+
+/* A list row inside a section. The 44px floor is the touch target and the
+   rhythm at the same time. */
+@utility row {
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+  min-height: 2.75rem;
+  border-top: 1px solid var(--color-line-inner);
 }
 
 @utility scroll-area {

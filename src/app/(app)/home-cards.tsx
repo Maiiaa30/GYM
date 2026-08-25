@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Card, cx } from "@/components/ui";
+import { Panel, Section, Stat, StatGrid, cx } from "@/components/ui";
 import { buildSeries, type ChartBox, type HeatCell } from "@/lib/charts";
 import { formatVolume, type DaySlot } from "@/lib/home";
 
@@ -22,18 +22,15 @@ export function EmptyCard({
   action?: string;
 }) {
   return (
-    <Card className="p-5">
+    <Section>
       <p className="label">{label}</p>
-      <p className="mt-2 text-sm leading-relaxed text-muted">{children}</p>
+      <p className="mt-3.5 text-sm leading-relaxed text-muted">{children}</p>
       {href && action ? (
-        <Link
-          href={href}
-          className="mt-3 inline-block text-sm text-brass underline underline-offset-4"
-        >
+        <Link href={href} className="action mt-3.5 inline-block">
           {action}
         </Link>
       ) : null}
-    </Card>
+    </Section>
   );
 }
 
@@ -44,29 +41,29 @@ export function StatRow({
   stats: Array<{ label: string; value: string; hint?: string }>;
 }) {
   return (
-    <Card className="grid grid-cols-3 divide-x divide-line">
-      {stats.map((stat) => (
-        <div key={stat.label} className="px-3 py-4 text-center">
-          <p className="tabular font-[family-name:var(--font-display)] text-2xl leading-none">
-            {stat.value}
-          </p>
-          <p className="mt-1.5 text-[0.625rem] uppercase tracking-[0.12em] text-faint">
-            {stat.label}
-          </p>
-        </div>
-      ))}
-    </Card>
+    <div className="border-b border-line">
+      <StatGrid>
+        {stats.map((stat) => (
+          <Stat
+            key={stat.label}
+            label={stat.label}
+            value={stat.value}
+            note={stat.hint}
+          />
+        ))}
+      </StatGrid>
+    </div>
   );
 }
 
 /* -------------------------------------------------------------- heatmap */
 
 const HEAT_CLASS = [
-  "bg-raised",
-  "bg-brass/25",
-  "bg-brass/45",
-  "bg-brass/70",
-  "bg-brass",
+  "bg-line-inner",
+  "bg-amber/25",
+  "bg-amber/45",
+  "bg-amber/70",
+  "bg-amber",
 ];
 
 /**
@@ -82,41 +79,34 @@ export function ActivityCard({
   daysTrained: number;
 }) {
   return (
-    <Card className="p-5">
-      <div className="flex items-baseline justify-between gap-3">
-        <p className="label">Atividade</p>
-        <Link
-          href="/progress"
-          className="text-xs uppercase tracking-[0.14em] text-faint"
-        >
+    <Panel
+      title="Atividade · 3 meses"
+      meta={
+        <Link href="/progress" className="action">
           Ver o ano
         </Link>
-      </div>
-
-      <div className="mt-4 flex gap-[3px]" aria-hidden="true">
+      }
+      note={
+        daysTrained === 0
+          ? "O primeiro quadrado acende no fim do primeiro treino."
+          : daysTrained === 1
+            ? "1 dia treinado nos últimos três meses."
+            : `${daysTrained} dias treinados nos últimos três meses.`
+      }
+    >
+      <div className="flex gap-[3px]" aria-hidden="true">
         {columns.map((week) => (
           <div key={week[0].date} className="flex flex-1 flex-col gap-[3px]">
             {week.map((cell) => (
               <span
                 key={cell.date}
-                className={cx(
-                  "aspect-square w-full rounded-[1px]",
-                  HEAT_CLASS[cell.level],
-                )}
+                className={cx("aspect-square w-full", HEAT_CLASS[cell.level])}
               />
             ))}
           </div>
         ))}
       </div>
-
-      <p className="mt-3 text-xs text-faint">
-        {daysTrained === 0
-          ? "Ainda sem treinos registados."
-          : daysTrained === 1
-            ? "1 dia treinado nos últimos três meses."
-            : `${daysTrained} dias treinados nos últimos três meses.`}
-      </p>
-    </Card>
+    </Panel>
   );
 }
 
@@ -134,41 +124,37 @@ export function MusclesCard({
   missing: string[];
 }) {
   return (
-    <Card className="p-5">
-      <div className="flex items-baseline justify-between gap-3">
-        <p className="label">Músculos esta semana</p>
-        <Link
-          href="/progress"
-          className="text-xs uppercase tracking-[0.14em] text-faint"
-        >
+    <Panel
+      title="Equilíbrio muscular"
+      meta={
+        <Link href="/progress" className="action">
           Ver o mapa
         </Link>
-      </div>
-
+      }
+      note={
+        missing.length > 0 && worked.length > 0
+          ? `Ainda por trabalhar: ${missing.join(", ")}.`
+          : undefined
+      }
+    >
       {worked.length === 0 ? (
-        <p className="mt-3 text-sm leading-relaxed text-muted">
+        <p className="text-sm leading-relaxed text-muted">
           Ainda não treinaste esta semana. Assim que fizeres a primeira série,
           aparece aqui onde é que o trabalho foi parar.
         </p>
       ) : (
-        <ul className="mt-3 flex flex-wrap gap-1.5">
+        <ul className="flex flex-wrap gap-1.5">
           {worked.map((entry) => (
             <li
               key={entry.muscle}
-              className="tabular rounded-full border border-line-strong px-2.5 py-1 text-xs text-parchment"
+              className="tabular border border-line-strong px-2.5 py-1 text-xs text-parchment"
             >
               {entry.muscle} <span className="text-faint">{entry.sets}</span>
             </li>
           ))}
         </ul>
       )}
-
-      {missing.length > 0 && worked.length > 0 ? (
-        <p className="mt-3 text-xs leading-relaxed text-faint">
-          Ainda por trabalhar: {missing.join(", ")}.
-        </p>
-      ) : null}
-    </Card>
+    </Panel>
   );
 }
 
@@ -191,21 +177,29 @@ export function WeekCard({
   streak: number;
 }) {
   return (
-    <Card className="p-5">
-      <div className="flex items-baseline justify-between gap-3">
-        <p className="label">Esta semana</p>
-        <p className="tabular text-xs text-faint">
-          {trained} de {target}
+    <Panel
+      title="Esta semana"
+      meta={
+        <p className="display text-lg text-parchment">
+          {trained}
+          <span className="text-sm text-faint">/{target}</span>
         </p>
-      </div>
-
-      <ul className="mt-4 flex justify-between gap-1">
+      }
+      note={
+        streak > 0
+          ? streak === 1
+            ? "Primeira semana com o objetivo cumprido."
+            : `${streak} semanas seguidas com o objetivo cumprido.`
+          : undefined
+      }
+    >
+      <ul className="flex justify-between gap-1">
         {days.map((day) => (
           <li key={day.date} className="flex flex-1 flex-col items-center gap-2">
             <span
               className={cx(
                 "text-[0.625rem] uppercase tracking-[0.12em]",
-                day.isToday ? "text-brass" : "text-faint",
+                day.isToday ? "text-amber" : "text-faint",
               )}
             >
               {day.initial}
@@ -213,14 +207,14 @@ export function WeekCard({
             <span
               aria-hidden="true"
               className={cx(
-                "h-2.5 w-2.5 rounded-full border",
+                "h-2.5 w-2.5 border",
                 day.trained
-                  ? "border-brass bg-brass"
+                  ? "border-amber bg-amber"
                   : day.isToday
-                    ? "border-brass bg-transparent"
+                    ? "border-amber bg-transparent"
                     : day.isFuture
                       ? "border-line bg-transparent"
-                      : "border-line-strong bg-raised",
+                      : "border-line-strong bg-line-inner",
               )}
             />
             <span className="sr-only">
@@ -229,15 +223,7 @@ export function WeekCard({
           </li>
         ))}
       </ul>
-
-      {streak > 0 ? (
-        <p className="mt-4 text-xs text-faint">
-          {streak === 1
-            ? "Primeira semana com o objetivo cumprido."
-            : `${streak} semanas seguidas com o objetivo cumprido.`}
-        </p>
-      ) : null}
-    </Card>
+    </Panel>
   );
 }
 
@@ -261,33 +247,28 @@ export function LastSessionCard({ session }: { session: LastSession }) {
   ].filter(Boolean);
 
   return (
-    <Card className="p-5">
-      <div className="flex items-baseline justify-between gap-3">
-        <p className="label">Último treino</p>
-        <p className="text-xs text-faint">{session.when}</p>
-      </div>
-
-      <p className="mt-2 font-[family-name:var(--font-display)] text-2xl">
+    <Panel
+      title="Último treino"
+      meta={
+        <Link href={`/session/${session.id}/summary`} className="action">
+          Resumo
+        </Link>
+      }
+    >
+      <p className="display text-2xl leading-none text-parchment">
         {session.name}
       </p>
-
-      <p className="tabular mt-1 text-sm text-muted">{facts.join(" · ")}</p>
+      <p className="tabular mt-2 text-sm text-muted">{facts.join(" · ")}</p>
+      <p className="mt-1 text-[0.78125rem] text-faint">{session.when}</p>
 
       {session.records > 0 ? (
-        <p className="mt-3 text-xs text-brass">
+        <p className="mt-2.5 text-[0.78125rem] text-amber">
           {session.records === 1
             ? "1 recorde pessoal"
             : `${session.records} recordes pessoais`}
         </p>
       ) : null}
-
-      <Link
-        href={`/session/${session.id}/summary`}
-        className="mt-4 inline-block text-xs uppercase tracking-[0.14em] text-faint"
-      >
-        Ver o resumo
-      </Link>
-    </Card>
+    </Panel>
   );
 }
 
@@ -310,9 +291,17 @@ export function PartnerCard({
   lastWhen: string | null;
 }) {
   return (
-    <Card className="p-5">
-      <p className="label">Parceiro</p>
-      <p className="mt-2 text-sm leading-relaxed">
+    <Panel
+      title="Parceiro"
+      note={
+        thisWeek > 0
+          ? thisWeek === 1
+            ? "1 treino nos últimos 7 dias"
+            : `${thisWeek} treinos nos últimos 7 dias`
+          : undefined
+      }
+    >
+      <p className="text-sm leading-relaxed">
         {trainedToday ? (
           <>
             <span className="text-parchment">{name}</span> já treinou hoje.
@@ -328,14 +317,7 @@ export function PartnerCard({
           </>
         )}
       </p>
-      {thisWeek > 0 ? (
-        <p className="tabular mt-1 text-xs text-faint">
-          {thisWeek === 1
-            ? "1 treino nos últimos 7 dias"
-            : `${thisWeek} treinos nos últimos 7 dias`}
-        </p>
-      ) : null}
-    </Card>
+    </Panel>
   );
 }
 
@@ -374,16 +356,22 @@ export function WeightCard({
         : `−${format(Math.abs(changeKg))} kg`;
 
   return (
-    <Card className="p-5">
+    <Panel
+      title="Peso"
+      meta={
+        <Link href="/progress" className="action">
+          Registar
+        </Link>
+      }
+    >
       <div className="flex items-center justify-between gap-4">
-      <div>
-        <p className="label">Peso</p>
-        <p className="tabular mt-1 font-[family-name:var(--font-display)] text-3xl">
+      <div className="min-w-0">
+        <p className="display text-[2.125rem] text-parchment">
           {format(latest)}
-          <span className="ml-1 text-base text-muted">kg</span>
+          <span className="ml-1 text-base font-semibold text-faint">kg</span>
         </p>
         {direction ? (
-          <p className="tabular mt-1 text-xs text-faint">
+          <p className="tabular mt-1 text-[0.78125rem] text-amber">
             {direction} em {weeks === 1 ? "1 semana" : `${weeks} semanas`}
           </p>
         ) : null}
@@ -392,13 +380,13 @@ export function WeightCard({
       {series ? (
         <svg
           viewBox={`0 0 ${SPARK.width} ${SPARK.height}`}
-          className="h-9 w-36 shrink-0"
+          className="h-9 w-32 shrink-0"
           role="img"
           aria-label="Evolução do peso"
         >
           <path
             d={series.path}
-            className="fill-none stroke-brass [stroke-linecap:round] [stroke-linejoin:round] [stroke-width:1.5]"
+            className="fill-none stroke-amber [stroke-linecap:round] [stroke-linejoin:round] [stroke-width:1.5]"
           />
         </svg>
       ) : null}
@@ -407,18 +395,18 @@ export function WeightCard({
       {verdict ? (
         <p
           className={cx(
-            "mt-4 border-l-2 pl-3 text-sm leading-relaxed",
+            "mt-4 border-l-[3px] pl-3 text-sm leading-relaxed",
             verdict.tone === "warn"
               ? "border-oxblood text-parchment"
               : verdict.tone === "good"
-                ? "border-brass text-muted"
+                ? "border-amber text-muted"
                 : "border-line-strong text-muted",
           )}
         >
           {verdict.text}
         </p>
       ) : null}
-    </Card>
+    </Panel>
   );
 }
 

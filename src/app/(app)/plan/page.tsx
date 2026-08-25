@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { Card } from "@/components/ui";
+import { Section, Stat, StatGrid } from "@/components/ui";
 import { createClient } from "@/lib/supabase/server";
 import { today as todayInGym } from "@/lib/clock";
 import { estimateMinutes, formatMinutes } from "@/lib/duration";
@@ -156,55 +156,54 @@ export default async function PlanPage() {
   );
 
   return (
-    <div className="space-y-5">
-      <header>
-        <p className="label">Programa</p>
-        <h1 className="mt-1 font-[family-name:var(--font-display)] text-4xl">
-          Plano
+    <div>
+      <Section>
+        <p className="label text-amber">
+          {plan
+            ? plan.source === "generated"
+              ? "Programa à medida"
+              : "Programa de base"
+            : "Programa"}
+        </p>
+        <h1 className="display mt-2 text-[2rem] leading-[1.05] text-parchment">
+          {plan ? plan.name : "Plano"}
         </h1>
-      </header>
+        {plan ? (
+          <p className="tabular mt-1.5 text-[0.84375rem] text-muted">
+            {plan.weeks} semanas · desde {plan.block_start}
+          </p>
+        ) : null}
+      </Section>
 
-      <Card className="grid grid-cols-3 divide-x divide-line">
-        <Stat
-          value={settings ? String(settings.days_per_week) : "—"}
-          label="por semana"
-        />
-        <Stat
-          value={settings ? PROFILE_LABEL[settings.equipment] : "—"}
-          label="onde"
-        />
-        <Stat
-          value={settings ? String(settings.session_minutes) : "—"}
-          label="minutos"
-        />
-      </Card>
+      <div className="border-b border-line">
+        <StatGrid>
+          <Stat
+            value={settings ? String(settings.days_per_week) : "—"}
+            label="dias/sem"
+          />
+          <Stat
+            value={settings ? PROFILE_LABEL[settings.equipment] : "—"}
+            label="onde"
+          />
+          <Stat
+            value={settings ? String(settings.session_minutes) : "—"}
+            label="minutos"
+          />
+        </StatGrid>
+      </div>
 
       {plan ? (
         <>
-          <Card className="p-5">
-            <div className="flex items-baseline justify-between gap-3">
-              <p className="font-[family-name:var(--font-display)] text-xl">
-                {plan.name}
-              </p>
-              <p className="label shrink-0 text-brass-dim">
-                {plan.source === "generated" ? "À medida" : "De base"}
-              </p>
-            </div>
-            <p className="tabular mt-1 text-xs text-faint">
-              {plan.weeks} semanas · desde {plan.block_start}
-            </p>
-
-            {plan.rationale ? (
-              <details className="disclosure mt-1">
-                <summary className="text-sm text-brass">
-                  Porquê este plano
-                </summary>
-                <p className="pb-1 text-sm leading-relaxed text-muted">
+          {plan.rationale ? (
+            <Section>
+              <details className="disclosure">
+                <summary className="action">Porquê este plano</summary>
+                <p className="pt-2 text-sm leading-relaxed text-muted">
                   {plan.rationale}
                 </p>
               </details>
-            ) : null}
-          </Card>
+            </Section>
+          ) : null}
 
           {days?.map((day) => {
             const dayItems = (items ?? []).filter(
@@ -213,21 +212,23 @@ export default async function PlanPage() {
             const done = summaryByDay.get(day.id);
 
             return (
-              <Card key={day.id} className="p-5">
-                <div className="flex items-baseline justify-between gap-3">
-                  <div>
-                    <p className="font-[family-name:var(--font-display)] text-xl">
+              <Section key={day.id}>
+                <div className="flex items-start justify-between gap-3.5">
+                  <div className="min-w-0 flex-1">
+                    <p className="display text-[1.4375rem] leading-[1.05] text-parchment">
                       {day.name}
                     </p>
-                    <p className="mt-0.5 text-sm text-muted">{day.focus}</p>
+                    <p className="mt-1 text-[0.78125rem] text-muted">
+                      {day.focus}
+                      {day.focus ? " · " : ""}
+                      {dayItems.length} exercícios ·{" "}
+                      {formatMinutes(minutesByDay.get(day.id) ?? 0)}
+                    </p>
                   </div>
-                  <p className="tabular shrink-0 text-xs text-faint">
-                    {formatMinutes(minutesByDay.get(day.id) ?? 0)}
-                  </p>
                 </div>
 
                 {done ? (
-                  <p className="tabular mt-3 border-l-2 border-brass-dim pl-3 text-xs leading-relaxed text-muted">
+                  <p className="tabular mt-3.5 border-l-[3px] border-amber pl-3 text-[0.78125rem] leading-relaxed text-muted">
                     Já o fizeste {done.times === 1 ? "1 vez" : `${done.times} vezes`}.
                     <br />
                     <span className="text-faint">
@@ -238,65 +239,52 @@ export default async function PlanPage() {
                     </span>
                   </p>
                 ) : (
-                  <p className="mt-3 border-l-2 border-line pl-3 text-xs text-faint">
+                  <p className="mt-3.5 border-l-[3px] border-line-strong pl-3 text-[0.78125rem] text-faint">
                     Ainda não fizeste este treino.
                   </p>
                 )}
 
-                <details className="disclosure mt-1">
-                  <summary className="text-sm text-brass">
-                    {dayItems.length} exercícios
-                  </summary>
-                  <ul className="divide-y divide-line border-t border-line">
+                <details className="disclosure mt-2">
+                  <summary className="action">Ver os exercícios</summary>
+                  <ul className="pb-1">
                     {dayItems.map((item) => (
                       <li
                         key={`${day.id}-${item.position}`}
-                        className="flex items-baseline justify-between gap-4 py-2.5"
+                        className="row"
                       >
-                        <span className="text-sm">
+                        <span className="min-w-0 flex-1 text-[0.90625rem] text-parchment">
                           {exerciseBySlug.get(item.exercise)?.name ??
                             item.exercise}
                           {item.notes ? (
-                            <span className="mt-0.5 block text-xs text-faint">
+                            <span className="mt-0.5 block text-[0.78125rem] text-faint">
                               {item.notes}
                             </span>
                           ) : null}
                         </span>
-                        <span className="tabular whitespace-nowrap text-sm text-muted">
+                        <span className="display shrink-0 text-[1.0625rem] font-semibold text-muted">
                           {item.sets} × {repRange(item.rep_low, item.rep_high)}
                         </span>
                       </li>
                     ))}
                   </ul>
                 </details>
-              </Card>
+              </Section>
             );
           })}
 
-          <BuildPlanForm replacing />
+          <Section last>
+            <BuildPlanForm replacing />
+          </Section>
         </>
       ) : (
-        <Card className="space-y-4 p-5">
+        <Section last className="space-y-4">
           <p className="text-sm leading-relaxed text-muted">
             Ainda não tens plano. O de base é de corpo inteiro e anda à volta de
             quatro coisas: agachar, levantar do chão, empurrar e puxar.
           </p>
           <BuildPlanForm replacing={false} />
-        </Card>
+        </Section>
       )}
-    </div>
-  );
-}
-
-function Stat({ value, label }: { value: string; label: string }) {
-  return (
-    <div className="px-2 py-4 text-center">
-      <p className="tabular font-[family-name:var(--font-display)] text-2xl leading-none">
-        {value}
-      </p>
-      <p className="mt-1.5 text-[0.625rem] uppercase tracking-[0.12em] text-faint">
-        {label}
-      </p>
     </div>
   );
 }

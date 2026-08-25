@@ -61,7 +61,7 @@ export default function JoinPage() {
       <Submit />
       <p className="pt-2 text-center text-xs text-faint">
         Já tens conta?{" "}
-        <Link href="/login" className="text-brass underline underline-offset-4">
+        <Link href="/login" className="text-amber underline underline-offset-4">
           Entrar
         </Link>
       </p>

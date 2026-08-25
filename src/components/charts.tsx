@@ -103,10 +103,10 @@ export function LineChart({
         );
       })}
 
-      <path d={series.area} className="fill-brass/10" />
+      <path d={series.area} className="fill-amber/10" />
       <path
         d={series.path}
-        className="fill-none stroke-brass [stroke-linecap:round] [stroke-linejoin:round] [stroke-width:1.5]"
+        className="fill-none stroke-amber [stroke-linecap:round] [stroke-linejoin:round] [stroke-width:1.5]"
       />
 
       {goalY !== null ? (
@@ -116,20 +116,20 @@ export function LineChart({
             x2={LINE_BOX.width - LINE_BOX.padRight}
             y1={goalY}
             y2={goalY}
-            className="stroke-brass-dim [stroke-dasharray:3_4] [stroke-width:1]"
+            className="stroke-amber-dim [stroke-dasharray:3_4] [stroke-width:1]"
           />
           <text
             x={LINE_BOX.width - LINE_BOX.padRight}
             y={goalY - 4}
             textAnchor="end"
-            className="fill-brass-dim text-[9px]"
+            className="fill-amber-dim text-[9px]"
           >
             objetivo
           </text>
         </>
       ) : null}
 
-      <circle cx={last.x} cy={last.y} r={3} className="fill-brass" />
+      <circle cx={last.x} cy={last.y} r={3} className="fill-amber" />
       <text
         x={last.x}
         y={calloutY}
@@ -192,10 +192,10 @@ export function Sparkline({ values }: { values: number[] }) {
         d={series.path}
         className={cx(
           "fill-none [stroke-linecap:round] [stroke-linejoin:round] [stroke-width:1.5]",
-          rose ? "stroke-brass" : "stroke-brass-dim",
+          rose ? "stroke-amber" : "stroke-amber-dim",
         )}
       />
-      <circle cx={last.x} cy={last.y} r={2.5} className="fill-brass" />
+      <circle cx={last.x} cy={last.y} r={2.5} className="fill-amber" />
     </svg>
   );
 }
@@ -258,7 +258,7 @@ export function BarChart({
           width={bar.width}
           height={Math.max(bar.height, 1)}
           rx={1}
-          className={index === bars.length - 1 ? "fill-brass" : "fill-brass/40"}
+          className={index === bars.length - 1 ? "fill-amber" : "fill-amber/40"}
         />
       ))}
 
@@ -310,10 +310,10 @@ export function BarChart({
 
 const HEAT_CLASS = [
   "bg-raised",
-  "bg-brass/25",
-  "bg-brass/45",
-  "bg-brass/70",
-  "bg-brass",
+  "bg-amber/25",
+  "bg-amber/45",
+  "bg-amber/70",
+  "bg-amber",
 ];
 
 const CELL = 11;
@@ -400,11 +400,11 @@ export function VolumeBars({
           <span className="w-24 shrink-0 text-xs capitalize text-muted">
             {row.muscle}
           </span>
-          <span className="relative h-2 flex-1 overflow-hidden rounded-full bg-raised">
+          <span className="relative h-[3px] flex-1 overflow-hidden bg-line-strong">
             <span
               className={cx(
-                "absolute inset-y-0 left-0 rounded-full",
-                row.sets > 0 ? "bg-brass" : "bg-transparent",
+                "absolute inset-y-0 left-0",
+                row.sets > 0 ? "bg-amber" : "bg-transparent",
               )}
               style={{ width: `${Math.round(row.share * 100)}%` }}
             />

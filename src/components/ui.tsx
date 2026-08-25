@@ -7,10 +7,19 @@ export function cx(...parts: Array<string | false | null | undefined>) {
 /* ---------------------------------------------------------------- Button */
 
 type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
-  variant?: "primary" | "quiet" | "ghost" | "danger";
+  variant?: "primary" | "quiet" | "ghost" | "danger" | "tempo";
   size?: "md" | "field" | "lg";
 };
 
+/**
+ * Squared, condensed, uppercase. The primary variant is a solid block of amber
+ * with ink text — at 56px it is the only thing on the screen shaped like that,
+ * which is what makes it findable with one thumb without hunting.
+ *
+ * `tempo` exists for the rest clock's own controls and nowhere else. Giving
+ * skipping a rest the same amber as starting a workout made the two read as
+ * the same weight of decision, and they are not.
+ */
 export function Button({
   variant = "primary",
   size = "md",
@@ -18,25 +27,30 @@ export function Button({
   ...props
 }: ButtonProps) {
   const base =
-    "inline-flex items-center justify-center gap-2 rounded-[var(--radius-md)] " +
-    "border font-medium tracking-wide transition-colors duration-150 " +
-    "disabled:opacity-40 disabled:pointer-events-none select-none";
+    // No font-weight here: the size sets it, and two font-weight utilities on
+    // one element resolve by their order in the stylesheet rather than by the
+    // order they are written in, so the size would not reliably win.
+    "inline-flex items-center justify-center gap-2 border select-none " +
+    "font-[family-name:var(--font-display)] uppercase " +
+    "tracking-[0.08em] transition-colors duration-150 " +
+    "disabled:opacity-40 disabled:pointer-events-none";
 
   const sizes = {
-    md: "h-11 px-4 text-sm",
+    md: "h-11 px-4 text-base font-semibold",
     // Matches the height of a Field's input, for buttons that sit beside one.
-    field: "h-12 px-4 text-sm",
-    lg: "h-14 px-5 text-base",
+    field: "h-12 px-4 text-base font-semibold",
+    lg: "h-14 px-5 text-[1.4375rem] font-bold",
   }[size];
 
   const variants = {
     primary:
-      "border-brass bg-brass text-ink hover:bg-brass-dim hover:border-brass-dim active:bg-brass-dim",
+      "border-amber bg-amber text-ink hover:bg-amber-dim hover:border-amber-dim active:bg-amber-dim",
     quiet:
-      "border-line-strong bg-raised text-parchment hover:border-brass hover:text-brass",
-    ghost: "border-transparent bg-transparent text-muted hover:text-parchment",
+      "border-line-bright bg-transparent text-parchment hover:border-amber hover:text-amber",
+    ghost: "border-transparent bg-transparent text-faint hover:text-parchment",
     danger:
-      "border-oxblood bg-transparent text-oxblood hover:bg-oxblood hover:text-parchment",
+      "border-oxblood bg-transparent text-oxblood hover:bg-oxblood hover:text-ink",
+    tempo: "border-tempo bg-tempo text-ink hover:opacity-90",
   }[variant];
 
   return <button className={cx(base, sizes, variants, className)} {...props} />;
@@ -77,9 +91,9 @@ export function Field({
       <input
         id={props.id ?? (typeof props.name === "string" ? props.name : undefined)}
         className={cx(
-          "w-full h-12 rounded-[var(--radius-md)] border border-line bg-surface",
+          "w-full h-12 border border-line-strong bg-surface tabular",
           "px-3 text-parchment placeholder:text-faint",
-          "focus:border-brass focus:outline-none",
+          "focus:border-amber focus:outline-none",
           suffix && "pr-12",
           className,
         )}
@@ -125,8 +139,48 @@ export function Field({
   );
 }
 
-/* ------------------------------------------------------------------ Card */
+/* ---------------------------------------------------------------- Section */
 
+/**
+ * A full-width band of the plate, divided from the next one by a single
+ * hairline with the gutter's worth of air on each side of it — 44px between
+ * two sections, which is the whole of the separation. There is no border, no
+ * radius and no second ground: a card drawn inside a dark screen is one more
+ * edge to read, and the screens that needed the most reading had the most of
+ * them.
+ *
+ * `flush` cancels the horizontal padding for content that has to reach the
+ * edge — a divided list, a scrolling grid, a chart.
+ */
+export function Section({
+  children,
+  className,
+  flush = false,
+  last = false,
+}: {
+  children: ReactNode;
+  className?: string;
+  flush?: boolean;
+  last?: boolean;
+}) {
+  return (
+    <section
+      className={cx(
+        flush ? "py-[var(--gutter)]" : "gutter",
+        !last && "border-b border-line",
+        className,
+      )}
+    >
+      {children}
+    </section>
+  );
+}
+
+/**
+ * Kept so the screens that have not been reworked still compile and still look
+ * deliberate. It is the same band, boxed — new work should reach for
+ * `Section`.
+ */
 export function Card({
   children,
   className,
@@ -135,10 +189,71 @@ export function Card({
   className?: string;
 }) {
   return (
+    <div className={cx("border border-line bg-surface", className)}>
+      {children}
+    </div>
+  );
+}
+
+/**
+ * A statistic: its name in small condensed capitals, then the number large
+ * enough to be the thing you actually see. `unit` rides on the number's
+ * baseline rather than sitting on its own line, so a column of these keeps one
+ * rhythm whether or not the value carries a unit.
+ */
+export function Stat({
+  label,
+  value,
+  unit,
+  note,
+  tone = "neutral",
+}: {
+  label: string;
+  value: ReactNode;
+  unit?: string;
+  note?: ReactNode;
+  tone?: "neutral" | "amber";
+}) {
+  return (
+    <div className="flex flex-col gap-1.5">
+      <p className="label-sm">{label}</p>
+      <p className="display text-[2rem] text-parchment">
+        {value}
+        {unit ? (
+          <span className="ml-0.5 text-[0.9375rem] text-faint">{unit}</span>
+        ) : null}
+      </p>
+      {note ? (
+        <p
+          className={cx(
+            "text-[0.78125rem]",
+            tone === "amber" ? "text-amber" : "text-muted",
+          )}
+        >
+          {note}
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
+/**
+ * Two or three statistics across, divided by the same hairline as everything
+ * else. The divider is drawn on the children rather than with `divide-x` so a
+ * row of two and a row of three share one implementation.
+ */
+export function StatGrid({
+  children,
+  columns = 3,
+}: {
+  children: ReactNode;
+  columns?: 2 | 3;
+}) {
+  return (
     <div
       className={cx(
-        "rounded-[var(--radius-lg)] border border-line bg-surface",
-        className,
+        "grid [&>*]:gutter [&>*:not(:last-child)]:border-r [&>*:not(:last-child)]:border-line",
+        columns === 3 ? "grid-cols-3" : "grid-cols-2",
       )}
     >
       {children}
@@ -149,40 +264,55 @@ export function Card({
 /* ----------------------------------------------------------------- Panel */
 
 /**
- * One rhythm for every card on a reading screen: a label, optional figure on
- * the right, the content, and an optional line of explanation underneath.
+ * One rhythm for every section on a reading screen: the label on its own line
+ * with air under it, an optional figure opposite, the content, and an optional
+ * line of explanation underneath.
  *
- * The progress screens grew each card its own padding and its own idea of
- * where a heading goes, which is what made them read as noise. Content that
- * has to reach the card's edge — a scrolling grid, a divided list — cancels
- * the padding with `-mx-5`.
+ * The label having its own line is the change that made these screens
+ * scannable — pressed against the content it read as part of it.
  */
 export function Panel({
   title,
   meta,
   note,
   children,
+  flush = false,
+  last = false,
 }: {
   title: string;
   meta?: ReactNode;
   note?: ReactNode;
   children: ReactNode;
+  flush?: boolean;
+  last?: boolean;
 }) {
   return (
-    <Card className="p-5">
-      <div className="flex items-baseline justify-between gap-3">
+    <Section last={last}>
+      <div className={cx("flex items-baseline justify-between gap-3", flush && "gutter-x")}>
         <p className="label">{title}</p>
-        {meta ? (
-          <p className="tabular shrink-0 text-xs text-faint">{meta}</p>
+        {/* A bare string is the common case — a figure or a date — and it
+            should not have to carry its own type styles at every call site.
+            Anything richer (a link, a delta) is rendered as given. */}
+        {typeof meta === "string" || typeof meta === "number" ? (
+          <p className="tabular shrink-0 text-[0.78125rem] text-faint">{meta}</p>
+        ) : meta ? (
+          <div className="shrink-0">{meta}</div>
         ) : null}
       </div>
 
-      <div className="mt-4">{children}</div>
+      <div className="mt-3.5">{children}</div>
 
       {note ? (
-        <p className="mt-3 text-xs leading-relaxed text-faint">{note}</p>
+        <p
+          className={cx(
+            "mt-3 text-[0.84375rem] leading-relaxed text-muted",
+            flush && "gutter-x",
+          )}
+        >
+          {note}
+        </p>
       ) : null}
-    </Card>
+    </Section>
   );
 }
 
@@ -199,10 +329,10 @@ export function Notice({
     <p
       role={tone === "error" ? "alert" : undefined}
       className={cx(
-        "rounded-[var(--radius-md)] border px-3 py-2.5 text-sm",
+        "border-l-[3px] bg-surface px-3.5 py-2.5 text-sm",
         tone === "error"
-          ? "border-oxblood/60 text-oxblood"
-          : "border-line text-muted",
+          ? "border-oxblood text-oxblood"
+          : "border-line-bright text-muted",
       )}
     >
       {children}
@@ -216,7 +346,7 @@ export function Wordmark({ className }: { className?: string }) {
   return (
     <span
       className={cx(
-        "font-[family-name:var(--font-display)] text-2xl tracking-[0.3em] text-parchment",
+        "display text-2xl tracking-[0.3em] text-parchment",
         className,
       )}
     >

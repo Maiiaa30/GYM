@@ -101,7 +101,7 @@ export default async function SettingsPage() {
         <a
           href="/settings/export"
           download
-          className="mt-3 inline-block text-sm text-brass underline underline-offset-4"
+          className="mt-3 inline-block text-sm text-amber underline underline-offset-4"
         >
           Descarregar
         </a>
