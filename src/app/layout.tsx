@@ -70,6 +70,16 @@ export default function RootLayout({
           React reports as a hydration mismatch.
         */}
         <meta name="darkreader-lock" />
+        {/*
+          Written by hand because the metadata API no longer emits it: it now
+          produces only the standardised `mobile-web-app-capable`, and Safari
+          does not read that one. Without the `apple-` prefixed tag, adding the
+          application to the Home Screen gives a cut-down browser rather than a
+          standalone application — the bar along the bottom where the address
+          used to be stays behind as a dead strip, with the navigation sitting
+          above it.
+        */}
+        <meta name="apple-mobile-web-app-capable" content="yes" />
       </head>
       <body className="app-shell" suppressHydrationWarning>
         {children}
