@@ -1,7 +1,8 @@
 import { redirect } from "next/navigation";
-import { Section, Stat, StatGrid } from "@/components/ui";
+import { Section, Stat, StatGrid, cx } from "@/components/ui";
 import { createClient } from "@/lib/supabase/server";
 import { today as todayInGym } from "@/lib/clock";
+import { suggestedDayIndex } from "@/lib/schedule";
 import { estimateMinutes, formatMinutes } from "@/lib/duration";
 import { formatVolume, relativeDay, volumeOf } from "@/lib/home";
 import { BuildPlanForm } from "./build-form";
@@ -155,6 +156,19 @@ export default async function PlanPage() {
     ]),
   );
 
+  /* The day the rotation lands on today, so the plan says which of these is
+     the one you are about to do. Without it every day reads the same and the
+     screen answers a question nobody asked. */
+  const totalExercises = (items ?? []).length;
+
+  const suggested = settings
+    ? suggestedDayIndex({
+        today: todayInGym(),
+        daysPerWeek: settings.days_per_week,
+        completedSessions: (sessions ?? []).length,
+      })
+    : -1;
+
   return (
     <div>
       <Section>
@@ -171,6 +185,7 @@ export default async function PlanPage() {
         {plan ? (
           <p className="tabular mt-1.5 text-[0.84375rem] text-muted">
             {plan.weeks} semanas · desde {plan.block_start}
+            {settings ? ` · ${PROFILE_LABEL[settings.equipment]}` : ""}
           </p>
         ) : null}
       </Section>
@@ -181,10 +196,7 @@ export default async function PlanPage() {
             value={settings ? String(settings.days_per_week) : "—"}
             label="dias/sem"
           />
-          <Stat
-            value={settings ? PROFILE_LABEL[settings.equipment] : "—"}
-            label="onde"
-          />
+          <Stat value={String(totalExercises)} label="exercícios" />
           <Stat
             value={settings ? String(settings.session_minutes) : "—"}
             label="minutos"
@@ -210,15 +222,25 @@ export default async function PlanPage() {
               (item) => item.plan_day_id === day.id,
             );
             const done = summaryByDay.get(day.id);
+            const isToday = day.day_index === suggested;
 
             return (
-              <Section key={day.id}>
+              <Section
+                key={day.id}
+                className={isToday ? "border-l-[3px] border-l-amber" : undefined}
+              >
                 <div className="flex items-start justify-between gap-3.5">
                   <div className="min-w-0 flex-1">
                     <p className="display text-[1.4375rem] leading-[1.05] text-parchment">
                       {day.name}
                     </p>
-                    <p className="mt-1 text-[0.78125rem] text-muted">
+                    <p
+                      className={cx(
+                        "mt-1 text-[0.78125rem]",
+                        isToday ? "text-amber" : "text-muted",
+                      )}
+                    >
+                      {isToday ? "Hoje · " : null}
                       {day.focus}
                       {day.focus ? " · " : ""}
                       {dayItems.length} exercícios ·{" "}

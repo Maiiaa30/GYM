@@ -220,7 +220,9 @@ export function Stat({
       <p className="display text-[2rem] text-parchment">
         {value}
         {unit ? (
-          <span className="ml-0.5 text-[0.9375rem] text-faint">{unit}</span>
+          <span className="ml-0.5 text-[0.9375rem] normal-case text-faint">
+            {unit}
+          </span>
         ) : null}
       </p>
       {note ? (
@@ -238,6 +240,53 @@ export function Stat({
 }
 
 /**
+ * A statistic with the shape of its own history under it. The sparkline is not
+ * decoration: a number on its own says where you are, and the line under it
+ * says which way you are going, which is the half people actually act on.
+ *
+ * `note` carries the reading — a delta, or what the number means — and takes
+ * the accent only when it is telling you something has gone the right way.
+ */
+export function StatTile({
+  label,
+  value,
+  unit,
+  note,
+  tone = "neutral",
+  spark,
+}: {
+  label: string;
+  value: ReactNode;
+  unit?: string;
+  note?: ReactNode;
+  tone?: "neutral" | "amber";
+  spark?: ReactNode;
+}) {
+  return (
+    <div className="flex min-w-0 flex-col gap-1.5">
+      <p className="label-sm truncate">{label}</p>
+      <p className="display text-[1.75rem] text-parchment">
+        {value}
+        {unit ? (
+          <span className="ml-0.5 text-sm normal-case text-faint">{unit}</span>
+        ) : null}
+      </p>
+      {note ? (
+        <p
+          className={cx(
+            "truncate text-[0.71875rem]",
+            tone === "amber" ? "text-amber" : "text-muted",
+          )}
+        >
+          {note}
+        </p>
+      ) : null}
+      {spark ? <div className="mt-0.5 h-4">{spark}</div> : null}
+    </div>
+  );
+}
+
+/**
  * Two or three statistics across, divided by the same hairline as everything
  * else. The divider is drawn on the children rather than with `divide-x` so a
  * row of two and a row of three share one implementation.
@@ -245,14 +294,19 @@ export function Stat({
 export function StatGrid({
   children,
   columns = 3,
+  tight = false,
 }: {
   children: ReactNode;
   columns?: 2 | 3;
+  /** Three tiles carrying a label, a number, a reading and a line need the
+      width more than they need the gutter. */
+  tight?: boolean;
 }) {
   return (
     <div
       className={cx(
-        "grid [&>*]:gutter [&>*:not(:last-child)]:border-r [&>*:not(:last-child)]:border-line",
+        "grid [&>*:not(:last-child)]:border-r [&>*:not(:last-child)]:border-line",
+        tight ? "[&>*]:min-w-0 [&>*]:px-4 [&>*]:py-5" : "[&>*]:gutter",
         columns === 3 ? "grid-cols-3" : "grid-cols-2",
       )}
     >

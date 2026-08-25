@@ -3,13 +3,6 @@ import { createServerClient } from "@supabase/ssr";
 
 const PUBLIC_PATHS = ["/login", "/join"];
 
-/*
- * Temporary. Reachable signed in or signed out: listing it as public sent a
- * signed-in visitor straight back to the opening screen, because a public path
- * is one a signed-in visitor has no business being on.
- */
-const ALWAYS_PATHS = ["/diag"];
-
 export async function middleware(request: NextRequest) {
   let response = NextResponse.next({ request });
 
@@ -41,11 +34,6 @@ export async function middleware(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   const path = request.nextUrl.pathname;
-
-  if (ALWAYS_PATHS.some((p) => path === p || path.startsWith(`${p}/`))) {
-    return response;
-  }
-
   const isPublic = PUBLIC_PATHS.some(
     (p) => path === p || path.startsWith(`${p}/`),
   );

@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { Panel, Section, cx } from "@/components/ui";
+import { Panel, Section, StatGrid, StatTile, cx } from "@/components/ui";
 import { BodyMap } from "@/components/body-map";
 import {
   BarChart,
@@ -10,7 +10,7 @@ import {
   VolumeBars,
 } from "@/components/charts";
 import { formatVolume } from "@/lib/home";
-import { buildHeatmap } from "@/lib/charts";
+import { buildHeatmap, buildSeries, type ChartBox } from "@/lib/charts";
 import { daysFromToday, today as todayInGym } from "@/lib/clock";
 import { describeTrend, directionOf, readTrend } from "@/lib/gaining";
 import {
@@ -61,7 +61,7 @@ export default async function ProgressPage() {
   ] = await Promise.all([
     supabase
       .from("profiles")
-      .select("weight_goal_kg")
+      .select("weight_goal_kg, height_cm")
       .eq("id", user.id)
       .maybeSingle(),
     supabase
@@ -131,6 +131,27 @@ export default async function ProgressPage() {
       .map((set) => set.logged_at.slice(0, 10))
       .filter((day) => day >= trendFrom),
   ).size;
+
+  /* The three readings the tiles carry. Each is only shown when the history
+     behind it exists — a tile that says "—" is worse than no tile. */
+  const weekAgo = daysAgo(7);
+  const beforeWeek = weights.filter((entry) => entry.on <= weekAgo);
+  const weekBase = beforeWeek[beforeWeek.length - 1] ?? null;
+  const weekChange = latest && weekBase ? latest.kg - weekBase.kg : null;
+
+  const heightM = profile?.height_cm ? Number(profile.height_cm) / 100 : null;
+  const bmi = heightM && latest ? latest.kg / (heightM * heightM) : null;
+  const bmiFirst = heightM && first ? first.kg / (heightM * heightM) : null;
+
+  const totalChange = latest && first ? latest.kg - first.kg : null;
+
+  const movingRight = (delta: number | null) =>
+    delta !== null &&
+    goal !== null &&
+    latest !== null &&
+    ((goal < latest.kg && delta < 0) || (goal > latest.kg && delta > 0));
+  const towardsWeek = movingRight(weekChange);
+  const towardsTotal = movingRight(totalChange);
 
   const direction = directionOf(latest?.kg ?? null, goal);
   const trend = describeTrend(
@@ -213,7 +234,7 @@ export default async function ProgressPage() {
         ) : (
           <p className="display text-[3.25rem] leading-none text-parchment">
             {latest ? latest.kg.toFixed(1) : "—"}
-            <span className="ml-1 text-lg font-semibold text-faint">kg</span>
+            <span className="ml-1 text-lg font-semibold normal-case text-faint">kg</span>
           </p>
         )}
 
@@ -255,7 +276,7 @@ export default async function ProgressPage() {
         >
           <p className="display text-[2.5rem] leading-none text-parchment">
             {lastWaist.cm.toFixed(1).replace(".", ",").replace(/,0$/, "")}
-            <span className="ml-1 text-base font-semibold text-faint">cm</span>
+            <span className="ml-1 text-base font-semibold normal-case text-faint">cm</span>
           </p>
         </Panel>
       ) : null}
@@ -269,6 +290,64 @@ export default async function ProgressPage() {
           <GoalForm current={goal} />
         </div>
       </Panel>
+
+      {/* Three readings of the same history, side by side: the week just gone,
+          what the weight means for this body, and the whole distance covered.
+          The line under each is what says which way it is going — a number on
+          its own says where you are and nothing about where you are headed. */}
+      {latest ? (
+        <div className="border-b border-line">
+          <StatGrid tight>
+            <StatTile
+              label="7 dias"
+              value={
+                weekChange === null
+                  ? "—"
+                  : `${weekChange > 0 ? "+" : weekChange < 0 ? "−" : ""}${Math.abs(weekChange).toFixed(1)}`
+              }
+              note={
+                weekChange === null
+                  ? "sem leitura"
+                  : Math.abs(weekChange) < 0.3
+                    ? "estável"
+                    : weekChange < 0
+                      ? "a descer"
+                      : "a subir"
+              }
+              tone={towardsWeek ? "amber" : "neutral"}
+              spark={<Spark values={weights.slice(-8).map((w) => w.kg)} />}
+            />
+            <StatTile
+              label="IMC"
+              value={bmi === null ? "—" : bmi.toFixed(1)}
+              note={
+                bmi !== null && bmiFirst !== null
+                  ? // Just the delta: a third of a 320px screen does not hold
+                    // a sentence, and the tile beside it already says "desde".
+                    `${bmi - bmiFirst >= 0 ? "+" : "−"}${Math.abs(bmi - bmiFirst).toFixed(1)}`
+                  : "falta a altura"
+              }
+              spark={
+                heightM ? (
+                  <Spark
+                    values={weights
+                      .slice(-8)
+                      .map((w) => w.kg / (heightM * heightM))}
+                  />
+                ) : null
+              }
+            />
+            <StatTile
+              label={totalChange !== null && totalChange > 0 ? "Ganhos" : "Perdidos"}
+              value={totalChange === null ? "—" : Math.abs(totalChange).toFixed(1)}
+              unit="kg"
+              note={first ? `desde ${shortDate(first.on)}` : undefined}
+              tone={towardsTotal ? "amber" : "neutral"}
+              spark={<Spark values={weights.map((w) => w.kg)} />}
+            />
+          </StatGrid>
+        </div>
+      ) : null}
 
       {weights.length > 0 ? (
         <Section>
@@ -561,4 +640,37 @@ function goalProgress(first: number, current: number, goal: number): number {
   const span = goal - first;
   if (span === 0) return 100;
   return Math.max(0, Math.min(100, Math.round(((current - first) / span) * 100)));
+}
+
+const SPARK_BOX: ChartBox = {
+  width: 100,
+  height: 18,
+  padTop: 3,
+  padBottom: 3,
+  padLeft: 1,
+  padRight: 1,
+};
+
+/**
+ * The shape of a series in the width of a tile. No axes, no labels and no
+ * scale — it is not there to be read off, only to say which way the number
+ * above it has been moving. Two readings are the fewest that have a direction.
+ */
+function Spark({ values }: { values: number[] }) {
+  const series = buildSeries(values, SPARK_BOX);
+  if (!series) return null;
+  return (
+    <svg
+      viewBox={`0 0 ${SPARK_BOX.width} ${SPARK_BOX.height}`}
+      className="h-4 w-full"
+      preserveAspectRatio="none"
+      aria-hidden="true"
+    >
+      <path
+        d={series.path}
+        className="fill-none stroke-amber [stroke-linecap:round] [stroke-linejoin:round] [stroke-width:1.4]"
+        vectorEffect="non-scaling-stroke"
+      />
+    </svg>
+  );
 }

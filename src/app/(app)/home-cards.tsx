@@ -368,7 +368,7 @@ export function WeightCard({
       <div className="min-w-0">
         <p className="display text-[2.125rem] text-parchment">
           {format(latest)}
-          <span className="ml-1 text-base font-semibold text-faint">kg</span>
+          <span className="ml-1 text-base font-semibold normal-case text-faint">kg</span>
         </p>
         {direction ? (
           <p className="tabular mt-1 text-[0.78125rem] text-amber">
